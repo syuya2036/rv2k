@@ -101,6 +101,7 @@ rv2k_nested_fault:
 # Recover the faulting kernel sp without touching a task stack.
 csrr sp, mscratch
 csrw mscratch, zero
+mv a0, sp
 li gp, 0
 li tp, 0
 j rv2k_kernel_fault

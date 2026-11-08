@@ -160,7 +160,7 @@ unsafe extern "C" fn rv2k_trap_dispatch(frame: *mut TrapFrame) -> usize {
 }
 
 #[no_mangle]
-extern "C" fn rv2k_kernel_fault() -> ! {
+extern "C" fn rv2k_kernel_fault(_sp: usize) -> ! {
     stop(26)
 }
 

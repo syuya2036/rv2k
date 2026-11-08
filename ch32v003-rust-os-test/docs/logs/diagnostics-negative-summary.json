@@ -1,0 +1,72 @@
+[
+  {
+    "case": "fault-canary",
+    "reason": 2,
+    "task": 0,
+    "pc": 1068,
+    "cause": 11,
+    "tval": 1,
+    "sp": 536871320,
+    "instructions": 6919
+  },
+  {
+    "case": "fault-kernel-canary",
+    "reason": 2,
+    "task": 0,
+    "pc": 1068,
+    "cause": 11,
+    "tval": 4,
+    "sp": 536871320,
+    "instructions": 6919
+  },
+  {
+    "case": "fault-panic",
+    "reason": 1,
+    "task": 0,
+    "pc": 0,
+    "cause": 0,
+    "tval": 0,
+    "sp": 536871420,
+    "instructions": 6739
+  },
+  {
+    "case": "fault-illegal",
+    "reason": 4,
+    "task": 0,
+    "pc": 1254,
+    "cause": 2,
+    "tval": 4294967295,
+    "sp": 536871424,
+    "instructions": 7276
+  },
+  {
+    "case": "fault-kernel-illegal",
+    "reason": 5,
+    "task": 4294967295,
+    "pc": 3596,
+    "cause": 2,
+    "tval": 4294967295,
+    "sp": 536872832,
+    "instructions": 3439
+  },
+  {
+    "case": "fault-sp",
+    "reason": 3,
+    "task": 0,
+    "pc": 1256,
+    "cause": 11,
+    "tval": 0,
+    "sp": 0,
+    "instructions": 6923
+  },
+  {
+    "case": "fault-uart-stuck",
+    "reason": 1,
+    "task": 0,
+    "pc": 0,
+    "cause": 0,
+    "tval": 0,
+    "sp": 536871420,
+    "instructions": 22101
+  }
+]

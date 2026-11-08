@@ -18,10 +18,26 @@ pub fn dispatch(
     number: usize,
     args: [usize; 3],
 ) -> Outcome {
+    dispatch_with_info(scheduler, mailbox, memory, number, args, None)
+}
+
+pub fn dispatch_with_info(
+    scheduler: &mut Scheduler,
+    mailbox: &mut Mailbox,
+    memory: &mut impl UserMemory,
+    number: usize,
+    args: [usize; 3],
+    info: Option<&rv2k_api::mem::MemInfo>,
+) -> Outcome {
     let Some(caller) = scheduler.current() else {
         return Outcome::Complete(Error::Invalid.code());
     };
     let result = match Number::decode(number) {
+        Some(Number::MemInfo) => match info {
+            Some(info) if args[1] == 24 => memory.copy_out(args[0], &info.encode(), 2).map(|_| 0),
+            Some(_) => Err(Error::Invalid),
+            None => Err(Error::NoSys),
+        },
         Some(Number::Sleep) => match u32::try_from(args[0])
             .ok()
             .and_then(|ticks| scheduler.sleep(ticks).ok())
@@ -155,5 +171,68 @@ mod tests {
             u64::from_le_bytes(mem.0[..8].try_into().unwrap()),
             0x1_0000_0001
         );
+    }
+}
+
+#[cfg(test)]
+mod diagnostic_tests {
+    use super::*;
+    use rv2k_api::mem::MemInfo;
+    struct Output([u8; 24]);
+    impl UserMemory for Output {
+        fn copy_out(
+            &mut self,
+            address: usize,
+            bytes: &[u8],
+            alignment: usize,
+        ) -> Result<(), Error> {
+            if address != 0x1000 || alignment != 2 {
+                return Err(Error::Fault);
+            }
+            self.0.copy_from_slice(bytes);
+            Ok(())
+        }
+    }
+    #[test]
+    fn snapshot_serialization_version_size_and_faults() {
+        let mut s = Scheduler::new();
+        s.initialize([0x100, 0x200]);
+        s.select_next();
+        let mut m = Mailbox::new();
+        let mut output = Output([0xcc; 24]);
+        let info = MemInfo {
+            version: 1,
+            static_bytes: 768,
+            kernel_reserved: 256,
+            task_reserved: 256,
+            used: [104, 104, 204],
+            guard_failures: 0,
+            flash_bytes: 8096,
+            ram_limit: 2048,
+            flash_limit: 16384,
+            reserved: 0,
+        };
+        assert!(matches!(
+            dispatch_with_info(
+                &mut s,
+                &mut m,
+                &mut output,
+                13,
+                [0x1000, 24, 0],
+                Some(&info)
+            ),
+            Outcome::Complete(0)
+        ));
+        assert_eq!(&output.0[..4], &[1, 0, 0, 3]);
+        assert_eq!(&output.0[16..22], &[0xa0, 0x1f, 0, 8, 0, 0x40]);
+        for (args, expected) in [
+            ([0x1000, 23, 0], -1),
+            ([0x1001, 24, 0], -8),
+            ([usize::MAX, 24, 0], -8),
+        ] {
+            assert!(
+                matches!(dispatch_with_info(&mut s,&mut m,&mut output,13,args,Some(&info)),Outcome::Complete(v) if v==expected)
+            );
+        }
     }
 }

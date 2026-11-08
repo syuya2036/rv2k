@@ -1,5 +1,7 @@
 #![no_std]
 #![no_main]
+#[cfg(feature = "diagnostics")]
+mod diagnostics;
 #[cfg(feature = "services")]
 mod services;
 #[cfg(all(feature = "services", any(feature = "coop", feature = "timer", feature = "scheduler", feature = "syscall")))]
@@ -129,4 +131,9 @@ extern "C" fn rust_main() -> ! {
     loop { core::hint::spin_loop(); }
 }
 #[panic_handler]
-fn panic(_: &core::panic::PanicInfo) -> ! { loop { core::hint::spin_loop(); } }
+fn panic(_: &core::panic::PanicInfo) -> ! {
+    #[cfg(feature = "diagnostics")]
+    diagnostics::panic();
+    #[cfg(not(feature = "diagnostics"))]
+    loop { core::hint::spin_loop(); }
+}

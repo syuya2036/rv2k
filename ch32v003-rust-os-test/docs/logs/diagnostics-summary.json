@@ -1,0 +1,15 @@
+{
+  "instructions": 1724937,
+  "syscalls": 30,
+  "timer_irqs": 6,
+  "idle_polls": 2615,
+  "uptime_ticks": 7,
+  "wait_results": 127,
+  "stack_used_bytes_tasks_kernel": [
+    184,
+    184,
+    204
+  ],
+  "static_ram_bytes": 768,
+  "kernel_stack_reserved_bytes": 256
+}

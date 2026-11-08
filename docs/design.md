@@ -1,6 +1,6 @@
 # rv2k 2.0 設計書
 
-状態: Phase 3のタイマー・IPCまで実装・検証済み。Phase 4以降は設計案。Phase 0/1の実測を土台に、後続の契約と検証条件を定める。設計上の予算やAPIを実装済みと解釈しない。リリース名は **rv2k 2.0** に統一する。
+状態: Phase 4のメモリ・障害診断まで実装・検証済み。Phase 5以降は設計案。Phase 0/1の実測を土台に、後続の契約と検証条件を定める。設計上の予算やAPIを実装済みと解釈しない。リリース名は **rv2k 2.0** に統一する。
 
 ## 1. 目的と決定事項
 
@@ -275,6 +275,8 @@ socket handleはslotと世代を含む整数。1つのlistener/connectionをT1�
 シェルは行バッファ64バイト、超過行は次の改行まで破棄してエラー応答。ps/mem/uptime/netstatは公開snapshot APIを使う。長い出力は小さなチャンクでsocketへ送る。shellとechoの切替はアプリ内部モードとし、第3スタックを要求しない。
 
 ## 11. 静的メモリとFlash予算
+
+現在の実測と予算の自動検査は [Phase 4検証](../ch32v003-rust-os-test/docs/diagnostics.md) を参照。
 
 **目標予算。現時点のsize_ofやリンク結果ではない。** データ、padding、canaryを各枠に含め、実装後にlinker mapで実数を出す。
 

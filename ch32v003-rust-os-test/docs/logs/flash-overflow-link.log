@@ -1,0 +1,3 @@
+rust-lld: error: Flash exceeds 16384-byte budget
+rust-lld: error: section '.text' will not fit in region 'FLASH': overflowed by 5 bytes
+rust-lld: error: section '.data' will not fit in region 'FLASH': overflowed by 8 bytes

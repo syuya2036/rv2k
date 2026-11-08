@@ -1,5 +1,6 @@
 #![no_std]
 
+pub mod diagnostics;
 pub mod ipc;
 pub mod memory;
 pub mod services;
