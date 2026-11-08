@@ -1,13 +1,14 @@
 //! Streaming TCP wire boundary. Verify all lengths/options/checksum before state.
 use crate::{
     be16,
-    checksum::{checksum, Checksum},
+    checksum::Checksum,
     tcp::{Endpoint, Segment, SYN},
     Network, Scratch,
 };
 use rv2k_api::syscall::Error;
 use rv2k_drivers::network::NetworkDevice;
 
+#[inline(always)]
 fn be32(bytes: &[u8]) -> u32 {
     u32::from_be_bytes(bytes[..4].try_into().unwrap())
 }
@@ -49,42 +50,37 @@ impl Network {
         }
         let mut mss = 536;
         let mut seen_mss = false;
-        let mut pos = 20;
-        while pos < size {
-            let kind = s.header[pos];
+        let mut options = &s.header[20..size];
+        while !options.is_empty() {
+            let kind = options[0];
             if kind == 0 {
                 break;
             }
             if kind == 1 {
-                pos += 1;
+                options = &options[1..];
                 continue;
             }
-            if pos + 1 >= size || s.header[pos + 1] < 2 || pos + s.header[pos + 1] as usize > size {
+            if options.len() < 2 || options[1] < 2 || options[1] as usize > options.len() {
                 self.drop_frame();
                 return Ok(());
             }
+            let size = options[1] as usize;
+            let option = &options[..size];
             if kind == 2 {
-                if s.header[pos + 1] != 4 || seen_mss || be16(&s.header[pos + 2..pos + 4]) == 0 {
+                if size != 4 || seen_mss || be16(&option[2..4]) == 0 {
                     self.drop_frame();
                     return Ok(());
                 }
                 if s.header[13] & SYN != 0 {
-                    mss = be16(&s.header[pos + 2..pos + 4]);
+                    mss = be16(&option[2..4]);
                 }
                 seen_mss = true;
             }
-            pos += s.header[pos + 1] as usize;
+            options = &options[size..];
         }
         let mut sum = Checksum::new();
         pseudo(&mut sum, &s.reception.packet.peer.ip, &self.config.ip, len);
-        let mut offset = 0;
-        while offset < len {
-            let count = (len - offset).min(s.stream.len());
-            d.rx_read_at(f, start + offset, &mut s.stream[..count])?;
-            sum.update(&s.stream[..count]);
-            offset += count;
-        }
-        if sum.finish() != 0 {
+        if !Self::frame_checksum(d, f, start, len, &mut s.stream, &mut sum)? {
             self.stats.bad_checksum = self.stats.bad_checksum.saturating_add(1);
             self.drop_frame();
             return Ok(());
@@ -126,22 +122,15 @@ impl Network {
             Err(Error::Again) => return Ok(()),
             Err(e) => return Err(e),
         }
+        self.ipv4_header(
+            &mut s.header,
+            &out.peer.mac,
+            &out.peer.ip,
+            (20 + len) as u16,
+            6,
+        );
         let h = &mut s.header;
-        h[..34 + size].fill(0);
-        h[..6].copy_from_slice(&out.peer.mac);
-        h[6..12].copy_from_slice(&self.config.mac);
-        h[12..14].copy_from_slice(&[8, 0]);
-        h[14] = 0x45;
-        h[16..18].copy_from_slice(&((20 + len) as u16).to_be_bytes());
-        self.id = self.id.wrapping_add(1);
-        h[18..20].copy_from_slice(&self.id.to_be_bytes());
-        h[20] = 0x40;
-        h[22] = 64;
-        h[23] = 6;
-        h[26..30].copy_from_slice(&self.config.ip);
-        h[30..34].copy_from_slice(&out.peer.ip);
-        let ip_sum = checksum(&h[14..34]);
-        h[24..26].copy_from_slice(&ip_sum.to_be_bytes());
+        h[34..34 + size].fill(0);
         h[34..36].copy_from_slice(&out.local_port.to_be_bytes());
         h[36..38].copy_from_slice(&out.peer.port.to_be_bytes());
         h[38..42].copy_from_slice(&out.seq.to_be_bytes());

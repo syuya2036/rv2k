@@ -49,12 +49,35 @@ pub enum Action {
     Exit(i16),
 }
 
+#[repr(u8)]
+#[derive(Clone, Copy, PartialEq)]
+enum Running {
+    None,
+    Network,
+    Application,
+}
+impl Running {
+    fn id(self) -> Option<TaskId> {
+        match self {
+            Self::None => None,
+            Self::Network => Some(TaskId::Network),
+            Self::Application => Some(TaskId::Application),
+        }
+    }
+    fn from_id(id: TaskId) -> Self {
+        match id {
+            TaskId::Network => Self::Network,
+            TaskId::Application => Self::Application,
+        }
+    }
+}
+
 /// The architecture owns interrupt exclusion and context frames. All mutations
 /// occur through a unique borrow while running on the kernel stack.
 pub struct Scheduler {
     tasks: [Task; 2],
-    current: Option<TaskId>,
-    last: TaskId,
+    current: Running,
+    next: TaskId,
     ticks: u64,
 }
 
@@ -73,8 +96,8 @@ impl Scheduler {
                 finite: false,
                 result_ready: false,
             }; 2],
-            current: None,
-            last: TaskId::Application,
+            current: Running::None,
+            next: TaskId::Network,
             ticks: 0,
         }
     }
@@ -88,7 +111,7 @@ impl Scheduler {
     }
 
     pub fn current(&self) -> Option<TaskId> {
-        self.current
+        self.current.id()
     }
 
     pub fn info(&self, id: TaskId) -> TaskInfo {
@@ -103,7 +126,8 @@ impl Scheduler {
     }
 
     pub fn suspend(&mut self, sp: usize, action: Action) {
-        if let Some(id) = self.current.take() {
+        if let Some(id) = self.current() {
+            self.current = Running::None;
             let task = &mut self.tasks[id.index()];
             task.saved_sp = sp;
             task.state = match action {
@@ -114,23 +138,23 @@ impl Scheduler {
                     TaskState::Exited
                 }
             };
-            self.last = id;
+            self.next = if id == TaskId::Network {
+                TaskId::Application
+            } else {
+                TaskId::Network
+            };
             self.recheck(id);
             if let Action::Exit(_) = action {
-                for peer in [TaskId::Network, TaskId::Application] {
-                    let task = &mut self.tasks[peer.index()];
-                    // Resource waits depending on the other task cannot make
-                    // progress after its exit. Pure timer/poll waits can.
-                    if peer != id
-                        && task.state == TaskState::Blocked
-                        && task.wait == Wait::Event
-                        && task.wait_mask & !event::DRIVER_POLL != 0
-                    {
-                        task.wait = Wait::None;
-                        task.state = TaskState::Ready;
-                        task.result = Error::Closed.code() as i32;
-                        task.result_ready = true;
-                    }
+                let task = &mut self.tasks[1 - id.index()];
+                // Only the peer can have a resource wait dependent on this exit.
+                if task.state == TaskState::Blocked
+                    && task.wait == Wait::Event
+                    && task.wait_mask & !event::DRIVER_POLL != 0
+                {
+                    task.wait = Wait::None;
+                    task.state = TaskState::Ready;
+                    task.result = Error::Closed.code() as i32;
+                    task.result_ready = true;
                 }
             }
         }
@@ -159,9 +183,8 @@ impl Scheduler {
         if ticks != 0 && self.tasks[TaskId::Network.index()].state != TaskState::Exited {
             self.tasks[TaskId::Network.index()].pending_events |= event::DRIVER_POLL;
         }
-        for id in [TaskId::Network, TaskId::Application] {
-            self.recheck(id);
-        }
+        self.recheck(TaskId::Network);
+        self.recheck(TaskId::Application);
     }
 
     pub fn sleep(&mut self, ticks: u32) -> Result<Action, Error> {
@@ -171,7 +194,7 @@ impl Scheduler {
         if ticks == 0 {
             return Ok(Action::Yield);
         }
-        let id = self.current.ok_or(Error::Invalid)?;
+        let id = self.current().ok_or(Error::Invalid)?;
         let task = &mut self.tasks[id.index()];
         task.wait = Wait::Sleep;
         task.finite = true;
@@ -193,7 +216,7 @@ impl Scheduler {
         {
             return Err(Error::Invalid);
         }
-        let id = self.current.ok_or(Error::Invalid)?;
+        let id = self.current().ok_or(Error::Invalid)?;
         let peer_exited = self.tasks[1 - id.index()].state == TaskState::Exited;
         let task = &mut self.tasks[id.index()];
         let bits = (task.pending_events | level) & mask;
@@ -261,15 +284,15 @@ impl Scheduler {
     }
 
     pub fn select_next(&mut self) -> Selection {
-        if let Some(id) = self.current {
+        if let Some(id) = self.current() {
             return Selection::Run(id, self.tasks[id.index()].saved_sp);
         }
-        for offset in 1..=2 {
-            let index = (self.last.index() + offset) % 2;
+        for offset in 0..2 {
+            let index = (self.next.index() + offset) % 2;
             if self.tasks[index].state == TaskState::Ready {
                 let id = TaskId::from_index(index).unwrap();
                 self.tasks[index].state = TaskState::Running;
-                self.current = Some(id);
+                self.current = Running::from_id(id);
                 return Selection::Run(id, self.tasks[index].saved_sp);
             }
         }

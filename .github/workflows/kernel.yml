@@ -27,6 +27,7 @@ jobs:
       - run: bash scripts/drivers.sh
       - run: bash scripts/diagnostics.sh
       - run: python3 scripts/diagnostics-negative.py
+      - run: python3 scripts/diagnostics-negative.py --tcp-build-profile
       - run: python3 scripts/budget-negative.py
       - run: bash scripts/services.sh
       - run: bash scripts/syscall.sh

@@ -67,25 +67,18 @@ fn modify(m: &mut impl Mmio, address: usize, clear: u32, set: u32) {
     let old = m.read(address);
     m.write(address, (old & !clear) | set);
 }
-fn mode(m: &mut impl Mmio, port: usize, pin: u32, value: u32) {
-    modify(m, port, 15 << (pin * 4), value << (pin * 4));
-}
 pub fn configure(m: &mut impl Mmio) {
     modify(m, RCC, 0, 1 | (1 << 2) | (1 << 4) | (1 << 5) | (1 << 14));
     // Latches first: CS inactive, mode-0 clock and MOSI low.
     m.write(C + 0x10, 1 << 4);
     m.write(A + 0x14, 1 << 2);
     m.write(C + 0x14, 1 << 1);
-    mode(m, A, 1, 4);
-    mode(m, D, 4, 4);
-    mode(m, D, 5, 4); // non-driving common aliases
-    mode(m, A, 2, 2);
-    mode(m, C, 1, 2);
-    mode(m, C, 2, 4);
-    mode(m, C, 4, 2);
+    // Configure each port in one read/modify/write, preserving other pads.
+    modify(m, A, 0x0000_0ff0, 0x0000_0240);
+    modify(m, C, 0x000f_0ff0, 0x0002_0420);
     // Remap 2: PD6 TX. Preserve SWIO configuration and all other remaps.
     modify(m, AFIO, (1 << 21) | (1 << 15) | (1 << 2), 1 << 21);
-    mode(m, D, 6, 0xa);
+    modify(m, D, 0x0fff_0000, 0x0a44_0000); // PD4/5 aliases remain non-driving
     m.write(0x40013808, 208);
     m.write(0x4001380c, (1 << 13) | (1 << 3)); // TX only, HSI 24MHz
 }

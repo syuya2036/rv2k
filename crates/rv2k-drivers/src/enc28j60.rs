@@ -70,12 +70,23 @@ impl<S: SpiBus> Enc28j60<S> {
         }
         result
     }
-    fn bit(&mut self, address: u8, mask: u8, set: bool) -> Result<(), Error> {
+    #[cfg_attr(feature = "compact", inline(never))]
+    fn command(&mut self, opcode: u8, value: u8, dummy: bool) -> Result<u8, Error> {
         self.transaction(|s| {
-            s.transfer((if set { 0x80 } else { 0xa0 }) | (address & 31))?;
-            s.transfer(mask)?;
-            Ok(())
+            s.transfer(opcode)?;
+            if dummy {
+                s.transfer(0)?;
+            }
+            s.transfer(value)
         })
+    }
+    fn bit(&mut self, address: u8, mask: u8, set: bool) -> Result<(), Error> {
+        self.command(
+            (if set { 0x80 } else { 0xa0 }) | (address & 31),
+            mask,
+            false,
+        )
+        .map(|_| ())
     }
     fn bank(&mut self, reg: u8) -> Result<(), Error> {
         if reg & 31 >= 0x1b {
@@ -93,21 +104,11 @@ impl<S: SpiBus> Enc28j60<S> {
     }
     fn read(&mut self, reg: u8) -> Result<u8, Error> {
         self.bank(reg)?;
-        self.transaction(|s| {
-            s.transfer(reg & 31)?;
-            if reg & 0x80 != 0 {
-                s.transfer(0)?;
-            }
-            s.transfer(0)
-        })
+        self.command(reg & 31, 0, reg & 0x80 != 0)
     }
     fn write(&mut self, reg: u8, value: u8) -> Result<(), Error> {
         self.bank(reg)?;
-        self.transaction(|s| {
-            s.transfer(0x40 | (reg & 31))?;
-            s.transfer(value)?;
-            Ok(())
-        })
+        self.command(0x40 | (reg & 31), value, false).map(|_| ())
     }
     fn word(&mut self, reg: u8, value: u16) -> Result<(), Error> {
         self.write(reg, value as u8)?;
@@ -178,8 +179,8 @@ impl<S: SpiBus> Enc28j60<S> {
         ] {
             self.write(reg, value)?;
         }
-        for (reg, value) in [0xe4, 0xe5, 0xe2, 0xe3, 0xe0, 0xe1].into_iter().zip(mac) {
-            self.write(reg, value)?;
+        for i in 0..6 {
+            self.write([0xe4, 0xe5, 0xe2, 0xe3, 0xe0, 0xe1][i], mac[i])?;
         }
         self.phy_write(0, 0)?;
         self.phy_write(0x10, 0x0100)?; // half duplex, no local loopback
@@ -300,7 +301,12 @@ impl<S: SpiBus> NetworkDevice for Enc28j60<S> {
         {
             return Err(Error::Invalid);
         }
-        let address = (self.next_rx as usize + 6 + offset) % (RX_END as usize + 1);
+        // A validated frame is shorter than the RX ring, so at most one wrap
+        // is possible. Avoid general division on RV32EC (which has no M).
+        let mut address = self.next_rx as usize + 6 + offset;
+        if address > RX_END as usize {
+            address -= RX_END as usize + 1;
+        }
         self.read_ring(address as u16, out)
     }
     fn rx_release(&mut self, frame: RxFrame) -> Result<(), Error> {

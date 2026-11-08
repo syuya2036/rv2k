@@ -50,8 +50,8 @@ sw zero, 0(a1)
 addi a1, a1, 4
 j 3b
 4:
+la gp, __global_pointer$
 .if {fill_stack}
-li gp, 0
 li tp, 0
 la t0, _stack_bottom
 li t1, 0xa5a5a5a5

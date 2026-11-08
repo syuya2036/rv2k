@@ -52,6 +52,8 @@ for address in [symbols['TASK_STACKS'],symbols['TASK_STACKS']+256,symbols['_stac
     offset=address-0x20000000
     assert ram[offset:offset+16]==bytes.fromhex('a5a5a5a5')*4
 assert integer('APP_BYTES')==193 and integer('APP_LISTENS')==3
+assert integer('APP_MEM_CHECK')==1
+assert integer('APP_GP_CHECK')==1
 assert integer('UPTIME',8)>=6500 and integer('TIMER_IRQS')>0
 probe=r['tcp_probe']
 assert probe['done'] and probe['connections']==2 and probe['echoed_bytes']==193
@@ -83,6 +85,8 @@ for port,size in [(50000,65),(50001,128)]:
     assert bytes(payload[port][i] for i in range(size))==bytes((i*17+3)%256 for i in range(size))
 assert syn_count[50000]>=2 and fin_count[50000]>=2 and duplicates>0
 summary={'host_packet_peer':'PASS (synthetic peer, not native Mac TCP)',
+    'public_mem_snapshot_checked':True,
+    'gp_preserved_across_timer_irqs_and_syscall':True,
     'instructions':r['instructions'],'frames_in':len(incoming),'frames_out':len(outgoing),
     'connections':2,'echoed_bytes':193,'syn_data_fin_loss_recovered':True,
     'out_of_order_and_duplicate_input':True,'sequence_wrap':True,'negotiated_peer_mss':24,

@@ -91,10 +91,8 @@ mod sockets {
     use core::ptr::{addr_of, read_volatile, write_volatile};
     use rv2k_api::{socket, TaskId};
     use rv2k_kernel::{
-        ipc::Mailbox,
         memory::{Region, UserMemory},
         socket::SocketService,
-        syscall::Outcome,
         Scheduler,
     };
     use rv2k_net::tcp::socket::Socket;
@@ -104,6 +102,52 @@ mod sockets {
     static mut APP_BYTES: u32 = 0;
     #[no_mangle]
     static mut APP_LISTENS: u32 = 0;
+    #[no_mangle]
+    static mut APP_MEM_CHECK: u32 = 0;
+    #[cfg(feature = "emulator-stop")]
+    #[no_mangle]
+    static mut APP_GP_CHECK: u32 = 0;
+    // Rust requires the configured gp. Poison it only inside this assembly
+    // probe: two real timer IRQs and GetPid must preserve the task value while
+    // kernel code uses its own linker-defined gp. Restore it before Rust resumes.
+    #[cfg(feature = "emulator-stop")]
+    core::arch::global_asm!(
+        r#"
+.section .text
+.option push
+.option norelax
+.global app_gp_probe
+app_gp_probe:
+addi sp, sp, -16
+sw gp, 0(sp)
+li gp, 0x55
+la t0, TIMER_IRQS
+lw a3, 0(t0)
+li t0, 0xe000f008
+lw t1, 0(t0)
+1: lw t2, 0(t0)
+sub t2, t2, t1
+li a4, 480000
+bltu t2, a4, 1b
+la t0, TIMER_IRQS
+lw a4, 0(t0)
+sub a4, a4, a3
+li t0, 2
+li a0, 0
+bltu a4, t0, 2f
+li a5, 2
+ecall
+li t0, 0x55
+bne gp, t0, 3f
+li t0, 1
+beq a0, t0, 2f
+3: li a0, 0
+2: lw gp, 0(sp)
+addi sp, sp, 16
+ret
+.option pop
+"#
+    );
     struct Service<'a>(&'a mut Socket);
     impl SocketService for Service<'_> {
         fn listen(&mut self, port: u16) -> Result<usize, Error> {
@@ -141,21 +185,8 @@ mod sockets {
             end: start + 32,
         }
     }
-    pub unsafe fn socket_dispatch(
-        s: &mut Scheduler,
-        m: &Mailbox,
-        u: &mut impl UserMemory,
-        n: usize,
-        a: [usize; 3],
-    ) -> Option<Outcome> {
-        rv2k_kernel::socket::dispatch(
-            s,
-            m,
-            u,
-            n,
-            a,
-            &mut Service(&mut (*addr_of_mut!(NETWORK)).socket),
-        )
+    pub unsafe fn socket_service() -> impl SocketService {
+        Service(&mut (*addr_of_mut!(NETWORK)).socket)
     }
     pub unsafe fn exited(s: &mut Scheduler, id: TaskId) {
         let socket = &mut (*addr_of_mut!(NETWORK)).socket;
@@ -169,6 +200,24 @@ mod sockets {
     }
     #[inline(never)]
     pub fn application() {
+        #[cfg(feature = "emulator-stop")]
+        unsafe {
+            extern "C" {
+                fn app_gp_probe() -> u32;
+            }
+            assert_eq!(app_gp_probe(), 1);
+            write_volatile(addr_of_mut!(APP_GP_CHECK), 1);
+        }
+        let info = rv2k_api::mem::info().expect("memory snapshot");
+        assert!(
+            info.version == 1
+                && info.guard_failures == 0
+                && info.static_bytes + info.kernel_reserved <= 2048
+                && info.flash_bytes <= 16384
+        );
+        unsafe {
+            write_volatile(addr_of_mut!(APP_MEM_CHECK), 1);
+        }
         loop {
             let handle = match socket::listen(1234) {
                 Ok(h) => h,
@@ -231,4 +280,4 @@ mod sockets {
     }
 }
 #[cfg(feature = "tcp")]
-pub use sockets::{application, application_region, exited, socket_dispatch};
+pub use sockets::{application, application_region, exited, socket_service};

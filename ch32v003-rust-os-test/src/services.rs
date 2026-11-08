@@ -61,6 +61,8 @@ extern "C" {
     fn rv2k_first_task(sp: usize) -> !;
     static _stack_bottom: u32;
     static _stack_top: u32;
+    #[link_name = "__global_pointer$"]
+    static GLOBAL_POINTER: u8;
 }
 
 #[cfg(feature = "diagnostics")]
@@ -91,6 +93,7 @@ pub fn start() -> ! {
             let sp = base.add(64) as usize;
             let frame = sp - FRAME_BYTES;
             let mut initial = TrapFrame::initial(task_trampoline as *const () as u32, sp as u32);
+            initial.registers[1] = addr_of!(GLOBAL_POINTER) as u32;
             initial.status |= 0x80;
             (frame as *mut TrapFrame).write(initial);
             frames[id] = frame;
@@ -211,16 +214,11 @@ unsafe extern "C" fn rv2k_trap_dispatch(frame: *mut TrapFrame) -> usize {
         saved.registers[9] as usize,
         saved.registers[10] as usize,
     ];
-    #[cfg(feature = "diagnostics")]
+    #[cfg(all(feature = "diagnostics", not(feature = "tcp")))]
     let snapshot = crate::diagnostics::info();
     #[cfg(feature = "tcp")]
-    let socket_outcome = crate::network::socket_dispatch(
-        scheduler,
-        &*addr_of!(MAILBOX),
-        &mut memory,
-        saved.registers[13] as usize,
-        args,
-    );
+    let mut socket = crate::network::socket_service();
+    #[cfg(not(feature = "tcp"))]
     macro_rules! standard_dispatch {
         () => {{
             #[cfg(all(feature = "diagnostics", not(feature = "drivers")))]
@@ -255,8 +253,32 @@ unsafe extern "C" fn rv2k_trap_dispatch(frame: *mut TrapFrame) -> usize {
             outcome
         }};
     }
-    #[cfg(feature = "tcp")]
-    let outcome = socket_outcome.unwrap_or_else(|| standard_dispatch!());
+    #[cfg(all(feature = "tcp", feature = "drivers"))]
+    let outcome = rv2k_kernel::services::dispatch_runtime(
+        scheduler,
+        &mut *addr_of_mut!(MAILBOX),
+        &mut memory,
+        saved.registers[13] as usize,
+        args,
+        rv2k_kernel::services::RuntimeServices {
+            console: Some(crate::drivers::console()),
+            socket: Some(&mut socket),
+            info: rv2k_kernel::services::InfoSource::Live(crate::diagnostics::info),
+        },
+    );
+    #[cfg(all(feature = "tcp", not(feature = "drivers")))]
+    let outcome = rv2k_kernel::services::dispatch_runtime(
+        scheduler,
+        &mut *addr_of_mut!(MAILBOX),
+        &mut memory,
+        saved.registers[13] as usize,
+        args,
+        rv2k_kernel::services::RuntimeServices::<rv2k_kernel::services::NoConsole, _> {
+            console: None,
+            socket: Some(&mut socket),
+            info: rv2k_kernel::services::InfoSource::Live(crate::diagnostics::info),
+        },
+    );
     #[cfg(not(feature = "tcp"))]
     let outcome = standard_dispatch!();
     match outcome {

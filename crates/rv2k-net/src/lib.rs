@@ -17,9 +17,10 @@ pub struct Config {
     pub mac: [u8; 6],
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(C, align(4))]
 struct Peer {
-    mac: [u8; 6],
     ip: [u8; 4],
+    mac: [u8; 6],
 }
 #[derive(Clone, Copy)]
 struct Neighbor {
@@ -107,6 +108,49 @@ fn unicast_mac(mac: &[u8]) -> bool {
     mac.len() == 6 && mac[0] & 1 == 0 && mac.iter().any(|b| *b != 0)
 }
 impl Network {
+    #[inline(always)]
+    fn frame_checksum(
+        d: &mut impl NetworkDevice,
+        f: RxFrame,
+        start: usize,
+        len: usize,
+        stream: &mut [u8; 64],
+        sum: &mut Checksum,
+    ) -> Result<bool, Error> {
+        let mut offset = 0;
+        while offset < len {
+            let count = stream.len().min(len - offset);
+            d.rx_read_at(f, start + offset, &mut stream[..count])?;
+            sum.update(&stream[..count]);
+            offset += count;
+        }
+        Ok(sum.finish() == 0)
+    }
+    #[inline(never)]
+    fn ipv4_header(
+        &mut self,
+        h: &mut [u8; 96],
+        mac: &[u8; 6],
+        ip: &[u8; 4],
+        total: u16,
+        protocol: u8,
+    ) {
+        h[..6].copy_from_slice(mac);
+        h[6..12].copy_from_slice(&self.config.mac);
+        h[12..14].copy_from_slice(&[8, 0]);
+        h[14..34].fill(0);
+        h[14] = 0x45;
+        h[16..18].copy_from_slice(&total.to_be_bytes());
+        self.id = self.id.wrapping_add(1);
+        h[18..20].copy_from_slice(&self.id.to_be_bytes());
+        h[20] = 0x40;
+        h[22] = 64;
+        h[23] = protocol;
+        h[26..30].copy_from_slice(&self.config.ip);
+        h[30..34].copy_from_slice(ip);
+        let sum = checksum(&h[14..34]);
+        h[24..26].copy_from_slice(&sum.to_be_bytes());
+    }
     #[cfg(feature = "tcp")]
     pub const fn unconfigured() -> Self {
         let mut n = Self::new(Config {
@@ -281,6 +325,7 @@ impl Network {
         }
         Ok(())
     }
+    #[cfg_attr(feature = "tcp", inline(never))]
     fn drop_frame(&mut self) {
         self.stats.dropped = self.stats.dropped.saturating_add(1);
     }
@@ -428,26 +473,26 @@ impl Network {
             self.drop_frame();
             return Ok(());
         }
-        let mut option = 34;
-        while option < 14 + ihl {
-            let kind = s.header[option];
+        let mut options = &s.header[34..14 + ihl];
+        while !options.is_empty() {
+            let kind = options[0];
             if kind == 0 {
                 break;
             }
             if kind == 1 {
-                option += 1;
+                options = &options[1..];
                 continue;
             }
-            if option + 1 >= 14 + ihl
-                || s.header[option + 1] < 2
-                || option + s.header[option + 1] as usize > 14 + ihl
+            if options.len() < 2
+                || options[1] < 2
+                || options[1] as usize > options.len()
                 || kind == 131
                 || kind == 137
             {
                 self.drop_frame();
                 return Ok(());
             }
-            option += s.header[option + 1] as usize;
+            options = &options[options[1] as usize..];
         }
         let peer = Peer {
             mac: s.header[6..12].try_into().unwrap(),
@@ -482,14 +527,7 @@ impl Network {
             return Ok(());
         }
         let mut sum = Checksum::new();
-        let mut offset = 0;
-        while offset < len {
-            let count = s.stream.len().min(len - offset);
-            d.rx_read_at(f, start + offset, &mut s.stream[..count])?;
-            sum.update(&s.stream[..count]);
-            offset += count;
-        }
-        if sum.finish() != 0 {
+        if !Self::frame_checksum(d, f, start, len, &mut s.stream, &mut sum)? {
             self.stats.bad_checksum = self.stats.bad_checksum.saturating_add(1);
             self.drop_frame();
             return Ok(());
@@ -505,20 +543,7 @@ impl Network {
             Err(e) => return Err(e),
         }
         s.header.copy_within(start..start + 8, 34);
-        s.header[..6].copy_from_slice(&peer.mac);
-        s.header[6..12].copy_from_slice(&self.config.mac);
-        s.header[14..34].fill(0);
-        s.header[14] = 0x45;
-        s.header[16..18].copy_from_slice(&((20 + len) as u16).to_be_bytes());
-        self.id = self.id.wrapping_add(1);
-        s.header[18..20].copy_from_slice(&self.id.to_be_bytes());
-        s.header[20] = 0x40;
-        s.header[22] = 64;
-        s.header[23] = 1;
-        s.header[26..30].copy_from_slice(&self.config.ip);
-        s.header[30..34].copy_from_slice(&peer.ip);
-        let ip_checksum = checksum(&s.header[14..34]);
-        s.header[24..26].copy_from_slice(&ip_checksum.to_be_bytes());
+        self.ipv4_header(&mut s.header, &peer.mac, &peer.ip, (20 + len) as u16, 1);
         s.header[34] = 0;
         s.header[36..38].copy_from_slice(&reply_checksum.to_be_bytes());
         let result = (|| {
@@ -1088,6 +1113,78 @@ mod tests {
             d.fail_write = false;
             n.poll(&mut d, &mut s, 1).unwrap();
             assert_eq!(validate(&d.out[0])[13], SYN | ACK);
+        }
+        #[test]
+        fn wire_rst_challenges_an_in_window_sequence_and_retires_the_exact_connection() {
+            let (mut n, mut s, mut d, h) = setup();
+            inject(&mut n, &mut s, &mut d, frame(99, 0, SYN, &[], &[], &[]), 0);
+            let syn = validate(&d.out[0]);
+            let next = u32::from_be_bytes(syn[4..8].try_into().unwrap()).wrapping_add(1);
+            inject(
+                &mut n,
+                &mut s,
+                &mut d,
+                frame(100, next, ACK, b"abc", &[], &[]),
+                1,
+            );
+            assert_eq!(n.socket.rx_len(), 3);
+            let count = d.out.len();
+            inject(
+                &mut n,
+                &mut s,
+                &mut d,
+                frame(104, next, RST | ACK, &[], &[], &[]),
+                2,
+            );
+            assert_eq!(n.tcp.state(), State::Established);
+            assert_eq!(n.socket.rx_len(), 3);
+            assert_eq!(d.out.len(), count + 1);
+            let challenge = validate(d.out.last().unwrap());
+            assert_eq!(challenge[13], ACK);
+            assert_eq!(&challenge[8..12], &103u32.to_be_bytes());
+            inject(
+                &mut n,
+                &mut s,
+                &mut d,
+                frame(103, next, RST | ACK, &[], &[], &[]),
+                3,
+            );
+            assert_eq!(n.tcp.state(), State::Closed);
+            assert_eq!(d.out.len(), count + 1);
+            assert_eq!(n.socket.recv_with(h, 8, |_| Ok(())), Err(Error::Closed));
+            assert_ne!(n.socket.listen(80).unwrap(), h);
+            assert_eq!(n.socket.recv_with(h, 8, |_| Ok(())), Err(Error::BadFd));
+            assert_eq!(d.releases, 4);
+        }
+        #[test]
+        fn wire_syn_retry_exhaustion_reports_timeout_and_allows_a_new_listener() {
+            let (mut n, mut s, mut d, h) = setup();
+            inject(&mut n, &mut s, &mut d, frame(99, 0, SYN, &[], &[], &[]), 0);
+            let first = validate(&d.out[0]).to_vec();
+            let mut now = 0;
+            let mut interval = 100;
+            for _ in 0..8 {
+                now += interval;
+                n.poll(&mut d, &mut s, now).unwrap();
+                assert_eq!(validate(d.out.last().unwrap()), first);
+                interval = (interval * 2).min(6000);
+            }
+            assert_eq!(d.out.len(), 9);
+            n.poll(&mut d, &mut s, now + interval).unwrap();
+            assert_eq!(n.tcp.state(), State::Closed);
+            assert_eq!(d.out.len(), 9);
+            assert_eq!(n.socket.recv_with(h, 8, |_| Ok(())), Err(Error::Timeout));
+            assert_ne!(n.socket.listen(80).unwrap(), h);
+            inject(
+                &mut n,
+                &mut s,
+                &mut d,
+                frame(999, 0, SYN, &[], &[], &[]),
+                now + interval + 1,
+            );
+            assert_eq!(n.tcp.state(), State::SynReceived);
+            assert_eq!(validate(d.out.last().unwrap())[13], SYN | ACK);
+            assert_eq!(d.releases, 2);
         }
     }
 }

@@ -23,7 +23,9 @@ impl FaultInfo {
     pub const fn empty() -> Self {
         Self {
             reason: Reason::None,
-            task: u32::MAX,
+            // Fields carry meaning only when reason != None. An all-zero
+            // empty record can live in BSS rather than consume Flash.
+            task: 0,
             pc: 0,
             cause: 0,
             tval: 0,

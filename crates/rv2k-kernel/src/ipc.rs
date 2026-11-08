@@ -1,11 +1,11 @@
-use crate::{memory::UserMemory, Scheduler};
+use crate::{memory::UserMemory, Running, Scheduler};
 use rv2k_api::{event, syscall::Error, TaskId, TaskState};
 
 /// One global message. Payload stays in the kernel and is never placed on the
 /// kernel stack or shared with network buffers.
 pub struct Mailbox {
     payload: [u8; 64],
-    destination: Option<TaskId>,
+    destination: Running,
     sender: TaskId,
     len: u8,
 }
@@ -14,15 +14,15 @@ impl Mailbox {
     pub const fn new() -> Self {
         Self {
             payload: [0; 64],
-            destination: None,
+            destination: Running::None,
             sender: TaskId::Network,
             len: 0,
         }
     }
     pub fn readiness(&self, id: TaskId) -> u32 {
-        if self.destination == Some(id) {
+        if self.destination == Running::from_id(id) {
             event::MSG_AVAILABLE
-        } else if self.destination.is_none() {
+        } else if self.destination == Running::None {
             event::MSG_SPACE
         } else {
             0
@@ -42,7 +42,7 @@ impl Mailbox {
         if scheduler.info(destination).state == TaskState::Exited {
             return Err(Error::Closed);
         }
-        if self.destination.is_some() {
+        if self.destination != Running::None {
             return Err(Error::Again);
         }
         let sender = scheduler.current().ok_or(Error::Invalid)?;
@@ -51,7 +51,7 @@ impl Mailbox {
         }
         self.len = len as u8;
         self.sender = sender;
-        self.destination = Some(destination);
+        self.destination = Running::from_id(destination);
         scheduler.signal(destination, event::MSG_AVAILABLE)?;
         Ok(0)
     }
@@ -63,7 +63,7 @@ impl Mailbox {
         capacity: usize,
     ) -> Result<usize, Error> {
         let caller = scheduler.current().ok_or(Error::Invalid)?;
-        if self.destination != Some(caller) {
+        if self.destination != Running::from_id(caller) {
             return Err(Error::Again);
         }
         let len = self.len as usize;
@@ -73,13 +73,13 @@ impl Mailbox {
         if len != 0 {
             memory.copy_out(address, &self.payload[..len], 1)?;
         }
-        self.destination = None;
+        self.destination = Running::None;
         let _ = scheduler.signal(self.sender, event::MSG_SPACE);
         Ok(len)
     }
     pub fn task_exited(&mut self, scheduler: &mut Scheduler, id: TaskId) {
-        if self.destination == Some(id) {
-            self.destination = None;
+        if self.destination == Running::from_id(id) {
+            self.destination = Running::None;
             let _ = scheduler.signal(self.sender, event::MSG_SPACE);
         }
     }

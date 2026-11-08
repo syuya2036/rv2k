@@ -34,7 +34,7 @@ csrr t0, mtval
 sw t0, 72(sp)
 sw zero, 76(sp)
 csrw mscratch, zero
-li gp, 0
+la gp, __global_pointer$
 li tp, 0
 mv a0, sp
 .if {timer}
@@ -102,7 +102,7 @@ rv2k_nested_fault:
 csrr sp, mscratch
 csrw mscratch, zero
 mv a0, sp
-li gp, 0
+la gp, __global_pointer$
 li tp, 0
 j rv2k_kernel_fault
 .option pop
