@@ -1,0 +1,63 @@
+diff --git a/crates/remu-cpu-riscv/src/core.rs b/crates/remu-cpu-riscv/src/core.rs
+index cd6b749..9a20c90 100644
+--- a/crates/remu-cpu-riscv/src/core.rs
++++ b/crates/remu-cpu-riscv/src/core.rs
+@@ -1194,6 +1194,7 @@ impl Cpu for RiscVCpu {
+         }
+ 
+         self.pending_memory_trap = None;
++        let mut trap_instruction = 0u32;
+         let execution = (|| {
+             let prefetched = bus
+                 .fast_fetch32(u64::from(self.pc), now)
+@@ -1220,8 +1221,10 @@ impl Cpu for RiscVCpu {
+                 } else {
+                     self.fetch16(bus, self.pc.wrapping_add(2), now)?
+                 };
+-                self.execute32(u32::from(low) | (u32::from(high) << 16), bus, now)
++                trap_instruction = u32::from(low) | (u32::from(high) << 16);
++                self.execute32(trap_instruction, bus, now)
+             } else if self.profile.extension_c {
++                trap_instruction = u32::from(low);
+                 self.execute16(low, bus, now)
+             } else {
+                 self.illegal16(low)
+@@ -1236,6 +1239,17 @@ impl Cpu for RiscVCpu {
+                     self.cycle = self.cycle.wrapping_add(1);
+                     return Ok(StepOutcome::advanced(SimDuration::TICK));
+                 }
++                // rv2k: vector illegal instructions once a QingKe guest has
++                // installed a handler. Keep the unconfigured debugger behavior.
++                if error.kind == CpuFaultKind::IllegalInstruction
++                    && self.profile.interrupt_model == InterruptModel::QingKe
++                    && self.csrs[usize::from(CSR_MTVEC)] & !3 != self.profile.reset_vector
++                {
++                    self.enter_trap(2, trap_instruction, false);
++                    self.registers[0] = 0;
++                    self.cycle = self.cycle.wrapping_add(1);
++                    return Ok(StepOutcome::advanced(SimDuration::TICK));
++                }
+                 return Err(error);
+             }
+         };
+diff --git a/crates/remu-cpu-riscv/src/core/tests.rs b/crates/remu-cpu-riscv/src/core/tests.rs
+index d6ff2d4..c0f8d38 100644
+--- a/crates/remu-cpu-riscv/src/core/tests.rs
++++ b/crates/remu-cpu-riscv/src/core/tests.rs
+@@ -530,3 +530,16 @@ fn qingke_v2c_zmmul_accepts_multiply_but_rejects_divide() {
+         CpuFaultKind::IllegalInstruction
+     );
+ }
++
++#[test]
++fn qingke_installed_handler_receives_illegal_instruction() {
++    for instruction in [0xffff_ffff, 0x0010_0813, 0x0000_0000] {
++        let (mut cpu, mut bus) = cpu_and_bus(&[instruction], RiscVProfile::ch32v003());
++        cpu.write_csr(CSR_MTVEC, 0x100).unwrap();
++        cpu.step(&mut bus, SimTime::ZERO).unwrap();
++        assert_eq!(cpu.pc, 0x100);
++        assert_eq!(cpu.read_csr(CSR_MEPC).unwrap(), 0);
++        assert_eq!(cpu.read_csr(CSR_MCAUSE).unwrap(), 2);
++        assert_eq!(cpu.read_csr(CSR_MTVAL).unwrap(), instruction);
++    }
++}

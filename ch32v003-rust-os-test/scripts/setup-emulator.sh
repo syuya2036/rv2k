@@ -9,10 +9,17 @@ if [ ! -d vendor/renvo_emu/.git ]; then
   git -C vendor/renvo_emu checkout "$REV"
 fi
 [ "$(git -C vendor/renvo_emu rev-parse HEAD)" = "$REV" ] || { echo 'Unexpected Renvo revision' >&2; exit 1; }
+PATCH="$ROOT/patches/renvo-illegal-trap.patch"
+if git -C vendor/renvo_emu apply --check "$PATCH" 2>/dev/null; then
+  git -C vendor/renvo_emu apply "$PATCH"
+else
+  git -C vendor/renvo_emu apply --reverse --check "$PATCH"
+fi
 # Cargo discovers config from its working directory, even with --manifest-path.
 # Build outside this firmware's target/build-std configuration.
 SCRATCH=$(mktemp -d)
 trap 'rmdir "$SCRATCH"' EXIT
 (cd "$SCRATCH"; cargo +stable build --locked --release -p remu-cli --manifest-path "$ROOT/vendor/renvo_emu/Cargo.toml" --target-dir "$ROOT/vendor/renvo_emu/target")
+(cd "$SCRATCH"; cargo +stable test --locked -p remu-cpu-riscv --lib --manifest-path "$ROOT/vendor/renvo_emu/Cargo.toml" --target-dir "$ROOT/vendor/renvo_emu/target")
 file vendor/renvo_emu/target/release/remu
 vendor/renvo_emu/target/release/remu targets > docs/logs/targets.txt

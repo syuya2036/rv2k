@@ -4,6 +4,7 @@
 core::arch::global_asm!(include_str!("trap.S"), timer = const cfg!(feature = "timer") as usize);
 
 pub mod clock;
+pub mod stack;
 
 /// Preserve the caller's MIE state, including nested critical sections.
 /// The closure must not block, yield, or explicitly change interrupt state.

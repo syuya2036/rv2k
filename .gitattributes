@@ -1,0 +1,2 @@
+# Unified patches contain a space prefix on blank context lines.
+ch32v003-rust-os-test/patches/*.patch -whitespace

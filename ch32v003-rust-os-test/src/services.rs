@@ -8,12 +8,18 @@ use rv2k_arch::{clock::Clock, critical, frame_address, TrapFrame, FRAME_BYTES};
 use rv2k_kernel::{
     ipc::Mailbox,
     memory::{MemoryMap, Region, UserMemory},
-    services::dispatch,
     syscall::Outcome,
     Action, Scheduler, Selection,
 };
 
+#[cfg(not(feature = "diagnostics"))]
+use rv2k_kernel::services::dispatch;
+
 const WATERMARK: u32 = 0xa5a5a5a5;
+#[cfg(feature = "diagnostics")]
+const FIRST_MESSAGE: &[u8] = &[b'X'; 64];
+#[cfg(not(feature = "diagnostics"))]
+const FIRST_MESSAGE: &[u8] = b"hello";
 #[repr(C, align(16))]
 struct Stack([u32; 64]);
 #[no_mangle]
@@ -47,6 +53,15 @@ extern "C" {
     fn rv2k_first_task(sp: usize) -> !;
     static _stack_bottom: u32;
     static _stack_top: u32;
+}
+
+#[cfg(feature = "diagnostics")]
+pub(super) fn stack_base() -> *mut u32 {
+    addr_of_mut!(TASK_STACKS).cast::<u32>()
+}
+#[cfg(feature = "diagnostics")]
+pub(super) fn current_task() -> Option<TaskId> {
+    unsafe { (&*addr_of!(SCHEDULER)).current() }
 }
 
 fn stack_bounds(id: TaskId) -> (usize, usize) {
@@ -96,8 +111,13 @@ unsafe extern "C" fn rv2k_prepare_frame(temporary: *const TrapFrame) -> usize {
     let Some(id) = (&*addr_of!(SCHEDULER)).current() else {
         stop(21);
     };
+    #[cfg(feature = "diagnostics")]
+    crate::diagnostics::check(Some(frame));
     let (base, top) = stack_bounds(id);
     let Some(destination) = frame_address(frame.registers[14] as usize, base, top) else {
+        #[cfg(feature = "diagnostics")]
+        crate::diagnostics::fail(rv2k_kernel::diagnostics::Reason::InvalidSp, Some(frame), 0);
+        #[cfg(not(feature = "diagnostics"))]
         stop(22);
     };
     core::ptr::copy_nonoverlapping(temporary, destination as *mut TrapFrame, 1);
@@ -125,6 +145,8 @@ impl UserMemory for GuestMemory {
 
 #[no_mangle]
 unsafe extern "C" fn rv2k_trap_dispatch(frame: *mut TrapFrame) -> usize {
+    #[cfg(feature = "fault-kernel-illegal")]
+    asm!(".word 0xffffffff");
     update_clock();
     let scheduler = &mut *addr_of_mut!(SCHEDULER);
     let saved = &mut *frame;
@@ -132,6 +154,9 @@ unsafe extern "C" fn rv2k_trap_dispatch(frame: *mut TrapFrame) -> usize {
     write_volatile(addr_of_mut!(LAST_CAUSE), saved.cause);
     write_volatile(addr_of_mut!(LAST_PC), saved.pc);
     if !saved.advance_ecall() {
+        #[cfg(feature = "diagnostics")]
+        crate::diagnostics::fail(rv2k_kernel::diagnostics::Reason::TaskTrap, Some(saved), 0);
+        #[cfg(not(feature = "diagnostics"))]
         stop(23);
     }
     let Some(id) = scheduler.current() else {
@@ -154,13 +179,26 @@ unsafe extern "C" fn rv2k_trap_dispatch(frame: *mut TrapFrame) -> usize {
         saved.registers[9] as usize,
         saved.registers[10] as usize,
     ];
-    match dispatch(
+    #[cfg(feature = "diagnostics")]
+    let snapshot = crate::diagnostics::info();
+    #[cfg(feature = "diagnostics")]
+    let outcome = rv2k_kernel::services::dispatch_with_info(
         scheduler,
         &mut *addr_of_mut!(MAILBOX),
         &mut memory,
         saved.registers[13] as usize,
         args,
-    ) {
+        Some(&snapshot),
+    );
+    #[cfg(not(feature = "diagnostics"))]
+    let outcome = dispatch(
+        scheduler,
+        &mut *addr_of_mut!(MAILBOX),
+        &mut memory,
+        saved.registers[13] as usize,
+        args,
+    );
+    match outcome {
         Outcome::Complete(result) => {
             saved.registers[8] = result as u32;
             frame as usize
@@ -177,7 +215,10 @@ unsafe extern "C" fn rv2k_trap_dispatch(frame: *mut TrapFrame) -> usize {
 }
 
 #[no_mangle]
-extern "C" fn rv2k_kernel_fault() -> ! {
+extern "C" fn rv2k_kernel_fault(_sp: usize) -> ! {
+    #[cfg(feature = "diagnostics")]
+    crate::diagnostics::kernel_fault(_sp as u32);
+    #[cfg(not(feature = "diagnostics"))]
     stop(26)
 }
 
@@ -204,7 +245,57 @@ fn mark(bit: u32) {
         );
     }
 }
+#[cfg_attr(
+    any(
+        feature = "fault-panic",
+        feature = "fault-sp",
+        feature = "fault-illegal",
+        feature = "fault-irq-canary"
+    ),
+    allow(unreachable_code)
+)]
 fn task_a() {
+    #[cfg(feature = "fault-irq-canary")]
+    unsafe {
+        write_volatile(stack_base().add(2), 0);
+        extern "C" {
+            fn fault_irq_wait() -> !;
+        }
+        fault_irq_wait();
+    }
+    #[cfg(feature = "fault-canary")]
+    unsafe {
+        write_volatile(stack_base().add(2), 0);
+        task::yield_now();
+    }
+    #[cfg(feature = "fault-kernel-canary")]
+    unsafe {
+        write_volatile(addr_of!(_stack_bottom).cast_mut().add(2), 0);
+        task::yield_now();
+    }
+    #[cfg(feature = "fault-sp")]
+    unsafe {
+        asm!("li sp, 0", "ecall", options(noreturn));
+    }
+    #[cfg(feature = "fault-illegal")]
+    unsafe {
+        asm!(".word 0xffffffff", options(noreturn));
+    }
+    #[cfg(feature = "fault-panic")]
+    panic!("injected panic");
+    #[cfg(feature = "diagnostics")]
+    {
+        let memory = checked(rv2k_api::mem::info(), 92);
+        if memory.version != 1
+            || memory.guard_failures != 0
+            || memory.static_bytes + memory.kernel_reserved > 2048
+            || memory.flash_bytes > 16384
+            || memory.used.iter().any(|used| *used > 240)
+        {
+            stop(93);
+        }
+    }
+
     // The inner critical section must leave the outer one masked, and the
     // outer section must restore task context's enabled MIE.
     let mie: usize;
@@ -240,8 +331,10 @@ fn task_a() {
     mark(64);
     checked(event::signal(TaskId::Application, event::NET_RX), 62);
     checked(time::sleep(0), 63);
-    let mut bytes = [0u8; 8];
-    if checked(ipc::recv(&mut bytes), 64) != 5 || &bytes[..5] != b"hello" {
+    let mut bytes = [0u8; if cfg!(feature = "diagnostics") { 64 } else { 8 }];
+    if checked(ipc::recv(&mut bytes), 64) != FIRST_MESSAGE.len()
+        || &bytes[..FIRST_MESSAGE.len()] != FIRST_MESSAGE
+    {
         stop(65);
     }
     mark(2);
@@ -276,7 +369,7 @@ fn task_b() {
     if checked(event::wait(event::NET_RX, event::FOREVER), 77) != event::NET_RX {
         stop(78);
     }
-    checked(ipc::send(TaskId::Network, b"hello"), 79);
+    checked(ipc::send(TaskId::Network, FIRST_MESSAGE), 79);
     if ipc::send(TaskId::Network, b"full") != Err(Error::Again) {
         stop(80);
     }
@@ -296,7 +389,9 @@ fn task_b() {
 }
 
 #[no_mangle]
-unsafe extern "C" fn rv2k_timer_irq() {
+unsafe extern "C" fn rv2k_timer_irq(_frame: *const TrapFrame) {
+    #[cfg(feature = "diagnostics")]
+    crate::diagnostics::check(Some(&*_frame));
     let count = read_volatile(0xe000f008 as *const u32);
     write_volatile(0xe000f010 as *mut u32, count.wrapping_add(CLOCKS_PER_TICK));
     write_volatile(0xe000f004 as *mut u32, 0);
@@ -310,6 +405,8 @@ unsafe fn update_clock() {
     (&mut *addr_of_mut!(SCHEDULER)).advance_ticks(elapsed);
 }
 unsafe fn select_next() -> usize {
+    #[cfg(feature = "diagnostics")]
+    crate::diagnostics::check(None);
     let scheduler = &mut *addr_of_mut!(SCHEDULER);
     match scheduler.select_next() {
         Selection::Run(id, sp) => {
@@ -375,3 +472,12 @@ fn stop(status: u32) -> ! {
         core::hint::spin_loop();
     }
 }
+
+#[cfg(feature = "fault-irq-canary")]
+core::arch::global_asm!(
+    ".section .text",
+    ".global fault_irq_wait",
+    "fault_irq_wait:",
+    "nop",
+    "j fault_irq_wait"
+);

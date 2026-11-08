@@ -3,6 +3,7 @@
 pub mod event;
 #[cfg(target_arch = "riscv32")]
 pub mod ipc;
+pub mod mem;
 pub mod syscall;
 #[cfg(target_arch = "riscv32")]
 pub mod task;

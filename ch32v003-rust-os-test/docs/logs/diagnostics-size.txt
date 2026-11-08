@@ -1,0 +1,2 @@
+   text	   data	    bss	    dec	    hex	filename
+   8026	    168	    592	   8786	   2252	target/diagnostics/riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test

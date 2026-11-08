@@ -1,0 +1,32 @@
+running 29 tests
+test core::tests::esp32c6_pmp_locked_config_and_tor_lower_bound_are_immutable ... ok
+test core::tests::esp32c6_user_mode_ecall_and_privileged_csr_access_trap_to_machine ... ok
+test core::tests::esp32c6_memory_protection_csrs_are_profile_gated ... ok
+test core::tests::esp32c6_delegated_user_interrupt_enters_utvec_and_uret_restores_user_code ... ok
+test core::tests::esp32c6_memory_protection_csrs_persist_and_reset ... ok
+test core::tests::compressed_addi_executes_on_qingke_profile ... ok
+test core::tests::esp32c6_pmp_checks_a_complete_instruction_and_machine_bypasses_unlocked_entries ... ok
+test core::tests::esp32c6_level_interrupt_cannot_preempt_its_own_handler ... ok
+test core::tests::esp32c6_pmp_execute_only_napot_region_traps_user_loads ... ok
+test core::tests::executes_integer_program_and_halts ... ok
+test core::tests::hazard3_level_interrupt_cannot_preempt_its_own_handler ... ok
+test core::tests::hazard3_irq_array_access_selects_nonzero_windows_atomically ... ok
+test core::tests::hazard3_zbkb_pack_combines_low_halfwords ... ok
+test core::tests::hazard3_zcb_byte_load_and_store_decode_both_immediate_bits ... ok
+test core::tests::hazard3_external_irq_is_filtered_by_windowed_enable_array ... ok
+test core::tests::hazard3_zcmp_push_and_popret_preserve_return_address ... ok
+test core::tests::hazard3_zcb_lhu_loads_a_compact_halfword ... ok
+test core::tests::m_extension_division_corner_cases_match_riscv ... ok
+test core::tests::loads_and_stores_little_endian_words ... ok
+test core::tests::qingke_installed_handler_receives_illegal_instruction ... ok
+test core::tests::qingke_pfic_interrupt_uses_mode_three_vector_table ... ok
+test core::tests::qingke_v2c_zmmul_accepts_multiply_but_rejects_divide ... ok
+test core::tests::qingke_xw_executes_all_eight_compressed_memory_operations ... ok
+test core::tests::hazard3_meinext_update_publishes_current_irq_context ... ok
+test core::tests::qingke_xw_opcode_is_profile_gated ... ok
+test core::tests::rv32e_rejects_high_registers ... ok
+test core::tests::user_mode_machine_interrupt_saves_user_privilege_in_mpp ... ok
+test core::tests::zbb_sign_extend_byte_and_halfword_use_their_unary_encodings ... ok
+test core::tests::zbb_signed_and_unsigned_min_max_encodings_are_distinct ... ok
+
+test result: ok. 29 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s

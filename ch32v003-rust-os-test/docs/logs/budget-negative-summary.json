@@ -1,0 +1,14 @@
+[
+  {
+    "case": "ram-boundary",
+    "link_succeeded": true
+  },
+  {
+    "case": "ram-overflow",
+    "link_succeeded": false
+  },
+  {
+    "case": "flash-overflow",
+    "link_succeeded": false
+  }
+]
