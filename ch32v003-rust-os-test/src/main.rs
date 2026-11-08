@@ -2,10 +2,14 @@
 #![no_main]
 #[cfg(feature = "coop")]
 mod coop;
+#[cfg(feature = "scheduler")]
+mod scheduler;
+#[cfg(all(feature = "scheduler", any(feature = "coop", feature = "timer")))]
+compile_error!("scheduler, coop and timer must be tested separately");
 #[cfg(all(feature = "coop", feature = "timer"))]
 compile_error!("coop and timer must be tested separately");
 use core::arch::global_asm;
-#[cfg(not(feature = "coop"))]
+#[cfg(not(any(feature = "coop", feature = "scheduler")))]
 use core::{arch::asm, ptr::{read_volatile, write_volatile}};
 global_asm!(r#"
 .section .init,"ax"
@@ -63,7 +67,10 @@ static mut SEED: u32 = 0x12345678;
 #[cfg(feature = "coop")]
 #[no_mangle]
 extern "C" fn rust_main() -> ! { coop::start() }
-#[cfg(not(feature = "coop"))]
+#[cfg(feature = "scheduler")]
+#[no_mangle]
+extern "C" fn rust_main() -> ! { scheduler::start() }
+#[cfg(not(any(feature = "coop", feature = "scheduler")))]
 #[no_mangle]
 extern "C" fn rust_main() -> ! {
     unsafe {

@@ -1,0 +1,305 @@
+
+File: target/scheduler/riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test
+Format: elf32-littleriscv
+Arch: riscv32
+AddressSize: 32bit
+LoadName: <Not found>
+ElfHeader {
+  Ident {
+    Magic: (7F 45 4C 46)
+    Class: 32-bit (0x1)
+    DataEncoding: LittleEndian (0x1)
+    FileVersion: 1
+    OS/ABI: SystemV (0x0)
+    ABIVersion: 0
+    Unused: (00 00 00 00 00 00 00)
+  }
+  Type: Executable (0x2)
+  Machine: EM_RISCV (0xF3)
+  Version: 1
+  Entry: 0x0
+  ProgramHeaderOffset: 0x34
+  SectionHeaderOffset: 0xF26C
+  Flags [ (0x9)
+    EF_RISCV_RVC (0x1)
+    EF_RISCV_RVE (0x8)
+  ]
+  HeaderSize: 52
+  ProgramHeaderEntrySize: 32
+  ProgramHeaderCount: 5
+  SectionHeaderEntrySize: 40
+  SectionHeaderCount: 17
+  StringTableSectionIndex: 15
+}
+Sections [
+  Section {
+    Index: 0
+    Name:  (0)
+    Type: SHT_NULL (0x0)
+    Flags [ (0x0)
+    ]
+    Address: 0x0
+    Offset: 0x0
+    Size: 0
+    Link: 0
+    Info: 0
+    AddressAlignment: 0
+    EntrySize: 0
+  }
+  Section {
+    Index: 1
+    Name: .text (1)
+    Type: SHT_PROGBITS (0x1)
+    Flags [ (0x6)
+      SHF_ALLOC (0x2)
+      SHF_EXECINSTR (0x4)
+    ]
+    Address: 0x0
+    Offset: 0x1000
+    Size: 1797
+    Link: 0
+    Info: 0
+    AddressAlignment: 2
+    EntrySize: 0
+  }
+  Section {
+    Index: 2
+    Name: .data (7)
+    Type: SHT_PROGBITS (0x1)
+    Flags [ (0x3)
+      SHF_ALLOC (0x2)
+      SHF_WRITE (0x1)
+    ]
+    Address: 0x20000000
+    Offset: 0x2000
+    Size: 20
+    Link: 0
+    Info: 0
+    AddressAlignment: 4
+    EntrySize: 0
+  }
+  Section {
+    Index: 3
+    Name: .bss (13)
+    Type: SHT_NOBITS (0x8)
+    Flags [ (0x3)
+      SHF_ALLOC (0x2)
+      SHF_WRITE (0x1)
+    ]
+    Address: 0x20000020
+    Offset: 0x2020
+    Size: 560
+    Link: 0
+    Info: 0
+    AddressAlignment: 16
+    EntrySize: 0
+  }
+  Section {
+    Index: 4
+    Name: .debug_loc (18)
+    Type: SHT_PROGBITS (0x1)
+    Flags [ (0x0)
+    ]
+    Address: 0x0
+    Offset: 0x2020
+    Size: 1722
+    Link: 0
+    Info: 0
+    AddressAlignment: 1
+    EntrySize: 0
+  }
+  Section {
+    Index: 5
+    Name: .debug_abbrev (29)
+    Type: SHT_PROGBITS (0x1)
+    Flags [ (0x0)
+    ]
+    Address: 0x0
+    Offset: 0x26DA
+    Size: 1462
+    Link: 0
+    Info: 0
+    AddressAlignment: 1
+    EntrySize: 0
+  }
+  Section {
+    Index: 6
+    Name: .debug_info (43)
+    Type: SHT_PROGBITS (0x1)
+    Flags [ (0x0)
+    ]
+    Address: 0x0
+    Offset: 0x2C90
+    Size: 18124
+    Link: 0
+    Info: 0
+    AddressAlignment: 1
+    EntrySize: 0
+  }
+  Section {
+    Index: 7
+    Name: .debug_aranges (55)
+    Type: SHT_PROGBITS (0x1)
+    Flags [ (0x0)
+    ]
+    Address: 0x0
+    Offset: 0x735C
+    Size: 136
+    Link: 0
+    Info: 0
+    AddressAlignment: 1
+    EntrySize: 0
+  }
+  Section {
+    Index: 8
+    Name: .debug_ranges (70)
+    Type: SHT_PROGBITS (0x1)
+    Flags [ (0x0)
+    ]
+    Address: 0x0
+    Offset: 0x73E4
+    Size: 904
+    Link: 0
+    Info: 0
+    AddressAlignment: 1
+    EntrySize: 0
+  }
+  Section {
+    Index: 9
+    Name: .debug_str (84)
+    Type: SHT_PROGBITS (0x1)
+    Flags [ (0x30)
+      SHF_MERGE (0x10)
+      SHF_STRINGS (0x20)
+    ]
+    Address: 0x0
+    Offset: 0x776C
+    Size: 21477
+    Link: 0
+    Info: 0
+    AddressAlignment: 1
+    EntrySize: 1
+  }
+  Section {
+    Index: 10
+    Name: .comment (95)
+    Type: SHT_PROGBITS (0x1)
+    Flags [ (0x30)
+      SHF_MERGE (0x10)
+      SHF_STRINGS (0x20)
+    ]
+    Address: 0x0
+    Offset: 0xCB51
+    Size: 161
+    Link: 0
+    Info: 0
+    AddressAlignment: 1
+    EntrySize: 1
+  }
+  Section {
+    Index: 11
+    Name: .riscv.attributes (104)
+    Type: SHT_RISCV_ATTRIBUTES (0x70000003)
+    Flags [ (0x0)
+    ]
+    Address: 0x0
+    Offset: 0xCBF2
+    Size: 40
+    Link: 0
+    Info: 0
+    AddressAlignment: 1
+    EntrySize: 0
+  }
+  Section {
+    Index: 12
+    Name: .debug_frame (122)
+    Type: SHT_PROGBITS (0x1)
+    Flags [ (0x0)
+    ]
+    Address: 0x0
+    Offset: 0xCC1C
+    Size: 196
+    Link: 0
+    Info: 0
+    AddressAlignment: 4
+    EntrySize: 0
+  }
+  Section {
+    Index: 13
+    Name: .debug_line (135)
+    Type: SHT_PROGBITS (0x1)
+    Flags [ (0x0)
+    ]
+    Address: 0x0
+    Offset: 0xCCE0
+    Size: 2737
+    Link: 0
+    Info: 0
+    AddressAlignment: 1
+    EntrySize: 0
+  }
+  Section {
+    Index: 14
+    Name: .symtab (147)
+    Type: SHT_SYMTAB (0x2)
+    Flags [ (0x0)
+    ]
+    Address: 0x0
+    Offset: 0xD794
+    Size: 4608
+    Link: 16
+    Info: 265
+    AddressAlignment: 4
+    EntrySize: 16
+  }
+  Section {
+    Index: 15
+    Name: .shstrtab (155)
+    Type: SHT_STRTAB (0x3)
+    Flags [ (0x0)
+    ]
+    Address: 0x0
+    Offset: 0xE994
+    Size: 173
+    Link: 0
+    Info: 0
+    AddressAlignment: 1
+    EntrySize: 0
+  }
+  Section {
+    Index: 16
+    Name: .strtab (165)
+    Type: SHT_STRTAB (0x3)
+    Flags [ (0x0)
+    ]
+    Address: 0x0
+    Offset: 0xEA41
+    Size: 2090
+    Link: 0
+    Info: 0
+    AddressAlignment: 1
+    EntrySize: 0
+  }
+]
+BuildAttributes {
+  FormatVersion: 0x41
+  Section 1 {
+    SectionLength: 39
+    Vendor: riscv
+    Tag: Tag_File (0x1)
+    Size: 29
+    FileAttributes {
+      Attribute {
+        Tag: 4
+        Value: 4
+        TagName: stack_align
+        Description: Stack alignment is 4-bytes
+      }
+      Attribute {
+        Tag: 5
+        TagName: arch
+        Value: rv32e2p0_c2p0_zca1p0
+      }
+    }
+  }
+}

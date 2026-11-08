@@ -2,6 +2,9 @@
 name = "ch32v003-rust-os-test"
 version = "0.1.0"
 edition = "2021"
+[dependencies]
+rv2k-api = { path = "../crates/rv2k-api" }
+rv2k-kernel = { path = "../crates/rv2k-kernel" }
 [profile.release]
 opt-level = "s"
 lto = true
@@ -12,3 +15,4 @@ debug = true
 [features]
 timer = []
 coop = []
+scheduler = []
