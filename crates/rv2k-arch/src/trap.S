@@ -37,11 +37,40 @@ csrw mscratch, zero
 li gp, 0
 li tp, 0
 mv a0, sp
+.if {timer}
+lw t0, 68(sp)
+li t1, 0x8000000c
+beq t0, t1, rv2k_timer_trap
+.endif
 call rv2k_prepare_frame
 # a0 is now a checked frame on the task stack. Discard temporary frame.
 la sp, _stack_top
 call rv2k_trap_dispatch
+.if {timer}
+beqz a0, rv2k_idle
+.endif
 j rv2k_restore
+.if {timer}
+rv2k_timer_trap:
+call rv2k_timer_irq
+mv a0, sp
+j rv2k_restore
+rv2k_idle:
+# No Rust call stack is live during the interrupt-enabled window. Polling and
+# selecting run non-reentrantly with MIE off and mscratch=0.
+la sp, _stack_top
+csrci mstatus, 8
+csrw mscratch, zero
+call rv2k_idle_poll
+bnez a0, rv2k_restore
+la t0, _stack_top
+csrw mscratch, t0
+csrsi mstatus, 8
+nop
+nop
+csrci mstatus, 8
+j rv2k_idle
+.endif
 .global rv2k_first_task
 rv2k_first_task:
 rv2k_restore:

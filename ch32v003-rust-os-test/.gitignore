@@ -3,3 +3,5 @@
 __pycache__/
 /docs/logs/syscall-bus.json
 /docs/logs/syscall-coverage.json
+/docs/logs/services-bus.json
+/docs/logs/services-coverage.json
