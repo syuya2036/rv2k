@@ -111,7 +111,6 @@ mod sockets {
         socket::SocketService,
         Scheduler,
     };
-    use rv2k_net::tcp::socket::Socket;
     #[no_mangle]
     static mut APP_BUFFER: [u8; 32] = [0; 32];
     #[cfg(feature = "emulator-stop")]
@@ -167,10 +166,13 @@ ret
 .option pop
 "#
     );
-    struct Service<'a>(&'a mut Socket);
+    struct Service<'a>(&'a mut Network);
     impl SocketService for Service<'_> {
+        fn info(&self) -> Result<rv2k_api::net::NetInfo, Error> {
+            Ok(self.0.info())
+        }
         fn listen(&mut self, port: u16) -> Result<usize, Error> {
-            self.0.listen(port)
+            self.0.socket.listen(port)
         }
         fn recv(
             &mut self,
@@ -179,7 +181,9 @@ ret
             a: usize,
             n: usize,
         ) -> Result<usize, Error> {
-            self.0.recv_with(h, n, |bytes| m.copy_out(a, bytes, 1))
+            self.0
+                .socket
+                .recv_with(h, n, |bytes| m.copy_out(a, bytes, 1))
         }
         fn send(
             &mut self,
@@ -188,13 +192,13 @@ ret
             a: usize,
             n: usize,
         ) -> Result<usize, Error> {
-            self.0.send_with(h, n, |out| m.copy_in(a, out))
+            self.0.socket.send_with(h, n, |out| m.copy_in(a, out))
         }
         fn close(&mut self, h: usize) -> Result<(), Error> {
-            self.0.close(h)
+            self.0.socket.close(h)
         }
         fn readiness(&self) -> u32 {
-            self.0.readiness()
+            self.0.socket.readiness()
         }
     }
     pub fn application_region() -> Region {
@@ -205,7 +209,7 @@ ret
         }
     }
     pub unsafe fn socket_service() -> impl SocketService {
-        Service(&mut (*addr_of_mut!(NETWORK)).socket)
+        Service(&mut *addr_of_mut!(NETWORK))
     }
     pub unsafe fn exited(s: &mut Scheduler, id: TaskId) {
         let socket = &mut (*addr_of_mut!(NETWORK)).socket;
@@ -240,6 +244,8 @@ ret
                 write_volatile(addr_of_mut!(APP_MEM_CHECK), 1);
             }
         }
+        #[cfg(feature = "netinfo-probe")]
+        crate::netinfo_probe::boot();
         loop {
             let handle = match socket::listen(1234) {
                 Ok(h) => h,
@@ -264,6 +270,8 @@ ret
                 Ok(_) => continue,
                 Err(_) => return,
             }
+            #[cfg(feature = "netinfo-probe")]
+            crate::netinfo_probe::connected();
             'connection: loop {
                 let buffer = unsafe { &mut *addr_of_mut!(APP_BUFFER) };
                 match socket::recv(handle, buffer) {

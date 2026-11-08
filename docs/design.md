@@ -1,6 +1,6 @@
 # rv2k 2.0 設計書
 
-状態: Phase 4まで検証済み。Phase 5はsoftware driver/model/RV32ECがPASS、J4M6実機未検証のためPARTIAL。Phase 6はvirtual NICとARP/IPv4/ICMPのhost/RV32ECフレーム注入がPASS、Mac実ping未検証のためPARTIAL。Phase 7はwire/guestのTCP echo・再送・異常終了と、仮想NIC/ENC構成の容量検査がPASS。Mac native TCPが未検証のためPARTIAL。Phase 8はIRQ強制切替・共有状態保護・SPI途中IRQ・異常系と両構成の容量検査がPASS（実機はUNVERIFIED）。Phase 9以降は設計案。Phase 0/1の実測を土台に、後続の契約と検証条件を定める。設計上の予算やAPIを実装済みと解釈しない。リリース名は **rv2k 2.0** に統一する。
+状態: Phase 4まで検証済み。Phase 5はsoftware driver/model/RV32ECがPASS、J4M6実機未検証のためPARTIAL。Phase 6はvirtual NICとARP/IPv4/ICMPのhost/RV32ECフレーム注入がPASS、Mac実ping未検証のためPARTIAL。Phase 7はwire/guestのTCP echo・再送・異常終了と、仮想NIC/ENC構成の容量検査がPASS。Mac native TCPが未検証のためPARTIAL。Phase 8はIRQ強制切替・共有状態保護・SPI途中IRQ・異常系と両構成の容量検査がPASS（実機はUNVERIFIED）。Phase 9/10の入力パーサと公開network snapshotは導入済みで、サーバー／シェル統合は実装中。Phase 0/1の実測を土台に、後続の契約と検証条件を定める。設計上の予算やAPIを実装済みと解釈しない。リリース名は **rv2k 2.0** に統一する。
 
 ## 1. 目的と決定事項
 
@@ -168,7 +168,7 @@ Phase 8のSysTickはタスク実行中にrescheduleを要求する。カーネ�
 |11|TaskExit|a0=終了コード、戻らない|
 |12|TaskInfo|a0=TaskId、a1=snapshot出力、a2=サイズ|
 |13|MemInfo|a0=snapshot出力、a1=サイズ|
-|14|NetInfo|a0=snapshot出力、a1=サイズ|
+|14|NetInfo|a0=snapshot出力、a1=32、a2=0。v1の固定32byte・alignment=2|
 |15|MessageSend|a0=宛先TaskId、a1=ptr、a2=len（最大64）|
 |16|MessageRecv|a0=ptr、a1=capacity、実byte数／Again|
 

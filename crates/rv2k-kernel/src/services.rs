@@ -214,7 +214,8 @@ pub fn dispatch_runtime(
             call @ (Number::SocketListen
             | Number::SocketRecv
             | Number::SocketSend
-            | Number::SocketClose),
+            | Number::SocketClose
+            | Number::NetInfo),
         ) => match services.socket {
             Some(socket) => crate::socket::operation(scheduler, memory, call, args, socket, caller),
             None => Err(Error::NoSys),

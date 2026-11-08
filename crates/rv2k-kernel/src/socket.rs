@@ -7,6 +7,9 @@ use rv2k_api::{
 };
 
 pub trait SocketService {
+    fn info(&self) -> Result<rv2k_api::net::NetInfo, Error> {
+        Err(Error::NoSys)
+    }
     fn listen(&mut self, port: u16) -> Result<usize, Error>;
     fn recv(
         &mut self,
@@ -43,6 +46,7 @@ pub fn dispatch(
             | Number::SocketRecv
             | Number::SocketSend
             | Number::SocketClose
+            | Number::NetInfo
             | Number::EventWait
     ) {
         return None;
@@ -84,6 +88,16 @@ pub(crate) fn operation(
     socket: &mut impl SocketService,
     caller: TaskId,
 ) -> Result<usize, Error> {
+    if call == Number::NetInfo {
+        if args[1] != rv2k_api::net::BYTES || args[2] != 0 {
+            return Err(Error::Invalid);
+        }
+        let mut info = socket.info()?;
+        if scheduler.info(TaskId::Network).state == TaskState::Exited {
+            info.flags |= rv2k_api::net::NETWORK_STOPPED;
+        }
+        return info.with_bytes(|bytes| memory.copy_out(args[0], bytes, 2).map(|_| 0));
+    }
     if caller != TaskId::Application {
         Err(Error::BadFd)
     } else if scheduler.info(TaskId::Network).state == TaskState::Exited {
@@ -105,6 +119,239 @@ pub(crate) fn operation(
             let _ = scheduler.signal(TaskId::Network, event::DRIVER_POLL);
         }
         result
+    }
+}
+
+#[cfg(test)]
+mod snapshot_tests {
+    use super::*;
+    use crate::{
+        memory::{MemoryMap, Region},
+        services::{dispatch_runtime, InfoSource, NoConsole, RuntimeServices},
+        Selection,
+    };
+    use core::cell::Cell;
+    use rv2k_api::net::{NetInfo, TcpState, BYTES};
+    fn snapshot() -> NetInfo {
+        NetInfo {
+            version: 1,
+            state: TcpState::Closed,
+            flags: 0,
+            local_ip: [192, 168, 123, 50],
+            peer_ip: [0; 4],
+            local_port: 23,
+            peer_port: 0,
+            received: 1,
+            transmitted: 2,
+            dropped: 3,
+            bad_checksum: 4,
+            fragments: 5,
+            io_errors: 6,
+            retransmissions: 7,
+            resets: 8,
+        }
+    }
+    struct Output([u8; BYTES]);
+    impl UserMemory for Output {
+        fn copy_out(
+            &mut self,
+            address: usize,
+            bytes: &[u8],
+            alignment: usize,
+        ) -> Result<(), Error> {
+            MemoryMap {
+                stack: Region {
+                    start: 0x1000,
+                    end: 0x1020,
+                },
+                application: Region { start: 0, end: 0 },
+                flash: Region { start: 0, end: 0 },
+            }
+            .validate(address, bytes.len(), alignment, true)?;
+            self.0.copy_from_slice(bytes);
+            Ok(())
+        }
+    }
+    struct Source {
+        reads: Cell<usize>,
+        available: bool,
+    }
+    impl SocketService for Source {
+        fn info(&self) -> Result<NetInfo, Error> {
+            self.reads.set(self.reads.get() + 1);
+            if self.available {
+                Ok(snapshot())
+            } else {
+                Err(Error::NoSys)
+            }
+        }
+        fn listen(&mut self, _: u16) -> Result<usize, Error> {
+            panic!("snapshot must not listen")
+        }
+        fn recv(
+            &mut self,
+            _: &mut impl UserMemory,
+            _: usize,
+            _: usize,
+            _: usize,
+        ) -> Result<usize, Error> {
+            panic!("snapshot must not recv")
+        }
+        fn send(
+            &mut self,
+            _: &mut impl UserMemory,
+            _: usize,
+            _: usize,
+            _: usize,
+        ) -> Result<usize, Error> {
+            panic!("snapshot must not send")
+        }
+        fn close(&mut self, _: usize) -> Result<(), Error> {
+            panic!("snapshot must not close")
+        }
+        fn readiness(&self) -> u32 {
+            panic!("snapshot must not consume socket readiness")
+        }
+    }
+    fn invoke(
+        s: &mut Scheduler,
+        mailbox: &mut Mailbox,
+        out: &mut Output,
+        service: &mut Source,
+        args: [usize; 3],
+        full: bool,
+    ) -> isize {
+        let result = if full {
+            dispatch_runtime(
+                s,
+                mailbox,
+                out,
+                14,
+                args,
+                RuntimeServices::<NoConsole, _> {
+                    console: None,
+                    socket: Some(service),
+                    info: InfoSource::None,
+                },
+            )
+        } else {
+            dispatch(s, mailbox, out, 14, args, service).unwrap()
+        };
+        match result {
+            Outcome::Complete(n) => n,
+            _ => panic!("snapshot must not switch"),
+        }
+    }
+    #[test]
+    fn snapshot_copy_both_dispatchers_owners_and_pointer_failures() {
+        for full in [false, true] {
+            let mut s = Scheduler::new();
+            s.initialize([0x100, 0x200]);
+            s.select_next();
+            let mut mailbox = Mailbox::new();
+            let mut source = Source {
+                reads: Cell::new(0),
+                available: true,
+            };
+            let mut out = Output([0xa5; BYTES]);
+            for (args, code) in [
+                ([0x1000, 31, 0], -1),
+                ([0x1000, 33, 0], -1),
+                ([0x1000, 32, 1], -1),
+            ] {
+                assert_eq!(
+                    invoke(&mut s, &mut mailbox, &mut out, &mut source, args, full),
+                    code
+                );
+                assert_eq!(out.0, [0xa5; BYTES]);
+            }
+            assert_eq!(source.reads.get(), 0);
+            for address in [0x1001, 0x1002, 0x0ffe, usize::MAX, usize::MAX - 1] {
+                assert_eq!(
+                    invoke(
+                        &mut s,
+                        &mut mailbox,
+                        &mut out,
+                        &mut source,
+                        [address, 32, 0],
+                        full
+                    ),
+                    -8
+                );
+                assert_eq!(out.0, [0xa5; BYTES]);
+            }
+            for id in [TaskId::Network, TaskId::Application] {
+                assert_eq!(s.current(), Some(id));
+                assert_eq!(
+                    invoke(
+                        &mut s,
+                        &mut mailbox,
+                        &mut out,
+                        &mut source,
+                        [0x1000, 32, 0],
+                        full
+                    ),
+                    0
+                );
+                assert_eq!(out.0, snapshot().encode());
+                s.suspend(0x200, Action::Yield);
+                s.select_next();
+            }
+            assert_eq!(s.wait_event(event::DRIVER_POLL, 0, 0), Err(Error::Timeout));
+            // A stopped network remains observable; this read does not require ownership.
+            s.suspend(0x100, Action::Exit(0));
+            assert_eq!(s.select_next(), Selection::Run(TaskId::Application, 0x200));
+            assert_eq!(
+                invoke(
+                    &mut s,
+                    &mut mailbox,
+                    &mut out,
+                    &mut source,
+                    [0x1000, 32, 0],
+                    full
+                ),
+                0
+            );
+            let mut stopped = snapshot();
+            stopped.flags |= rv2k_api::net::NETWORK_STOPPED;
+            assert_eq!(out.0, stopped.encode());
+            out.0.fill(0xa5);
+            source.available = false;
+            assert_eq!(
+                invoke(
+                    &mut s,
+                    &mut mailbox,
+                    &mut out,
+                    &mut source,
+                    [0x1000, 32, 0],
+                    full
+                ),
+                -2
+            );
+            assert_eq!(out.0, [0xa5; BYTES]);
+        }
+    }
+    #[test]
+    fn snapshot_unavailable_without_network_service() {
+        let mut s = Scheduler::new();
+        s.initialize([0x100, 0x200]);
+        s.select_next();
+        let mut mailbox = Mailbox::new();
+        let mut out = Output([0xa5; BYTES]);
+        let result = dispatch_runtime(
+            &mut s,
+            &mut mailbox,
+            &mut out,
+            14,
+            [0x1000, 32, 0],
+            RuntimeServices::<NoConsole, Source> {
+                console: None,
+                socket: None,
+                info: InfoSource::None,
+            },
+        );
+        assert!(matches!(result, Outcome::Complete(-2)));
+        assert_eq!(out.0, [0xa5; BYTES]);
     }
 }
 

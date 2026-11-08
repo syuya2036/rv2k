@@ -6,6 +6,8 @@ mod compact;
 mod drivers;
 #[cfg(feature = "net")]
 mod network;
+#[cfg(feature = "netinfo-probe")]
+mod netinfo_probe;
 #[cfg(feature = "diagnostics")]
 mod diagnostics;
 #[cfg(feature = "services")]

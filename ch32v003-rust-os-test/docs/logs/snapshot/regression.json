@@ -1,0 +1,141 @@
+{
+  "probe-summary.json": {
+    "instructions": 12332493,
+    "progress": [
+      3,
+      3
+    ],
+    "forced_switches": 47,
+    "irqs": 51,
+    "deferred_irqs": 5,
+    "rejected_blocking_calls": 8,
+    "max_disabled_clocks": 963686,
+    "trace_irq_switches_inside_cpu_probes": [
+      3,
+      4
+    ],
+    "deferred_switches_at_syscall_boundary": 1,
+    "spi_mosi_packets": [
+      [
+        165,
+        60
+      ]
+    ],
+    "irq_inside_spi_bit_positions": [
+      3
+    ],
+    "stack_used_bytes_tasks_kernel": [
+      208,
+      208,
+      128
+    ],
+    "all_guards_intact": true
+  },
+  "probe-budget.json": {
+    "flash_bytes": 6698,
+    "flash_limit": 16384,
+    "static_ram_bytes": 932,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 1188,
+    "ram_limit": 2048
+  },
+  "negative-summary.json": [
+    {
+      "case": "missing-t1",
+      "detected_panic": true,
+      "instructions": 4470032
+    },
+    {
+      "case": "fault-preempt-pc",
+      "detected_panic": true,
+      "instructions": 1451755
+    },
+    {
+      "case": "fault-preempt-lock",
+      "detected_panic": true,
+      "instructions": 731154
+    }
+  ],
+  "baseline/tcp-summary.json": {
+    "host_packet_peer": "PASS (synthetic peer, not native Mac TCP)",
+    "public_mem_snapshot_checked": true,
+    "gp_preserved_across_timer_irqs_and_syscall": true,
+    "instructions": 6035640,
+    "frames_in": 25,
+    "frames_out": 31,
+    "connections": 2,
+    "echoed_bytes": 193,
+    "syn_data_fin_loss_recovered": true,
+    "out_of_order_and_duplicate_input": true,
+    "sequence_wrap": true,
+    "negotiated_peer_mss": 24,
+    "stack_used_bytes_tasks_kernel": [
+      204,
+      140,
+      120
+    ],
+    "syscalls": 176,
+    "timer_irqs": 27,
+    "uptime_ticks": 6525,
+    "simulated_clock_advance_ticks": 6500,
+    "mac_native_tcp": "UNVERIFIED",
+    "physical_enc": "UNVERIFIED",
+    "preemption": {
+      "nic_irq_injections": 0,
+      "deferred_irqs": 1,
+      "forced_switches": 5,
+      "max_disabled_clocks": 7754,
+      "injected_clocks_per_frame": 0,
+      "shared_borrow_released_before_completion": true
+    }
+  },
+  "tcp-summary.json": {
+    "host_packet_peer": "PASS (synthetic peer, not native Mac TCP)",
+    "public_mem_snapshot_checked": true,
+    "gp_preserved_across_timer_irqs_and_syscall": true,
+    "instructions": 6523587,
+    "frames_in": 25,
+    "frames_out": 30,
+    "connections": 2,
+    "echoed_bytes": 193,
+    "syn_data_fin_loss_recovered": true,
+    "out_of_order_and_duplicate_input": true,
+    "sequence_wrap": true,
+    "negotiated_peer_mss": 24,
+    "stack_used_bytes_tasks_kernel": [
+      204,
+      140,
+      120
+    ],
+    "syscalls": 256,
+    "timer_irqs": 36,
+    "uptime_ticks": 6552,
+    "simulated_clock_advance_ticks": 6500,
+    "mac_native_tcp": "UNVERIFIED",
+    "physical_enc": "UNVERIFIED",
+    "preemption": {
+      "nic_irq_injections": 25,
+      "deferred_irqs": 30,
+      "forced_switches": 2,
+      "max_disabled_clocks": 248170,
+      "injected_clocks_per_frame": 240000,
+      "shared_borrow_released_before_completion": true
+    }
+  },
+  "tcp-budget.json": {
+    "flash_bytes": 13952,
+    "flash_limit": 16384,
+    "static_ram_bytes": 1580,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 1836,
+    "ram_limit": 2048
+  },
+  "enc-budget.json": {
+    "flash_bytes": 16132,
+    "flash_limit": 16384,
+    "static_ram_bytes": 1596,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 1852,
+    "ram_limit": 2048
+  }
+}
