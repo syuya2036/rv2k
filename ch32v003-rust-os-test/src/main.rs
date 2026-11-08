@@ -10,6 +10,10 @@ mod network;
 mod diagnostics;
 #[cfg(feature = "services")]
 mod services;
+#[cfg(feature = "preempt-probe")]
+mod preemption_probe;
+#[cfg(all(feature = "preempt-probe", any(feature = "net", feature = "drivers")))]
+compile_error!("preempt-probe owns the test GPIO/SPI pins; test network/drivers separately");
 #[cfg(all(feature = "services", any(feature = "coop", feature = "timer", feature = "scheduler", feature = "syscall")))]
 compile_error!("services must be tested separately");
 #[cfg(feature = "syscall")]

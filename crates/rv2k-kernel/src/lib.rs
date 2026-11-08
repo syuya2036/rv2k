@@ -113,6 +113,14 @@ impl Scheduler {
     pub fn current(&self) -> Option<TaskId> {
         self.current.id()
     }
+    /// A timer quantum switches only when another task can actually run.
+    pub fn can_preempt(&self) -> bool {
+        match self.current {
+            Running::Network => self.tasks[1].state == TaskState::Ready,
+            Running::Application => self.tasks[0].state == TaskState::Ready,
+            Running::None => false,
+        }
+    }
 
     pub fn info(&self, id: TaskId) -> TaskInfo {
         let task = &self.tasks[id.index()];
@@ -492,5 +500,23 @@ mod wait_tests {
         s.suspend(0x210, Action::Yield);
         s.select_next();
         assert_eq!(s.wait_event(event::NET_RX, 0, 0), Ok(Some(event::NET_RX)));
+    }
+    #[test]
+    fn preemption_eligibility_tracks_idle_block_wake_and_exit() {
+        let mut s = Scheduler::new();
+        s.initialize([0x100, 0x200]);
+        assert!(!s.can_preempt());
+        assert_eq!(s.select_next(), Selection::Run(A, 0x100));
+        assert!(s.can_preempt());
+        s.wait_event(event::NET_RX, event::FOREVER, 0).unwrap();
+        s.suspend(0x110, Action::Block);
+        assert!(!s.can_preempt());
+        assert_eq!(s.select_next(), Selection::Run(B, 0x200));
+        assert!(!s.can_preempt());
+        s.signal(A, event::NET_RX).unwrap();
+        assert!(s.can_preempt());
+        s.suspend(0x210, Action::Exit(0));
+        assert_eq!(s.select_next(), Selection::Run(A, 0x110));
+        assert!(!s.can_preempt());
     }
 }

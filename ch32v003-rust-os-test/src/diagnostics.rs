@@ -1,6 +1,6 @@
 use core::{
     arch::{asm, global_asm},
-    ptr::{addr_of, addr_of_mut, write_volatile},
+    ptr::{addr_of, addr_of_mut, read_volatile, write_volatile},
 };
 use rv2k_api::mem::MemInfo;
 use rv2k_arch::{stack::StackRegion, TrapFrame};
@@ -154,8 +154,10 @@ unsafe extern "C" fn rv2k_record_fault(
     for byte in b"FAULT " {
         put(*byte);
     }
-    for value in [reason as u32, task, pc, cause, tval, sp] {
-        hex(value);
+    // FaultInfo is repr(C), six u32-sized fields, with a checked 24-byte size.
+    // Print the saved record instead of retaining another six-word stack copy.
+    for index in 0..6 {
+        hex(read_volatile(addr_of!(FAULT_INFO).cast::<u32>().add(index)));
         put(b' ');
     }
     put(b'\n');

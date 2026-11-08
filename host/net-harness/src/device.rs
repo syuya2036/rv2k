@@ -12,6 +12,7 @@ pub struct State {
     pub received: u32,
     pub transmitted: u32,
     pub released: u32,
+    pub rx_reads: u64,
     done: bool,
 }
 impl State {
@@ -42,7 +43,7 @@ impl Device for Nic {
         "rv2k.virtual-ethernet"
     }
     fn read(&mut self, offset: u64, width: AccessWidth, _: SimTime) -> Result<u64, DeviceError> {
-        let s = self.0.borrow();
+        let mut s = self.0.borrow_mut();
         let value = match (offset, width) {
             (0, AccessWidth::Word) => {
                 1 | if !s.incoming.is_empty() { 2 } else { 0 }
@@ -52,12 +53,16 @@ impl Device for Nic {
             (4, AccessWidth::Word) => s.incoming.front().map_or(0, |f| f.len() as u64),
             (8, AccessWidth::Word) => s.token as u64,
             (20, AccessWidth::Word) => s.stop as u64,
-            (0x100..=0x6e9, AccessWidth::Byte) => *s
-                .incoming
-                .front()
-                .and_then(|f| f.get(offset as usize - 0x100))
-                .ok_or_else(|| DeviceError::new("RX read outside current frame"))?
-                as u64,
+            (0x100..=0x6e9, AccessWidth::Byte) => {
+                let value = *s
+                    .incoming
+                    .front()
+                    .and_then(|f| f.get(offset as usize - 0x100))
+                    .ok_or_else(|| DeviceError::new("RX read outside current frame"))?
+                    as u64;
+                s.rx_reads += 1;
+                value
+            }
             _ => return Err(DeviceError::new("invalid virtual NIC read")),
         };
         Ok(value)
