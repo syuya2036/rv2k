@@ -8,6 +8,7 @@ rv2k-kernel = { path = "../crates/rv2k-kernel" }
 rv2k-arch = { path = "../crates/rv2k-arch" }
 rv2k-drivers = { path = "../crates/rv2k-drivers" }
 rv2k-net = { path = "../crates/rv2k-net", optional = true }
+rv2k-apps = { path = "../crates/rv2k-apps", optional = true }
 [profile.release]
 opt-level = "s"
 lto = true
@@ -28,6 +29,7 @@ drivers = ["diagnostics"]
 net = ["diagnostics", "dep:rv2k-net"]
 tcp = ["net", "rv2k-net/tcp"]
 netinfo-probe = ["tcp", "preempt"]
+shell = ["tcp", "preempt", "dep:rv2k-apps"]
 preempt = ["services", "rv2k-arch/preempt"]
 preempt-probe = ["preempt", "diagnostics"]
 fault-preempt-pc = ["preempt-probe"]

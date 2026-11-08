@@ -8,6 +8,10 @@ mod drivers;
 mod network;
 #[cfg(feature = "netinfo-probe")]
 mod netinfo_probe;
+#[cfg(feature = "shell")]
+mod shell;
+#[cfg(all(feature = "shell", feature = "netinfo-probe"))]
+compile_error!("netinfo-probe tests the TCP echo application; build shell separately");
 #[cfg(feature = "diagnostics")]
 mod diagnostics;
 #[cfg(feature = "services")]
