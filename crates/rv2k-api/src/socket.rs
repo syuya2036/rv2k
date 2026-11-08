@@ -2,9 +2,11 @@ use crate::syscall::{raw, Error, Number};
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Handle(usize);
+#[inline(always)]
 pub fn listen(port: u16) -> Result<Handle, Error> {
     unsafe { Error::decode(raw(Number::SocketListen as usize, [port as usize, 0, 0])).map(Handle) }
 }
+#[inline(always)]
 pub fn recv(handle: Handle, out: &mut [u8]) -> Result<usize, Error> {
     unsafe {
         Error::decode(raw(
@@ -13,6 +15,7 @@ pub fn recv(handle: Handle, out: &mut [u8]) -> Result<usize, Error> {
         ))
     }
 }
+#[inline(always)]
 pub fn send(handle: Handle, bytes: &[u8]) -> Result<usize, Error> {
     unsafe {
         Error::decode(raw(
@@ -21,6 +24,7 @@ pub fn send(handle: Handle, bytes: &[u8]) -> Result<usize, Error> {
         ))
     }
 }
+#[inline(always)]
 pub fn close(handle: Handle) -> Result<(), Error> {
     unsafe { Error::decode(raw(Number::SocketClose as usize, [handle.0, 0, 0])).map(|_| ()) }
 }
