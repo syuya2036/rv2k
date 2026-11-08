@@ -1,0 +1,68 @@
+[
+  {
+    "file": "crates/rv2k-api/src/syscall.rs",
+    "needle": "#[inline(always)]",
+    "exit": 101,
+    "overflow": 1240
+  },
+  {
+    "file": "crates/rv2k-api/src/syscall.rs",
+    "needle": "#[inline]\npub unsafe fn raw",
+    "exit": 101,
+    "overflow": 1152
+  },
+  {
+    "file": "crates/rv2k-apps/src/shell.rs",
+    "needle": "    pub fn push(",
+    "exit": 101,
+    "overflow": 1012
+  },
+  {
+    "file": "crates/rv2k-net/src/lib.rs",
+    "needle": "    fn arp(",
+    "exit": 101,
+    "overflow": 1008
+  },
+  {
+    "file": "crates/rv2k-net/src/lib.rs",
+    "needle": "    fn receive(",
+    "exit": 101,
+    "overflow": 1052
+  },
+  {
+    "file": "crates/rv2k-net/src/lib.rs",
+    "needle": "#[inline(always)]\n    fn frame_checksum",
+    "exit": 101,
+    "overflow": 1000
+  },
+  {
+    "file": "crates/rv2k-kernel/src/ipc.rs",
+    "needle": "    pub fn send(",
+    "exit": 101,
+    "overflow": 1108
+  },
+  {
+    "file": "crates/rv2k-kernel/src/ipc.rs",
+    "needle": "    pub fn recv(",
+    "exit": 101,
+    "overflow": 1108
+  },
+  {
+    "file": "crates/rv2k-net/src/tcp/socket.rs",
+    "needle": "    pub fn listen(",
+    "exit": 101,
+    "overflow": 1048
+  },
+  {
+    "file": "crates/rv2k-drivers/src/enc28j60.rs",
+    "needle": "    fn rx_begin(",
+    "exit": 101,
+    "overflow": 1132
+  },
+  {
+    "file": "crates/rv2k-drivers/src/enc28j60.rs",
+    "needle": "    fn poll(",
+    "exit": 101,
+    "overflow": 1140
+  }
+]

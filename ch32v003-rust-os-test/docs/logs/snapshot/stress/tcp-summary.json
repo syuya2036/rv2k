@@ -2,7 +2,7 @@
   "host_packet_peer": "PASS (synthetic peer, not native Mac TCP)",
   "public_mem_snapshot_checked": true,
   "gp_preserved_across_timer_irqs_and_syscall": true,
-  "instructions": 6981419,
+  "instructions": 6981472,
   "frames_in": 25,
   "frames_out": 31,
   "connections": 2,
@@ -17,16 +17,16 @@
     120
   ],
   "syscalls": 277,
-  "timer_irqs": 38,
+  "timer_irqs": 39,
   "uptime_ticks": 6554,
   "simulated_clock_advance_ticks": 6500,
   "mac_native_tcp": "UNVERIFIED",
   "physical_enc": "UNVERIFIED",
   "preemption": {
     "nic_irq_injections": 25,
-    "deferred_irqs": 32,
+    "deferred_irqs": 33,
     "forced_switches": 2,
-    "max_disabled_clocks": 247779,
+    "max_disabled_clocks": 247777,
     "injected_clocks_per_frame": 240000,
     "shared_borrow_released_before_completion": true
   }

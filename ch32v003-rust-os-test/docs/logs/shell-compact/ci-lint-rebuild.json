@@ -1,0 +1,26 @@
+{
+  "source_commit": "ec48b78eefa547365951531d8a31053c6403f6be",
+  "change": "test-only byte_char_slices lint fix; input vectors unchanged",
+  "local_workspace_tests": 88,
+  "local_clippy": "PASS",
+  "load_span_comparison": [
+    {
+      "target": "shell",
+      "load_spans": "IDENTICAL to tested pre-lint ELF",
+      "sha256": "bac08c98922a4f8b5a9db8fae0306a896d297413b6a118cdb7f10f78acfa8215",
+      "before_sha256": "bac08c98922a4f8b5a9db8fae0306a896d297413b6a118cdb7f10f78acfa8215"
+    },
+    {
+      "target": "http",
+      "load_spans": "IDENTICAL to tested pre-lint ELF",
+      "sha256": "2f3c89388c75a87bdfb6ae42debf90e12e5783d6bb4cac4ad68cba7e439df95b",
+      "before_sha256": "2f3c89388c75a87bdfb6ae42debf90e12e5783d6bb4cac4ad68cba7e439df95b"
+    },
+    {
+      "target": "http-enc",
+      "load_spans": "IDENTICAL to tested pre-lint ELF",
+      "sha256": "d7ca486e17d8d8365a6e9258e0d0a013035708124d48d4a943a7bc9aa3b616d1",
+      "before_sha256": "d7ca486e17d8d8365a6e9258e0d0a013035708124d48d4a943a7bc9aa3b616d1"
+    }
+  ]
+}

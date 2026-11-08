@@ -28,7 +28,9 @@ pub struct Enc28j60<S> {
     bank: u8,
     ready: bool,
     next_rx: u16,
-    active: Option<RxFrame>,
+    // Valid frames are at least 60 bytes; zero means no owned RX frame.
+    // generation already holds the active token, so no second token is stored.
+    active_len: u16,
     next_packet: u16,
     generation: u32,
     tx: Tx,
@@ -43,7 +45,7 @@ impl<S: SpiDevice> Enc28j60<S> {
             bank: 0xff,
             ready: false,
             next_rx: 0,
-            active: None,
+            active_len: 0,
             next_packet: 0,
             generation: 0,
             tx: Tx::Idle,
@@ -132,7 +134,7 @@ impl<S: SpiDevice> Enc28j60<S> {
     pub fn reset(&mut self, mac: [u8; 6]) -> Result<u8, Error> {
         self.ready = false;
         self.bank = 0xff;
-        self.active = None;
+        self.active_len = 0;
         self.tx = Tx::Idle;
         self.generation = self.generation.wrapping_add(1);
         let result = self.spi.write_buffer(0xff, &[]);
@@ -189,7 +191,7 @@ impl<S: SpiDevice> Enc28j60<S> {
         self.word(0x0c, if next == 0 { RX_END } else { next - 1 })?;
         self.bit(ECON2, 0x40, true)?;
         self.next_rx = next;
-        self.active = None;
+        self.active_len = 0;
         Ok(())
     }
     fn read_ring(&mut self, address: u16, out: &mut [u8]) -> Result<(), Error> {
@@ -246,7 +248,7 @@ impl<S: SpiDevice> NetworkDevice for Enc28j60<S> {
     }
     fn rx_begin(&mut self) -> Result<Option<RxFrame>, Error> {
         self.ensure()?;
-        if self.active.is_some() {
+        if self.active_len != 0 {
             return Err(Error::Busy);
         }
         if self.read(EPKTCNT)? == 0 {
@@ -271,12 +273,12 @@ impl<S: SpiDevice> NetworkDevice for Enc28j60<S> {
             len: len - 4,
         };
         self.next_packet = next;
-        self.active = Some(frame);
+        self.active_len = frame.len;
         Ok(Some(frame))
     }
     fn rx_read_at(&mut self, frame: RxFrame, offset: usize, out: &mut [u8]) -> Result<(), Error> {
         self.ensure()?;
-        if self.active != Some(frame) {
+        if self.active_len == 0 || self.active_len != frame.len || self.generation != frame.token {
             return Err(Error::Invalid);
         }
         if offset
@@ -295,7 +297,7 @@ impl<S: SpiDevice> NetworkDevice for Enc28j60<S> {
     }
     fn rx_release(&mut self, frame: RxFrame) -> Result<(), Error> {
         self.ensure()?;
-        if self.active != Some(frame) {
+        if self.active_len == 0 || self.active_len != frame.len || self.generation != frame.token {
             return Err(Error::Invalid);
         }
         self.release_next(self.next_packet)
@@ -588,6 +590,38 @@ mod tests {
         let f = d.rx_begin().unwrap().unwrap();
         d.rx_release(f).unwrap();
         assert_eq!(d.spi.word(12), RX_END as usize);
+    }
+    #[test]
+    fn rx_ownership_checks_length_activity_and_wrapping_token_independently() {
+        let mut d = device();
+        let mut out = [0xcc; 1];
+        let inactive = RxFrame {
+            token: d.generation,
+            len: 0,
+        };
+        assert_eq!(d.rx_read_at(inactive, 0, &mut out), Err(Error::Invalid));
+        assert_eq!(d.rx_release(inactive), Err(Error::Invalid));
+        d.generation = u32::MAX;
+        d.spi.inject(0, 70, &[0xa5; 60], 0x80);
+        let frame = d.rx_begin().unwrap().unwrap();
+        assert_eq!(frame.token, 0);
+        for forged in [
+            RxFrame { len: 0, ..frame },
+            RxFrame { len: 59, ..frame },
+            RxFrame { len: 61, ..frame },
+            RxFrame { token: 1, ..frame },
+        ] {
+            assert_eq!(d.rx_read_at(forged, 0, &mut out), Err(Error::Invalid));
+            assert_eq!(d.rx_release(forged), Err(Error::Invalid));
+            assert_eq!(out, [0xcc]);
+            assert_eq!(d.rx_begin(), Err(Error::Busy));
+        }
+        d.rx_read_at(frame, 0, &mut out).unwrap();
+        assert_eq!(out, [0xa5]);
+        d.rx_release(frame).unwrap();
+        let inactive = RxFrame { len: 0, ..frame };
+        assert_eq!(d.rx_read_at(inactive, 0, &mut out), Err(Error::Invalid));
+        assert_eq!(d.rx_release(inactive), Err(Error::Invalid));
     }
     #[test]
     fn bad_status_and_length_release_but_corrupt_pointer_requires_reset() {

@@ -1,0 +1,37 @@
+[
+  {
+    "file": "crates/rv2k-net/src/lib.rs",
+    "needle": "self.neighbor\n            .filter",
+    "replacement": "self.neighbor\n            .as_ref()\n            .filter",
+    "exit": 101,
+    "overflow": 452
+  },
+  {
+    "file": "crates/rv2k-net/src/lib.rs",
+    "needle": "self.neighbor.is_some_and",
+    "replacement": "self.neighbor.as_ref().is_some_and",
+    "exit": 101,
+    "overflow": 448
+  },
+  {
+    "file": "crates/rv2k-net/src/lib.rs",
+    "needle": "self.query.is_none_or",
+    "replacement": "self.query.as_ref().is_none_or",
+    "exit": 101,
+    "overflow": 452
+  },
+  {
+    "file": "crates/rv2k-net/src/lib.rs",
+    "needle": "self.query.is_some_and",
+    "replacement": "self.query.as_ref().is_some_and",
+    "exit": 101,
+    "overflow": 452
+  },
+  {
+    "file": "crates/rv2k-net/src/tcp/mod.rs",
+    "needle": "let Some(peer) = self.peer else {\n            return false;\n        };\n        *out = Outbound {\n            peer,",
+    "replacement": "let Some(peer) = self.peer.as_ref() else {\n            return false;\n        };\n        *out = Outbound {\n            peer: *peer,",
+    "exit": 101,
+    "overflow": 452
+  }
+]

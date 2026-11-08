@@ -1,6 +1,6 @@
 # Phase 10: TCP シェル統合（仮想 NIC 検証済み）
 
-Renvo 上の実 RV32EC 命令で TCP 接続から全 4 コマンドを実行し、独立 PCAP 検査が PASS しました。仮想 NIC 版は Flash 15,776 / 16,384 byte、全スタックを含む予約 RAM 1,964 / 2,048 byte です。ENC28J60 版は専有 SPI と MIR 最適化後も Flash が 1,000 byte 超過し、Mac native TCP と実機は未検証です。Phase 10 全体は未完了です。
+Renvo 上の実 RV32EC 命令で TCP 接続から全 4 コマンドを実行し、独立 PCAP 検査が PASS しました。仮想 NIC 版は Flash 15,204 / 16,384 byte、全スタックを含む予約 RAM 1,908 / 2,048 byte です。ENC28J60 版は専有 SPI と MIR 最適化後も Flash が 444 byte 超過し、Mac native TCP と実機は未検証です。Phase 10 全体は未完了です。
 
 ## 実装
 
@@ -17,7 +17,7 @@ Renvo 上の実 RV32EC 命令で TCP 接続から全 4 コマンドを実行し�
 
 実行部は公開 API のみを使います。application 領域の登録は別の firmware adapter が行います。`with_info` は syscall による task-local コピーを callback へ渡し、追加の構造体戻り値を避けます。callback 中に待機・preemption が起きてもコピーは変わりません。従来の `info()` も残します。snapshot probe は task / mem / net の各 callback で yield してコピーが変わらないことを確認します。
 
-入力は最大 64 byte、出力も最大 64 byte の固定行です。出力オブジェクト内に 28 byte の十進変換用領域を再利用し、割り込まれる呼出し経路のスタックを抑えます。u64 全域の表示を保ち、ヒープも第 3 スタックも使いません。
+入力上限は 64 byte、入力の保持状態は 16 byte 以下、出力は最大 64 byte の固定行です。既知名を byte ごとに正確に符号化し、長い語の末尾や内部空白で別のコマンドを実行しません。出力オブジェクト内に 28 byte の十進変換用領域を再利用し、割り込まれる呼出し経路のスタックを抑えます。u64 全域の表示を保ち、ヒープも第 3 スタックも使いません。
 
 入力は CR / LF / CRLF を扱います。超過・不正入力は次の改行まで破棄し、エラーを 1 回返して次の行へ復帰します。受信は 1 byte ずつ取り出し、出力中の未処理入力は kernel の TCP RX buffer に保持します。未完了行は実行せず、新しい接続で入力状態を reset します。
 
@@ -32,7 +32,7 @@ cd ch32v003-rust-os-test
 bash scripts/shell.sh
 ```
 
-固定 nightly / 元の memory.x / 256 byte kernel stack / 既存のサイズ最適化フラグでビルドします。元 ELF の load span と RAM を検査してから、エミュレータ用 ELF を生成します。入力・整形・整数処理を含む workspace 86 tests、clippy、fmt が PASS です。
+固定 nightly / 元の memory.x / 256 byte kernel stack / 既存のサイズ最適化フラグでビルドします。元 ELF の load span と RAM を検査してから、エミュレータ用 ELF を生成します。入力・整形・整数処理を含む workspace 88 tests、clippy、fmt が PASS です。
 
 各 run は次の 5 接続を TCP MSS=24、受信窓=128 で検査します。
 
@@ -48,13 +48,13 @@ bash scripts/shell.sh
 |---|---:|---:|
 |接続 / 入力 byte / コマンド|5 / 138 / 12|5 / 138 / 12|
 |RX / TX frame|103 / 114|103 / 110|
-|T0 / T1 / kernel 高水位 byte|176 / 232 / 120|176 / 216 / 120|
-|強制切替 / 延期 IRQ|12 / 4|0 / 115|
+|T0 / T1 / kernel 高水位 byte|176 / 236 / 120|176 / 208 / 120|
+|強制切替 / 延期 IRQ|11 / 3|0 / 110|
 |NIC 読出し中の 1 tick 注入|0|103|
 
 ストレス試験では全 IRQ が T0 の保護された NIC 読出し中に届き、T1 が待機中なら強制切替は不要です。延期・共有借用の終了・全通信結果を検査します。強制切替自体は通常 run と、非 yield loop の専用 preemption probe（47 回）で確認しています。最大除外時間の計測は `preempt-timing` 専用で、shell の値は未計測です。
 
-共通処理では word 除算の共有、送信 ACK 済み prefix の index 管理、送信結果処理の共有、snapshot byte view、検証範囲計算と stack watermark 走査の重複除去を行いました。TCP / snapshot 通常・IRQ 注入、SPI 途中 IRQ、レジスタ復元欠陥 3 例、syscall 70 trap と負例、preempt profile 障害 9 例、ARP / IPv4 / ICMP が変更後も PASS です。結果は [raw log / summary](logs/shell) と [共通部分の回帰](logs/shell/regression) に保存しています。
+初回シェル統合時の共通処理では word 除算の共有、送信 ACK 済み prefix の index 管理、送信結果処理の共有、snapshot byte view、検証範囲計算と stack watermark 走査の重複除去を行いました。TCP / snapshot 通常・IRQ 注入、SPI 途中 IRQ、レジスタ復元欠陥 3 例、syscall 70 trap と負例、preempt profile 障害 9 例、ARP / IPv4 / ICMP が当時の変更後に PASS でした。結果は [raw log / summary](logs/shell) と [共通部分の回帰](logs/shell/regression) に保存しています。
 
 ## 残る完了条件
 
@@ -66,4 +66,6 @@ RUSTFLAGS='-Z inline-mir=yes -C opt-level=z -C llvm-args=-inline-threshold=25 -C
 
 ENC 構成の収容、Mac native TCP、統合 PR のレビュー / マージが残ります。実機は未保有です。仮想 packet peer の成功を Mac や実機の PASS として扱いません。
 
-現在の最適化構成は固定 nightly の `-Z inline-mir=yes` を含みます。十進変換は保存した 4 limb を除算後に検査し、全 helper call をまたいで非ゼロ集計値を保持しません。RV32E のスタック spill を抑え、T1 の全番兵を検査しています。[絶対期限・最適化後の共通回帰](logs/deadlines) も参照してください。LLVM の展開しきい値も 25 とし、TCP 終了・ハンドル検証等を共有します。ENC の最新失敗証跡は [こちら](logs/flash-fit/shell-enc-link-failure.txt) です。[容量削減後の回帰](flash-fit.md) も参照してください。
+現在の最適化構成は固定 nightly の `-Z inline-mir=yes` を含みます。十進変換は保存した 4 limb を除算後に検査し、全 helper call をまたいで非ゼロ集計値を保持しません。RV32E のスタック spill を抑え、T1 の全番兵を検査しています。[絶対期限・最適化後の共通回帰](logs/deadlines) も参照してください。LLVM の展開しきい値も 25 とし、TCP 終了・ハンドル検証等を共有します。ENC の最新失敗証跡は [こちら](logs/shell-compact/shell-enc-link-failure.txt) です。[容量削減後の回帰](flash-fit.md) も参照してください。
+
+入力・表示・RX 状態の削減と最新回帰は [シェル省メモリ化](shell-compact.md) を参照してください。

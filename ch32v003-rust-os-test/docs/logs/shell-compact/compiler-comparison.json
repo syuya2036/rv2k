@@ -1,0 +1,22 @@
+[
+  {
+    "flags": "-C llvm-args=-inline-threshold=20 -C llvm-args=-riscv-enable-global-merge=false",
+    "exit": 101,
+    "overflow": 508
+  },
+  {
+    "flags": "-C llvm-args=-inline-threshold=30 -C llvm-args=-riscv-enable-global-merge=false",
+    "exit": 101,
+    "overflow": 572
+  },
+  {
+    "flags": "-C llvm-args=-inline-threshold=25 -C llvm-args=-riscv-enable-global-merge=true",
+    "exit": 101,
+    "overflow": 556
+  },
+  {
+    "flags": "-C llvm-args=-inline-threshold=25 -C llvm-args=-riscv-enable-global-merge=false -Z no-jump-tables=yes",
+    "exit": 101,
+    "overflow": null
+  }
+]

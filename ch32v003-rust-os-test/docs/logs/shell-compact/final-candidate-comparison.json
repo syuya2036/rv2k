@@ -1,0 +1,35 @@
+[
+  {
+    "file": "crates/rv2k-net/src/lib.rs",
+    "needle": "#[derive(Default)]\npub struct Stats {",
+    "replacement": "#[derive(Default)]\n#[repr(C, align(4))]\npub struct Stats {",
+    "exit": 101,
+    "overflow": 508
+  },
+  {
+    "file": "crates/rv2k-drivers/src/enc28j60.rs",
+    "needle": "    #[cfg_attr(feature = \"compact\", inline(never))]\n    fn command",
+    "replacement": "    fn command",
+    "exit": 101,
+    "overflow": 528
+  },
+  {
+    "file": "crates/rv2k-drivers/src/enc28j60.rs",
+    "needle": "    #[cfg_attr(feature = \"compact\", inline(never))]\n    fn command",
+    "replacement": "    #[inline(always)]\n    fn command",
+    "exit": 101,
+    "overflow": 528
+  },
+  {
+    "file": "crates/rv2k-net/src/tcp/mod.rs",
+    "needle": "self.peer\n            .is_some_and(|p|",
+    "replacement": "self.peer\n            .as_ref()\n            .is_some_and(|p|",
+    "exit": 101,
+    "overflow": 452
+  },
+  {
+    "flags": "-C jump-tables=no",
+    "exit": 101,
+    "overflow": 520
+  }
+]

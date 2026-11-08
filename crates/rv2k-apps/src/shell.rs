@@ -15,18 +15,23 @@ pub enum Command {
     InvalidInput,
 }
 
-#[derive(Clone, Copy, PartialEq)]
-enum Rejection {
-    None,
-    TooLong,
-    InvalidInput,
-}
+// Values above the maximum length encode discard/CRLF state, never indices.
+const TOO_LONG: u8 = CAPACITY as u8 + 1;
+const INVALID: u8 = TOO_LONG + 1;
+const SKIP_LF: u8 = INVALID + 1;
+const PS: u64 = u64::from_be_bytes(*b"\0\0\0\0\0\0ps");
+const MEM: u64 = u64::from_be_bytes(*b"\0\0\0\0\0mem");
+const UPTIME: u64 = u64::from_be_bytes(*b"\0\0uptime");
+const NETSTAT: u64 = u64::from_be_bytes(*b"\0netstat");
+const HELP: u64 = u64::from_be_bytes(*b"\0\0\0\0help");
+const QUIT: u64 = u64::from_be_bytes(*b"\0\0\0\0quit");
+const _: () = assert!(CAPACITY <= 252);
+const _: () = assert!((PS | MEM | UPTIME | NETSTAT | HELP | QUIT) >> 56 == 0);
 
 pub struct Line {
-    bytes: [u8; CAPACITY],
+    word: u64,
     used: u8,
-    rejection: Rejection,
-    skip_lf: bool,
+    trailing: bool,
 }
 impl Default for Line {
     fn default() -> Self {
@@ -36,59 +41,67 @@ impl Default for Line {
 impl Line {
     pub const fn new() -> Self {
         Self {
-            bytes: [0; CAPACITY],
+            word: 0,
             used: 0,
-            rejection: Rejection::None,
-            skip_lf: false,
+            trailing: false,
         }
     }
     /// Discard a partial line and CRLF state when starting another connection.
     pub fn reset(&mut self) {
-        self.used = 0;
-        self.rejection = Rejection::None;
-        self.skip_lf = false;
+        *self = Self::new();
     }
     /// Return one command at CR or LF; suppress LF immediately following CR.
     /// After an error, discard the entire suffix through the next terminator.
+    #[inline(never)]
     pub fn push(&mut self, byte: u8) -> Option<Command> {
-        if self.skip_lf {
-            self.skip_lf = false;
+        if self.used == SKIP_LF {
+            self.used = 0;
             if byte == b'\n' {
                 return None;
             }
         }
         if matches!(byte, b'\r' | b'\n') {
-            let command = match self.rejection {
-                Rejection::TooLong => Command::TooLong,
-                Rejection::InvalidInput => Command::InvalidInput,
-                Rejection::None => {
-                    // Only SP/HTAB can be whitespace: other controls never enter bytes.
-                    match self.bytes[..self.used as usize].trim_ascii() {
-                        b"ps" => Command::Ps,
-                        b"mem" => Command::Mem,
-                        b"uptime" => Command::Uptime,
-                        b"netstat" => Command::Netstat,
-                        b"help" => Command::Help,
-                        b"quit" => Command::Quit,
-                        b"" => Command::Empty,
-                        _ => Command::Unknown,
-                    }
-                }
+            let command = match self.used {
+                TOO_LONG => Command::TooLong,
+                INVALID => Command::InvalidInput,
+                _ => match self.word {
+                    0 => Command::Empty,
+                    PS => Command::Ps,
+                    MEM => Command::Mem,
+                    UPTIME => Command::Uptime,
+                    NETSTAT => Command::Netstat,
+                    HELP => Command::Help,
+                    QUIT => Command::Quit,
+                    _ => Command::Unknown,
+                },
             };
             self.reset();
-            self.skip_lf = byte == b'\r';
+            if byte == b'\r' {
+                self.used = SKIP_LF;
+            }
             return Some(command);
         }
-        if self.rejection == Rejection::None {
-            self.rejection = if self.used as usize == CAPACITY {
-                Rejection::TooLong
-            } else if !matches!(byte, b'\t' | 0x20..=0x7e) {
-                Rejection::InvalidInput
+        if self.used < CAPACITY as u8 {
+            self.used += 1;
+            if !matches!(byte, b'\t' | 0x20..=0x7e) {
+                self.used = INVALID;
+            } else if matches!(byte, b' ' | b'\t') {
+                if self.word != 0 {
+                    self.trailing = true;
+                }
             } else {
-                self.bytes[self.used as usize] = byte;
-                self.used += 1;
-                Rejection::None
-            };
+                // Every retained byte is nonzero ASCII. A word of 8+ bytes
+                // keeps eight nonzero bytes, so it cannot alias a valid name
+                // (all names have at most seven bytes). Internal whitespace
+                // also invalidates the name, rather than joining tokens.
+                self.word = if self.trailing {
+                    u64::MAX
+                } else {
+                    (self.word << 8) | byte as u64
+                };
+            }
+        } else if self.used == CAPACITY as u8 {
+            self.used = TOO_LONG;
         }
         None
     }
@@ -196,5 +209,67 @@ mod tests {
         let mut commands = vec![];
         collect(&mut line, b"ps\n", &mut commands);
         assert_eq!(commands, [Command::Ps]);
+    }
+    #[test]
+    fn packed_names_match_a_buffered_reference_without_suffix_aliases() {
+        fn reference(input: &[u8]) -> Command {
+            let mut buffered = Vec::new();
+            for &byte in input {
+                if buffered.len() == CAPACITY {
+                    return Command::TooLong;
+                }
+                if !matches!(byte, b'\t' | 0x20..=0x7e) {
+                    return Command::InvalidInput;
+                }
+                buffered.push(byte);
+            }
+            match buffered.trim_ascii() {
+                b"ps" => Command::Ps,
+                b"mem" => Command::Mem,
+                b"uptime" => Command::Uptime,
+                b"netstat" => Command::Netstat,
+                b"help" => Command::Help,
+                b"quit" => Command::Quit,
+                b"" => Command::Empty,
+                _ => Command::Unknown,
+            }
+        }
+        let check = |mut input: Vec<u8>| {
+            let expected = reference(&input);
+            input.extend_from_slice(b"\r\n");
+            for chunk in [1, 3, input.len()] {
+                assert_eq!(parse(&input, chunk), [expected], "{input:?}");
+            }
+        };
+        for name in [
+            b"ps".as_slice(),
+            b"mem",
+            b"uptime",
+            b"netstat",
+            b"help",
+            b"quit",
+        ] {
+            for position in 0..=name.len() {
+                for byte in 0..=u8::MAX {
+                    if matches!(byte, b'\r' | b'\n') {
+                        continue;
+                    }
+                    let mut input = name.to_vec();
+                    input.insert(position, byte);
+                    check(input);
+                }
+            }
+            for count in 0..=CAPACITY + 1 {
+                for prefix in *b"x!\t " {
+                    let mut input = vec![prefix; count];
+                    input.extend_from_slice(name);
+                    check(input);
+                }
+                let mut input = name.to_vec();
+                input.extend_from_slice(&vec![b'\t'; count]);
+                check(input);
+            }
+        }
+        assert!(core::mem::size_of::<Line>() <= 16);
     }
 }

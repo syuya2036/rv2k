@@ -30,16 +30,18 @@ cargo +stable clippy -p rv2k-apps --all-targets -- -D warnings
 
 ## TCP シェルの行入力（Phase 10）
 
-`shell::Line` は 64 byte 固定配列を持ち、`push(byte)` が改行ごとに `Command` を返します。`ps` / `mem` / `uptime` / `netstat` / `help` / `quit` を大文字小文字を区別して認識し、前後の SP / HTAB を無視します。引数や空白のある別コマンドは Unknown、空行は Empty です。
+`shell::Line` は最大 64 byte の行を逐次処理し、`push(byte)` が改行ごとに `Command` を返します。入力状態は 16 byte 以下で、既知コマンドの ASCII byte を u64 に符号化します。既知名は最大 7 byte、8 byte 以上の語は非ゼロ ASCII を 8 byte 保持するため、末尾が既知名と一致しても別名を実行しません。ハッシュによる近似照合は使いません。`ps` / `mem` / `uptime` / `netstat` / `help` / `quit` を大文字小文字を区別して認識し、前後の SP / HTAB を無視します。引数や空白のある別コマンドは Unknown、空行は Empty です。
 
 CR、LF、CRLF に対応し、分割された CRLF を 1 改行として扱います。制限は前後の空白を含み、改行を除いて 64 byte です。超過または不正な byte の後は、次の改行まで全て捨ててエラーを 1 回返し、その次の行から復帰します。許可する入力は printable ASCII と HTAB で、backspace / terminal escape / 非 ASCII / Telnet 制御は扱いません。
 
 呼び出し側は新しい TCP 接続で `reset()` し、EOF の未完了行は実行しません。socket から複数行が一度に届いた場合も、全 byte を順番に push することで全コマンドを処理できます。このモジュールは行入力とコマンド識別だけを実装しており、公開 snapshot API による状態取得・送信や TCP シェル全体の完了を意味しません。
 
-試験は全チャンク幅 / 全 2 分割点、改行種別、64 / 65 byte 境界、5,000 byte の超過行からの復帰、全 byte 値の分類、接続変更時の reset を含みます。上記の test / clippy コマンドで HTTP と一緒に実行できます。
+試験は全チャンク幅 / 全 2 分割点、改行種別、64 / 65 byte 境界、5,000 byte の超過行からの復帰、全 byte 値の分類、接続変更時の reset を含みます。全ての既知名への byte 挿入、空白・長い prefix / suffix と buffered reference の比較も行います。上記の test / clippy コマンドで HTTP と一緒に実行できます。
 
 ## OS snapshot の表示
 
 `monitor::Line` は公開 TaskInfo / MemInfo / NetInfo と uptime を、最大 64 byte の行へ整形します。task は 1 行、memory は 3 行、network は 4 行に分けます。IPv4 と整数は十進表記で、uptime は u64 全域、終了コードは i16 全域に対応します。u64 の変換は 16 bit limb ごとの u32 除算で行い、core::fmt やヒープは使いません。
 
 最大値の snapshot、全状態名、負の終了コード、IPv4 の先頭ゼロ除去、u64 の境界値と 1,000 個の値を標準 formatter と照合します。socket 送信、接続中の取得結果、MCU スタック高水位は firmware の統合検証項目です。
+
+固定 snapshot の表示は NUL 区切りの私有パターン表と共通の読み出し処理を使い、task / TCP 状態名、符号付き値、RAM 合計も同じ経路で出力します。公開 API や表示形式は変えません。
