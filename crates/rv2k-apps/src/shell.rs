@@ -260,7 +260,7 @@ mod tests {
                 }
             }
             for count in 0..=CAPACITY + 1 {
-                for prefix in [b'x', b'!', b'\t', b' '] {
+                for prefix in *b"x!\t " {
                     let mut input = vec![prefix; count];
                     input.extend_from_slice(name);
                     check(input);
