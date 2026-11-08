@@ -1,6 +1,6 @@
 # rv2k 2.0 設計書
 
-状態: Phase 4まで検証済み。Phase 5はsoftware driver/model/RV32ECがPASS、J4M6実機未検証のためPARTIAL。Phase 6はvirtual NICとARP/IPv4/ICMPのhost/RV32ECフレーム注入がPASS、Mac実ping未検証のためPARTIAL。Phase 7以降は設計案。Phase 0/1の実測を土台に、後続の契約と検証条件を定める。設計上の予算やAPIを実装済みと解釈しない。リリース名は **rv2k 2.0** に統一する。
+状態: Phase 4まで検証済み。Phase 5はsoftware driver/model/RV32ECがPASS、J4M6実機未検証のためPARTIAL。Phase 6はvirtual NICとARP/IPv4/ICMPのhost/RV32ECフレーム注入がPASS、Mac実ping未検証のためPARTIAL。Phase 7のTCP/Socket基礎はhost試験中（wire/guest未接続）。Phase 8以降は設計案。Phase 0/1の実測を土台に、後続の契約と検証条件を定める。設計上の予算やAPIを実装済みと解釈しない。リリース名は **rv2k 2.0** に統一する。
 
 ## 1. 目的と決定事項
 
@@ -22,7 +22,7 @@ Phase 0の [協調検証](../ch32v003-rust-os-test/docs/cooperative.md) は独�
 
 Phase 0実測値: 静的RAM592バイト、起動スタック予約512バイト、Flash text1553バイト。以下の1792バイト予算は、テスト用状態の縮小、起動スタックの変更、ドライバ・TCPの追加を伴う将来設計。現在の領域に単純加算して収まるという意味ではない。
 
-実機ELFとRenvo用LMA補完ELFの分離を継続する。Renvoの仮想NIC、Macへのネットワーク接続、ENC28J60のSPIモデルは、今回まだ作成・実行していない。
+実機ELFとRenvo用LMA補完ELFの分離を継続する。Phase 6でRenvoの仮想NICとフレーム注入を追加した。Macへのネットワーク接続は未検証。ENC28J60のSPIモデルはPhase 5のホスト試験で使い、Renvoの物理ENCとしては接続していない。
 
 ## 3. ハードウェア成立性を先に検証する
 
@@ -76,7 +76,7 @@ host/
   net-harness/    # PCAP、フレーム注入、損失・遅延・重複、Mac接続
 ```
 
-api/kernelはPhase 1、archはPhase 2、driversはPhase 5で導入済み。残りは予定パス。アプリはapiだけを参照し、kernel内部TCBやsocket構造体を公開しない。netはdriverの具体型を知らず、静的ディスパッチのNetworkDeviceを使う。trait object、ヒープ、動的なタスク／socket生成を導入しない。unsafeはarch、MMIO、静的領域の限定した所有権境界へ集約する。
+api/kernelはPhase 1、archはPhase 2、driversはPhase 5、netとhost/net-harnessはPhase 6で導入済み。firmwareは現在ch32v003-rust-os-testに配置する。アプリはapiだけを参照し、kernel内部TCBやsocket構造体を公開しない。netはdriverの具体型を知らず、静的ディスパッチのNetworkDeviceを使う。firmwareにtrait object、ヒープ、動的なタスク／socket生成を導入しない。unsafeはarch、MMIO、静的領域の限定した所有権境界へ集約する。
 
 ## 5. タスク管理とスケジューラ
 

@@ -1,0 +1,51 @@
+{
+  "scope": "Phase 7 foundation; TCP is not wired into the guest",
+  "host_test_count": 50,
+  "tcp_and_socket_unit_test_count": 13,
+  "format": "PASS",
+  "clippy": "PASS",
+  "phase6_regression": {
+    "instructions": 5059017,
+    "frames_in": 21,
+    "frames_out": 12,
+    "stats_rx_tx_drop_bad_checksum_fragment_io": [
+      21,
+      12,
+      9,
+      2,
+      1,
+      0
+    ],
+    "stack_used_bytes_tasks_kernel": [
+      204,
+      120,
+      204
+    ],
+    "static_ram_bytes": 1024,
+    "kernel_stack_reserved_bytes": 256,
+    "syscalls": 49,
+    "timer_irqs": 20,
+    "mac_live_ping": "UNVERIFIED",
+    "physical_enc28j60": "UNVERIFIED"
+  },
+  "phase6_virtual_budget": {
+    "flash_bytes": 11636,
+    "flash_limit": 16384,
+    "static_ram_bytes": 1024,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 1280,
+    "ram_limit": 2048
+  },
+  "phase6_enc_link_budget": {
+    "flash_bytes": 16108,
+    "flash_limit": 16384,
+    "static_ram_bytes": 1072,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 1328,
+    "ram_limit": 2048
+  },
+  "tcp_wire": "UNIMPLEMENTED",
+  "tcp_guest_syscalls": "UNIMPLEMENTED",
+  "tcp_memory_and_stack": "UNVERIFIED",
+  "mac_tcp": "UNVERIFIED"
+}

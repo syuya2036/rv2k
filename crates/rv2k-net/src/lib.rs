@@ -1,5 +1,6 @@
 #![no_std]
 pub mod checksum;
+pub mod tcp;
 use checksum::{checksum, Checksum};
 use rv2k_api::syscall::Error;
 use rv2k_drivers::network::{NetworkDevice, RxFrame};

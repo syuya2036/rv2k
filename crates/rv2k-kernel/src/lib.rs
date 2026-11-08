@@ -4,6 +4,7 @@ pub mod diagnostics;
 pub mod ipc;
 pub mod memory;
 pub mod services;
+pub mod socket;
 pub mod syscall;
 
 use rv2k_api::{event, syscall::Error, TaskId, TaskInfo, TaskState};
