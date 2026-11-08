@@ -1,0 +1,4 @@
+[package]
+name = "rv2k-apps"
+version = "0.1.0"
+edition = "2021"

@@ -7,6 +7,10 @@ name = "rv2k-api"
 version = "0.1.0"
 
 [[package]]
+name = "rv2k-apps"
+version = "0.1.0"
+
+[[package]]
 name = "rv2k-arch"
 version = "0.1.0"
 
