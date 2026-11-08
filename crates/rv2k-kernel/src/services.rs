@@ -11,6 +11,41 @@ use rv2k_api::{
     TaskId,
 };
 
+pub trait ConsoleWrite {
+    fn write_user(
+        &mut self,
+        memory: &mut impl UserMemory,
+        address: usize,
+        len: usize,
+    ) -> Result<usize, Error>;
+}
+pub struct DeviceServices<'a, C> {
+    pub console: &'a mut C,
+    pub info: Option<&'a rv2k_api::mem::MemInfo>,
+}
+pub fn dispatch_with_devices(
+    scheduler: &mut Scheduler,
+    mailbox: &mut Mailbox,
+    memory: &mut impl UserMemory,
+    number: usize,
+    args: [usize; 3],
+    devices: DeviceServices<'_, impl ConsoleWrite>,
+) -> Outcome {
+    if number == Number::Write as usize {
+        if scheduler.current().is_none() {
+            return Outcome::Complete(Error::Invalid.code());
+        }
+        if args[0] != 1 {
+            return Outcome::Complete(Error::BadFd.code());
+        }
+        return Outcome::Complete(match devices.console.write_user(memory, args[1], args[2]) {
+            Ok(count) => count as isize,
+            Err(error) => error.code(),
+        });
+    }
+    dispatch_with_info(scheduler, mailbox, memory, number, args, devices.info)
+}
+
 pub fn dispatch(
     scheduler: &mut Scheduler,
     mailbox: &mut Mailbox,
@@ -232,6 +267,53 @@ mod diagnostic_tests {
         ] {
             assert!(
                 matches!(dispatch_with_info(&mut s,&mut m,&mut output,13,args,Some(&info)),Outcome::Complete(v) if v==expected)
+            );
+        }
+    }
+}
+
+#[cfg(test)]
+mod console_tests {
+    use super::*;
+    struct Input;
+    impl UserMemory for Input {
+        fn copy_out(&mut self, _: usize, _: &[u8], _: usize) -> Result<(), Error> {
+            Err(Error::Fault)
+        }
+        fn copy_in(&mut self, address: usize, out: &mut [u8]) -> Result<(), Error> {
+            if address != 0x1000 {
+                return Err(Error::Fault);
+            }
+            out.fill(0x5a);
+            Ok(())
+        }
+    }
+    struct Console;
+    impl ConsoleWrite for Console {
+        fn write_user(
+            &mut self,
+            m: &mut impl UserMemory,
+            address: usize,
+            len: usize,
+        ) -> Result<usize, Error> {
+            let mut out = [0; 32];
+            let count = len.min(out.len());
+            m.copy_in(address, &mut out[..count])?;
+            Ok(count)
+        }
+    }
+    #[test]
+    fn console_fd_copy_error_and_partial_acceptance() {
+        let mut s = Scheduler::new();
+        s.initialize([0x100, 0x200]);
+        s.select_next();
+        let mut mailbox = Mailbox::new();
+        let mut memory = Input;
+        let mut console = Console;
+        for (args, expected) in [([0, 0x1000, 8], -3), ([1, 0, 8], -8), ([1, 0x1000, 64], 32)] {
+            assert!(
+                matches!(dispatch_with_devices(&mut s,&mut mailbox,&mut memory,6,args,
+                DeviceServices{console:&mut console,info:None}),Outcome::Complete(value)if value==expected)
             );
         }
     }

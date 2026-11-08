@@ -1,0 +1,196 @@
+{
+  "coop": {
+    "instructions": 6112,
+    "counters": [
+      8,
+      8
+    ],
+    "switches": 32,
+    "stack_bytes_each": 256,
+    "stack_watermark_used_bytes": [
+      172,
+      172
+    ],
+    "local_addresses": [
+      "0x20000120",
+      "0x20000220"
+    ],
+    "static_ram_bytes": 592,
+    "boot_stack_reserved_bytes": 512,
+    "status": "0x600d",
+    "uart": "ABABABABABABABAB\nCOOP OK\n"
+  },
+  "scheduler": {
+    "instructions": 6836,
+    "counters": [
+      8,
+      3
+    ],
+    "exit_codes": [
+      0,
+      -7
+    ],
+    "selections": 23,
+    "task_stack_used_bytes": [
+      108,
+      108
+    ],
+    "static_ram_bytes": 640,
+    "kernel_stack_reserved_bytes": 512
+  },
+  "syscall": {
+    "instructions": 26401,
+    "traps": 70,
+    "counters": [
+      8,
+      3
+    ],
+    "call_mask": "0x3ffff",
+    "stack_used_bytes_tasks_kernel": [
+      236,
+      236,
+      148
+    ],
+    "static_ram_bytes": 640,
+    "kernel_stack_reserved_bytes": 256
+  },
+  "syscall-negative": [
+    {
+      "case": "syscall-bad-sp",
+      "status": 22,
+      "instructions": 2280
+    },
+    {
+      "case": "syscall-kernel-fault",
+      "status": 26,
+      "instructions": 2172
+    },
+    {
+      "case": "syscall-missing-t1",
+      "status": 55,
+      "instructions": 10418
+    }
+  ],
+  "services": {
+    "instructions": 1689544,
+    "syscalls": 29,
+    "timer_irqs": 6,
+    "idle_polls": 3901,
+    "uptime_ticks": 7,
+    "wait_results": 127,
+    "stack_used_bytes_tasks_kernel": [
+      112,
+      112,
+      148
+    ],
+    "static_ram_bytes": 736,
+    "kernel_stack_reserved_bytes": 256
+  },
+  "diagnostics": {
+    "instructions": 1724932,
+    "syscalls": 30,
+    "timer_irqs": 6,
+    "idle_polls": 2615,
+    "uptime_ticks": 7,
+    "wait_results": 127,
+    "stack_used_bytes_tasks_kernel": [
+      184,
+      184,
+      204
+    ],
+    "static_ram_bytes": 768,
+    "kernel_stack_reserved_bytes": 256
+  },
+  "diagnostics-negative": [
+    {
+      "case": "fault-irq-canary",
+      "reason": 2,
+      "task": 0,
+      "pc": 158,
+      "cause": 2147483660,
+      "tval": 1,
+      "sp": 536871424,
+      "instructions": 243184
+    },
+    {
+      "case": "fault-no-debugger",
+      "reason": 1,
+      "task": 0,
+      "pc": 0,
+      "cause": 0,
+      "tval": 0,
+      "sp": 536871420,
+      "instructions": 100000
+    },
+    {
+      "case": "fault-canary",
+      "reason": 2,
+      "task": 0,
+      "pc": 1068,
+      "cause": 11,
+      "tval": 1,
+      "sp": 536871320,
+      "instructions": 6930
+    },
+    {
+      "case": "fault-kernel-canary",
+      "reason": 2,
+      "task": 0,
+      "pc": 1068,
+      "cause": 11,
+      "tval": 4,
+      "sp": 536871320,
+      "instructions": 6930
+    },
+    {
+      "case": "fault-panic",
+      "reason": 1,
+      "task": 0,
+      "pc": 0,
+      "cause": 0,
+      "tval": 0,
+      "sp": 536871420,
+      "instructions": 6750
+    },
+    {
+      "case": "fault-illegal",
+      "reason": 4,
+      "task": 0,
+      "pc": 1254,
+      "cause": 2,
+      "tval": 4294967295,
+      "sp": 536871424,
+      "instructions": 7287
+    },
+    {
+      "case": "fault-kernel-illegal",
+      "reason": 5,
+      "task": 4294967295,
+      "pc": 3596,
+      "cause": 2,
+      "tval": 4294967295,
+      "sp": 536872832,
+      "instructions": 3450
+    },
+    {
+      "case": "fault-sp",
+      "reason": 3,
+      "task": 0,
+      "pc": 1256,
+      "cause": 11,
+      "tval": 0,
+      "sp": 0,
+      "instructions": 6934
+    },
+    {
+      "case": "fault-uart-stuck",
+      "reason": 1,
+      "task": 0,
+      "pc": 0,
+      "cause": 0,
+      "tval": 0,
+      "sp": 536871420,
+      "instructions": 1005922
+    }
+  ]
+}

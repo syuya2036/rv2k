@@ -8,6 +8,7 @@ version = "0.1.0"
 dependencies = [
  "rv2k-api",
  "rv2k-arch",
+ "rv2k-drivers",
  "rv2k-kernel",
 ]
 
@@ -18,6 +19,13 @@ version = "0.1.0"
 [[package]]
 name = "rv2k-arch"
 version = "0.1.0"
+
+[[package]]
+name = "rv2k-drivers"
+version = "0.1.0"
+dependencies = [
+ "rv2k-api",
+]
 
 [[package]]
 name = "rv2k-kernel"

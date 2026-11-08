@@ -1,0 +1,79 @@
+   Compiling rv2k-drivers v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-drivers)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.19s
+     Running unittests src/lib.rs (target/debug/deps/rv2k_api-8a25e7a2c96836ec)
+
+running 1 test
+test syscall::tests::abi_numbers_and_errors ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/rv2k_arch-5fc40fc49e88b1c8)
+
+running 3 tests
+test clock::tests::wrap_remainder_and_multiple_ticks_while_irq_masked ... ok
+test stack::tests::high_water_and_nonleading_guard_damage ... ok
+test tests::frame_layout_pc_and_bad_stack ... ok
+
+test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/rv2k_drivers-3db2630f967f53db)
+
+running 12 tests
+test board::tests::aliases_have_one_owner_and_no_reserved_gpio_is_exposed ... ok
+test board::tests::configure_latches_before_modes_preserves_swio_and_sets_tx_only_remap2 ... ok
+test enc28j60::tests::absent_and_slow_spi_unsafe_revisions_are_rejected ... ok
+test enc28j60::tests::bad_status_and_length_release_but_corrupt_pointer_requires_reset ... ok
+test spi::tests::mode_zero_msb_first_and_transaction_ownership ... ok
+test enc28j60::tests::reset_banks_dummy_mii_mac_mapping_and_link ... ok
+test enc28j60::tests::rx_stream_wrap_reread_release_and_stale_handles ... ok
+test enc28j60::tests::transport_failure_deasserts_and_poisoned_state_recovers_by_reset ... ok
+test uart::copy_tests::failed_user_copy_never_publishes_bytes ... ok
+test enc28j60::tests::tx_partial_busy_abort_error_and_wrapping_deadline ... ok
+test uart::tests::partial_write_backpressure_wrap_bounded_poll_and_retry ... ok
+test enc28j60::tests::full_mtu_streams_without_an_mcu_frame_buffer ... ok
+
+test result: ok. 12 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+     Running unittests src/lib.rs (target/debug/deps/rv2k_kernel-56e69f6494fcbf92)
+
+running 14 tests
+test ipc::tests::full_slot_faults_wakeup_capacity_retry_and_exit_cleanup ... ok
+test diagnostics::tests::uart_wait_covers_a_character_and_still_terminates ... ok
+test memory::tests::pointer_permissions_boundaries_and_overflow ... ok
+test services::diagnostic_tests::snapshot_serialization_version_size_and_faults ... ok
+test services::console_tests::console_fd_copy_error_and_partial_acceptance ... ok
+test services::tests::syscall_timer_event_and_message_routes ... ok
+test syscall::tests::every_number_and_invalid_snapshot ... ok
+test tests::all_blocked_idle_wake_and_exit ... ok
+test tests::round_robin_exit_and_only_ready ... ok
+test wait_tests::event_priority_sticky_bits_infinite_wait_and_exit_cancel ... ok
+test wait_tests::finite_timeout_once_and_late_event_is_preserved ... ok
+test wait_tests::notification_before_during_and_after_block ... ok
+test wait_tests::resource_wait_after_peer_exit_is_closed_but_ready_data_wins ... ok
+test wait_tests::tick_wrap_sleep_zero_and_timeout_limits ... ok
+
+test result: ok. 14 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests rv2k_api
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests rv2k_arch
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests rv2k_drivers
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+
+   Doc-tests rv2k_kernel
+
+running 0 tests
+
+test result: ok. 0 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
