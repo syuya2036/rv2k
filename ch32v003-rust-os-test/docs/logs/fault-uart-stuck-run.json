@@ -2,8 +2,8 @@
   "target": "ch32v003",
   "reason": "Halted",
   "stats": {
-    "instructions": 22101,
-    "time": 22101,
+    "instructions": 1005922,
+    "time": 1005922,
     "events": 0
   },
   "cpu": {
@@ -17,12 +17,12 @@
       },
       {
         "name": "x1",
-        "value": 0,
+        "value": 99,
         "bits": 32
       },
       {
         "name": "x2",
-        "value": 536872888,
+        "value": 536872884,
         "bits": 32
       },
       {
@@ -47,12 +47,12 @@
       },
       {
         "name": "x7",
-        "value": 0,
+        "value": 4097,
         "bits": 32
       },
       {
         "name": "x8",
-        "value": 0,
+        "value": 536871420,
         "bits": 32
       },
       {

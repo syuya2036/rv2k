@@ -3,7 +3,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 mkdir -p docs/logs
 # Keep the baseline and timer binaries independent of this experiment.
-RUSTFLAGS='-C link-arg=--defsym=_kernel_stack_size=256 -C link-arg=-Tmemory.x' cargo build --locked --release --features diagnostics --target-dir target/diagnostics
+RUSTFLAGS='-C link-arg=--defsym=_kernel_stack_size=256 -C link-arg=-Tmemory.x' cargo build --locked --release --features diagnostics,emulator-stop --target-dir target/diagnostics
 ELF=target/diagnostics/riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test
 BIN="$(rustc --print sysroot)/lib/rustlib/$(rustc -vV | sed -n 's/^host: //p')/bin"
 "$BIN/llvm-nm" -S "$ELF" > docs/logs/diagnostics-symbols.txt

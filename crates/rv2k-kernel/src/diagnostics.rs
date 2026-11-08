@@ -32,3 +32,35 @@ impl FaultInfo {
     }
 }
 const _: () = assert!(core::mem::size_of::<FaultInfo>() == 24);
+
+/// At BRR=208 a 10-bit UART character takes 2080 peripheral clocks. Each
+/// volatile ready poll executes at least one CPU instruction; 4096 polls cover
+/// a full character with the configured equal 24MHz CPU/peripheral clocks.
+pub fn uart_ready(mut ready: impl FnMut() -> bool) -> bool {
+    for _ in 0..4096 {
+        if ready() {
+            return true;
+        }
+    }
+    false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn uart_wait_covers_a_character_and_still_terminates() {
+        let mut polls = 0;
+        assert!(uart_ready(|| {
+            polls += 1;
+            polls > 2080
+        }));
+        assert_eq!(polls, 2081);
+        polls = 0;
+        assert!(!uart_ready(|| {
+            polls += 1;
+            false
+        }));
+        assert_eq!(polls, 4096);
+    }
+}

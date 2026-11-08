@@ -1,5 +1,5 @@
 {
-  "instructions": 1724937,
+  "instructions": 1724931,
   "syscalls": 30,
   "timer_irqs": 6,
   "idle_polls": 2615,

@@ -23,8 +23,10 @@ TaskInfoと同様、versionと固定長を持ち、カーネル内でformatし�
 タスク例外はトラップフレーム、kernel内例外はCSRとasmで保存した元kernel spから取得する。
 panicはreasonを記録し、PC/cause/tvalは0（panic発生箇所の正確なPCとは呼ばない）。
 障害時はMIEを禁止し、kernel stackを巻き戻してから診断記録とUARTの短いhex出力を行う。
-UARTは1byteごと最大64回のready検査で打ち切り、応答不能でも無限待機しない。
-Renvoでは最後のebreakを期待停止として扱う。実機は停止ループへ進む。
+UARTは1byteごと最大4096回のvolatile ready検査で打ち切る。
+BRR=208・CPU/peripheral同速の設定で1文字2080 clock以上を待てる下限を確保し、応答不能でも無限待機しない。
+`emulator-stop`を明示した場合だけebreakで期待停止する。既定の実機向け障害経路は例外を再発生させず停止ループへ進む。
+タイマーからのguard検査も一時フレームを渡し、元のPC/cause/spを保持する。
 
 ## 不正命令をゲストへ渡すRenvoパッチ
 
@@ -56,16 +58,17 @@ python3 scripts/diagnostics-negative.py
 python3 scripts/budget-negative.py
 ```
 
-[実測](logs/diagnostics-summary.json): 1724937命令、30 syscall、6 timer IRQ。
+[実測](logs/diagnostics-summary.json): 1724931命令、30 syscall、6 timer IRQ。
 公開mem APIと64byte IPC/空メッセージ/4byte応答、全待機・復帰を同じビルドで実行した。
 今回実行したcall chainのwatermarkはタスク各184/256byte、kernel204/256byte。
 [元ELFの容量](logs/diagnostics-budget.json)はFlash8200/16384byte、静的RAM768byte＋kernel256byte＝1024/2048byte。
 将来のdriver/TCP追加後の上限や未実行のcall chainを保証する数値ではなく、追加ごとに再測定する。
 
-[7種類の障害注入](logs/diagnostics-negative-summary.json)で、タスクguardの第3語、kernel guardの第3語、
-panic、タスクの不正命令、kernel内不正命令、sp=0、UART応答不能を確認した。
+[9種類の障害注入](logs/diagnostics-negative-summary.json)で、タスクguardの第3語、kernel guardの第3語、
+panic、タスクの不正命令、kernel内不正命令、sp=0、UART応答不能、ecall前のIRQでのguard検出、デバッガなし停止ループを確認した。
 sp=0検出後にタスクスタックへstoreがないこともbus traceで検査する。
-UART不能はvolatileなテスト状態を読み、ready待ち上限を実行したうえで22101命令以内に停止した。
+UART不能はvolatileなテスト状態を読み、4096回の待ち上限を実行したうえで1005922命令で停止した。
+デバッガなし構成は100000命令の観測期間でFAULT_INFOを一度だけ記録し、元のpanic記録を保持した。
 [リンク境界試験](logs/budget-negative-summary.json)と[Phase 0〜3回帰](logs/phase4-regression.json)も保存した。
 大きいbus/coverageは再現時生成とし、Gitにはsummary・実行結果・サイズ等を残す。
 

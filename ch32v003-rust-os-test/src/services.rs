@@ -249,11 +249,20 @@ fn mark(bit: u32) {
     any(
         feature = "fault-panic",
         feature = "fault-sp",
-        feature = "fault-illegal"
+        feature = "fault-illegal",
+        feature = "fault-irq-canary"
     ),
     allow(unreachable_code)
 )]
 fn task_a() {
+    #[cfg(feature = "fault-irq-canary")]
+    unsafe {
+        write_volatile(stack_base().add(2), 0);
+        extern "C" {
+            fn fault_irq_wait() -> !;
+        }
+        fault_irq_wait();
+    }
     #[cfg(feature = "fault-canary")]
     unsafe {
         write_volatile(stack_base().add(2), 0);
@@ -380,9 +389,9 @@ fn task_b() {
 }
 
 #[no_mangle]
-unsafe extern "C" fn rv2k_timer_irq() {
+unsafe extern "C" fn rv2k_timer_irq(_frame: *const TrapFrame) {
     #[cfg(feature = "diagnostics")]
-    crate::diagnostics::check(None);
+    crate::diagnostics::check(Some(&*_frame));
     let count = read_volatile(0xe000f008 as *const u32);
     write_volatile(0xe000f010 as *mut u32, count.wrapping_add(CLOCKS_PER_TICK));
     write_volatile(0xe000f004 as *mut u32, 0);
@@ -463,3 +472,12 @@ fn stop(status: u32) -> ! {
         core::hint::spin_loop();
     }
 }
+
+#[cfg(feature = "fault-irq-canary")]
+core::arch::global_asm!(
+    ".section .text",
+    ".global fault_irq_wait",
+    "fault_irq_wait:",
+    "nop",
+    "j fault_irq_wait"
+);

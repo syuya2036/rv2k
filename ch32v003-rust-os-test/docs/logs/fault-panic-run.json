@@ -2,13 +2,13 @@
   "target": "ch32v003",
   "reason": "Halted",
   "stats": {
-    "instructions": 6739,
-    "time": 6739,
+    "instructions": 6750,
+    "time": 6750,
     "events": 0
   },
   "cpu": {
     "architecture": "RiscV32",
-    "pc": 2480,
+    "pc": 2482,
     "registers": [
       {
         "name": "x0",
@@ -17,7 +17,7 @@
       },
       {
         "name": "x1",
-        "value": 192,
+        "value": 4097,
         "bits": 32
       },
       {
@@ -47,17 +47,17 @@
       },
       {
         "name": "x7",
-        "value": 6,
+        "value": 192,
         "bits": 32
       },
       {
         "name": "x8",
-        "value": 1,
+        "value": 0,
         "bits": 32
       },
       {
         "name": "x9",
-        "value": 99,
+        "value": 1,
         "bits": 32
       },
       {
@@ -77,17 +77,17 @@
       },
       {
         "name": "x13",
-        "value": 64,
+        "value": 4096,
         "bits": 32
       },
       {
         "name": "x14",
-        "value": 536871420,
+        "value": 99,
         "bits": 32
       },
       {
         "name": "x15",
-        "value": 0,
+        "value": 536871420,
         "bits": 32
       },
       {

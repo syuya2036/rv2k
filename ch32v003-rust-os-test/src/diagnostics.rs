@@ -156,6 +156,7 @@ unsafe extern "C" fn rv2k_record_fault(
         put(b' ');
     }
     put(b'\n');
+    #[cfg(feature = "emulator-stop")]
     asm!("ebreak");
     loop {
         core::hint::spin_loop();
@@ -163,16 +164,16 @@ unsafe extern "C" fn rv2k_record_fault(
 }
 
 fn put(byte: u8) {
-    for _ in 0..64 {
+    let ready = rv2k_kernel::diagnostics::uart_ready(|| {
         #[cfg(not(feature = "fault-uart-stuck"))]
         let ready = unsafe { core::ptr::read_volatile(0x40013800 as *const u32) & (1 << 7) != 0 };
         #[cfg(feature = "fault-uart-stuck")]
         let ready = unsafe { core::ptr::read_volatile(addr_of!(STUCK_UART_STATUS)) != 0 };
-        if ready {
-            unsafe {
-                write_volatile(0x40013804 as *mut u32, byte as u32);
-            }
-            return;
+        ready
+    });
+    if ready {
+        unsafe {
+            write_volatile(0x40013804 as *mut u32, byte as u32);
         }
     }
 }

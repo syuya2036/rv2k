@@ -2,8 +2,8 @@
   "target": "ch32v003",
   "reason": "Halted",
   "stats": {
-    "instructions": 1724937,
-    "time": 1724937,
+    "instructions": 1724931,
+    "time": 1724931,
     "events": 0
   },
   "cpu": {
