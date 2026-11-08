@@ -1,5 +1,7 @@
 #![no_std]
 #![no_main]
+#[cfg(feature = "drivers")]
+mod drivers;
 #[cfg(feature = "diagnostics")]
 mod diagnostics;
 #[cfg(feature = "services")]

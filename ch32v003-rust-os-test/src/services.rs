@@ -85,12 +85,17 @@ pub fn start() -> ! {
             (frame as *mut TrapFrame).write(initial);
             frames[id] = frame;
         }
-        // Baseline development board UART; J4M6 remapping belongs to Phase 5.
-        write_volatile(0x40021018 as *mut u32, (1 << 0) | (1 << 5) | (1 << 14));
-        let gpio = 0x40011400 as *mut u32;
-        write_volatile(gpio, (read_volatile(gpio) & !(0xf << 20)) | (0xb << 20));
-        write_volatile(0x40013808 as *mut u32, 208);
-        write_volatile(0x4001380c as *mut u32, (1 << 13) | (1 << 3));
+        #[cfg(feature = "drivers")]
+        crate::drivers::init();
+        #[cfg(not(feature = "drivers"))]
+        {
+            // Baseline development board UART; J4M6 remapping belongs to Phase 5.
+            write_volatile(0x40021018 as *mut u32, (1 << 0) | (1 << 5) | (1 << 14));
+            let gpio = 0x40011400 as *mut u32;
+            write_volatile(gpio, (read_volatile(gpio) & !(0xf << 20)) | (0xb << 20));
+            write_volatile(0x40013808 as *mut u32, 208);
+            write_volatile(0x4001380c as *mut u32, (1 << 13) | (1 << 3));
+        }
         let scheduler = &mut *addr_of_mut!(SCHEDULER);
         scheduler.initialize(frames);
         asm!("csrw mtvec, {0}", in(reg) rv2k_trap_entry as *const () as usize);
@@ -181,7 +186,7 @@ unsafe extern "C" fn rv2k_trap_dispatch(frame: *mut TrapFrame) -> usize {
     ];
     #[cfg(feature = "diagnostics")]
     let snapshot = crate::diagnostics::info();
-    #[cfg(feature = "diagnostics")]
+    #[cfg(all(feature = "diagnostics", not(feature = "drivers")))]
     let outcome = rv2k_kernel::services::dispatch_with_info(
         scheduler,
         &mut *addr_of_mut!(MAILBOX),
@@ -197,6 +202,18 @@ unsafe extern "C" fn rv2k_trap_dispatch(frame: *mut TrapFrame) -> usize {
         &mut memory,
         saved.registers[13] as usize,
         args,
+    );
+    #[cfg(feature = "drivers")]
+    let outcome = rv2k_kernel::services::dispatch_with_devices(
+        scheduler,
+        &mut *addr_of_mut!(MAILBOX),
+        &mut memory,
+        saved.registers[13] as usize,
+        args,
+        rv2k_kernel::services::DeviceServices {
+            console: crate::drivers::console(),
+            info: Some(&snapshot),
+        },
     );
     match outcome {
         Outcome::Complete(result) => {
@@ -255,6 +272,11 @@ fn mark(bit: u32) {
     allow(unreachable_code)
 )]
 fn task_a() {
+    #[cfg(feature = "drivers")]
+    if checked(rv2k_api::console::write(b"UART via API\n"), 94) != 13 {
+        stop(95);
+    }
+
     #[cfg(feature = "fault-irq-canary")]
     unsafe {
         write_volatile(stack_base().add(2), 0);
@@ -401,6 +423,8 @@ unsafe extern "C" fn rv2k_timer_irq(_frame: *const TrapFrame) {
     );
 }
 unsafe fn update_clock() {
+    #[cfg(feature = "drivers")]
+    crate::drivers::poll();
     let elapsed = (&mut *addr_of_mut!(CLOCK)).sample(read_volatile(0xe000f008 as *const u32));
     (&mut *addr_of_mut!(SCHEDULER)).advance_ticks(elapsed);
 }
@@ -456,6 +480,9 @@ fn finish() -> ! {
         );
         write_volatile(0xe000f000 as *mut u32, 0);
         write_volatile(addr_of_mut!(UPTIME), (&*addr_of!(SCHEDULER)).uptime());
+        #[cfg(feature = "drivers")]
+        crate::drivers::complete();
+        #[cfg(not(feature = "drivers"))]
         for byte in b"SERVICES OK\n" {
             while read_volatile(0x40013800 as *const u32) & (1 << 7) == 0 {}
             write_volatile(0x40013804 as *mut u32, *byte as u32);
@@ -466,6 +493,9 @@ fn finish() -> ! {
 fn stop(status: u32) -> ! {
     unsafe {
         write_volatile(addr_of_mut!(SERVICES_STATUS), status);
+        #[cfg(feature = "diagnostics")]
+        asm!("csrci mstatus, 8");
+        #[cfg(any(not(feature = "diagnostics"), feature = "emulator-stop"))]
         asm!("ebreak");
     }
     loop {

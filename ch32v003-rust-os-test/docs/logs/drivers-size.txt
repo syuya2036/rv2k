@@ -1,0 +1,2 @@
+   text	   data	    bss	    dec	    hex	filename
+  12791	    200	    640	  13631	   353f	target/drivers/riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test

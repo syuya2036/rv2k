@@ -1,5 +1,7 @@
 #![no_std]
 
+#[cfg(target_arch = "riscv32")]
+pub mod console;
 pub mod event;
 #[cfg(target_arch = "riscv32")]
 pub mod ipc;

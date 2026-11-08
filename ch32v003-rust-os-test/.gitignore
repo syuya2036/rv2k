@@ -7,3 +7,5 @@ __pycache__/
 /docs/logs/services-coverage.json
 /docs/logs/diagnostics-bus.json
 /docs/logs/diagnostics-coverage.json
+/docs/logs/drivers-bus.json
+/docs/logs/drivers-coverage.json

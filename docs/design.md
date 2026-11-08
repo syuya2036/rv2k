@@ -1,6 +1,6 @@
 # rv2k 2.0 設計書
 
-状態: Phase 4のメモリ・障害診断まで実装・検証済み。Phase 5以降は設計案。Phase 0/1の実測を土台に、後続の契約と検証条件を定める。設計上の予算やAPIを実装済みと解釈しない。リリース名は **rv2k 2.0** に統一する。
+状態: Phase 4まで検証済み。Phase 5はsoftware driver/model/RV32ECがPASS、J4M6実機未検証のためPARTIAL。Phase 6以降は設計案。Phase 0/1の実測を土台に、後続の契約と検証条件を定める。設計上の予算やAPIを実装済みと解釈しない。リリース名は **rv2k 2.0** に統一する。
 
 ## 1. 目的と決定事項
 
@@ -76,7 +76,7 @@ host/
   net-harness/    # PCAP、フレーム注入、損失・遅延・重複、Mac接続
 ```
 
-api/kernelはPhase 1、archはPhase 2で導入済み。残りは予定パス。アプリはapiだけを参照し、kernel内部TCBやsocket構造体を公開しない。netはdriverの具体型を知らず、静的ディスパッチのNetworkDeviceを使う。trait object、ヒープ、動的なタスク／socket生成を導入しない。unsafeはarch、MMIO、静的領域の限定した所有権境界へ集約する。
+api/kernelはPhase 1、archはPhase 2、driversはPhase 5で導入済み。残りは予定パス。アプリはapiだけを参照し、kernel内部TCBやsocket構造体を公開しない。netはdriverの具体型を知らず、静的ディスパッチのNetworkDeviceを使う。trait object、ヒープ、動的なタスク／socket生成を導入しない。unsafeはarch、MMIO、静的領域の限定した所有権境界へ集約する。
 
 ## 5. タスク管理とスケジューラ
 
@@ -215,7 +215,9 @@ UARTはTX非ブロッキング、32バイトリングを基準とし、満杯な
 
 SPIトランザクションはCS開始〜終了の所有権をT0のドライバだけが持つ。J4M6はsoftware backend、多ピン検証はhardware backend。各バイト中の割り込み可否と最大CS保持時間を測り、CSを共有したまま別タスクがSPIを操作する構成にしない。
 
-### NetworkDevice契約（予定）
+### NetworkDevice契約
+
+Phase 5でtraitとENC backendを実装済み。[ドライバ検証](../ch32v003-rust-os-test/docs/drivers.md) に試験範囲・実機の残ゲートを記録する。
 
 フルEthernetフレームをMCUのスタックへ載せない。デバイス側にフレームを保持したまま、固定scratchでチャンク転送する。
 
