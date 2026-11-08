@@ -10,6 +10,12 @@ mod network;
 mod netinfo_probe;
 #[cfg(feature = "shell")]
 mod shell;
+#[cfg(feature = "http")]
+mod http;
+#[cfg(all(feature = "http", feature = "shell"))]
+compile_error!("select one application: http or shell");
+#[cfg(all(feature = "http", feature = "netinfo-probe"))]
+compile_error!("netinfo-probe tests the TCP echo application; build http separately");
 #[cfg(all(feature = "shell", feature = "netinfo-probe"))]
 compile_error!("netinfo-probe tests the TCP echo application; build shell separately");
 #[cfg(feature = "diagnostics")]

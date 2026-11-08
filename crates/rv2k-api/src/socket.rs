@@ -7,6 +7,8 @@ pub fn listen(port: u16) -> Result<Handle, Error> {
     unsafe { Error::decode(raw(Number::SocketListen as usize, [port as usize, 0, 0])).map(Handle) }
 }
 #[inline(always)]
+/// An empty destination validates the handle and returns zero without reading.
+/// With a nonempty destination, zero denotes EOF after all queued bytes.
 pub fn recv(handle: Handle, out: &mut [u8]) -> Result<usize, Error> {
     unsafe {
         Error::decode(raw(

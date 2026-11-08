@@ -1,0 +1,4 @@
+Profile: --features http,drivers; target=http-enc; memory.x unchanged (Flash=16384, RAM=2048).
+  = note: rust-lld: error: Flash exceeds 16384-byte budget
+          rust-lld: error: section '.text' will not fit in region 'FLASH': overflowed by 1598 bytes
+          rust-lld: error: section '.data' will not fit in region 'FLASH': overflowed by 1600 bytes

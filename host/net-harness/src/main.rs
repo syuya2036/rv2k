@@ -1,4 +1,5 @@
 mod device;
+mod http_probe;
 mod pcap;
 mod peer;
 mod shell_probe;
@@ -23,9 +24,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     if !matches!(
         args[5].as_str(),
-        "replay" | "udp" | "tcp" | "tcp-preempt" | "shell" | "shell-preempt"
+        "replay"
+            | "udp"
+            | "tcp"
+            | "tcp-preempt"
+            | "shell"
+            | "shell-preempt"
+            | "http"
+            | "http-preempt"
     ) {
-        return Err("mode must be replay, udp, tcp[-preempt] shell[-preempt]".into());
+        return Err(
+            "mode must be replay, udp, tcp[-preempt] shell[-preempt] or http[-preempt]".into(),
+        );
     }
     let image = FirmwareImage::parse(&fs::read(&args[1])?)?;
     let mut machine = RiscVMachine::new(TargetId::Ch32v003)?;
@@ -37,11 +47,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Box::new(Nic(state.clone())),
     )?;
     machine.load_firmware(&image)?;
-    let preemption_stress = matches!(args[5].as_str(), "tcp-preempt" | "shell-preempt");
+    let preemption_stress = matches!(
+        args[5].as_str(),
+        "tcp-preempt" | "shell-preempt" | "http-preempt"
+    );
     let mut probe = if matches!(args[5].as_str(), "tcp" | "tcp-preempt") {
         Some(peer::Peer::Tcp(tcp_probe::Probe::new()))
     } else if matches!(args[5].as_str(), "shell" | "shell-preempt") {
         Some(peer::Peer::Shell(shell_probe::Probe::new()))
+    } else if matches!(args[5].as_str(), "http" | "http-preempt") {
+        Some(peer::Peer::Http(http_probe::Probe::new()))
     } else {
         None
     };
@@ -98,16 +113,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
                 let listens = word("APP_LISTENS")?;
                 let irqs = word("TIMER_IRQS")?;
-                let (accepts, request_bytes) = if probe.is_shell() {
-                    (word("APP_SHELL_ACCEPTS")?, word("APP_SHELL_INPUT_BYTES")?)
+                let (accepts, request_bytes, last_read_ticks) = if probe.is_http() {
+                    (
+                        word("HTTP_ACCEPTS")?,
+                        word("HTTP_REQUEST_BYTES")?,
+                        word("HTTP_LAST_READ_TICKS")?,
+                    )
+                } else if probe.is_shell() {
+                    (
+                        word("APP_SHELL_ACCEPTS")?,
+                        word("APP_SHELL_INPUT_BYTES")?,
+                        0,
+                    )
                 } else {
-                    (0, 0)
+                    (0, 0, 0)
                 };
                 probe.observe(peer::Observation {
                     listens,
                     irqs,
                     accepts,
                     request_bytes,
+                    last_read_ticks,
                     released: state.borrow().released,
                 });
             }

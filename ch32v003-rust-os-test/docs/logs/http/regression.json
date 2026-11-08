@@ -1,0 +1,248 @@
+{
+  "compact-summary.json": {
+    "instructions": 1729842,
+    "syscalls": 30,
+    "timer_irqs": 6,
+    "idle_polls": 3273,
+    "uptime_ticks": 7,
+    "wait_results": 127,
+    "stack_used_bytes_tasks_kernel": [
+      208,
+      192,
+      120
+    ],
+    "static_ram_bytes": 816,
+    "kernel_stack_reserved_bytes": 256,
+    "compact_memory_status": 192
+  },
+  "compact-budget.json": {
+    "flash_bytes": 5834,
+    "flash_limit": 16384,
+    "static_ram_bytes": 816,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 1072,
+    "ram_limit": 2048
+  },
+  "tcp-summary.json": {
+    "host_packet_peer": "PASS (synthetic peer, not native Mac TCP)",
+    "public_mem_snapshot_checked": true,
+    "gp_preserved_across_timer_irqs_and_syscall": true,
+    "instructions": 6035376,
+    "frames_in": 25,
+    "frames_out": 31,
+    "connections": 2,
+    "echoed_bytes": 193,
+    "syn_data_fin_loss_recovered": true,
+    "out_of_order_and_duplicate_input": true,
+    "sequence_wrap": true,
+    "negotiated_peer_mss": 24,
+    "stack_used_bytes_tasks_kernel": [
+      216,
+      148,
+      112
+    ],
+    "syscalls": 171,
+    "timer_irqs": 28,
+    "uptime_ticks": 6525,
+    "simulated_clock_advance_ticks": 6500,
+    "mac_native_tcp": "UNVERIFIED",
+    "physical_enc": "UNVERIFIED"
+  },
+  "tcp-budget.json": {
+    "flash_bytes": 13368,
+    "flash_limit": 16384,
+    "static_ram_bytes": 1568,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 1824,
+    "ram_limit": 2048
+  },
+  "tcp-enc-budget.json": {
+    "flash_bytes": 15700,
+    "flash_limit": 16384,
+    "static_ram_bytes": 1584,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 1840,
+    "ram_limit": 2048
+  },
+  "preemption/probe-summary.json": {
+    "instructions": 12332513,
+    "progress": [
+      3,
+      3
+    ],
+    "forced_switches": 47,
+    "irqs": 51,
+    "deferred_irqs": 5,
+    "rejected_blocking_calls": 8,
+    "max_disabled_clocks": 963686,
+    "trace_irq_switches_inside_cpu_probes": [
+      3,
+      4
+    ],
+    "deferred_switches_at_syscall_boundary": 1,
+    "spi_mosi_packets": [
+      [
+        165,
+        60
+      ]
+    ],
+    "irq_inside_spi_bit_positions": [
+      3
+    ],
+    "stack_used_bytes_tasks_kernel": [
+      208,
+      208,
+      128
+    ],
+    "all_guards_intact": true
+  },
+  "preemption/probe-budget.json": {
+    "flash_bytes": 6702,
+    "flash_limit": 16384,
+    "static_ram_bytes": 932,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 1188,
+    "ram_limit": 2048
+  },
+  "preemption/negative-summary.json": [
+    {
+      "case": "missing-t1",
+      "detected_panic": true,
+      "instructions": 4470040
+    },
+    {
+      "case": "fault-preempt-pc",
+      "detected_panic": true,
+      "instructions": 1451757
+    },
+    {
+      "case": "fault-preempt-lock",
+      "detected_panic": true,
+      "instructions": 731156
+    }
+  ],
+  "preemption/baseline/tcp-summary.json": {
+    "host_packet_peer": "PASS (synthetic peer, not native Mac TCP)",
+    "public_mem_snapshot_checked": true,
+    "gp_preserved_across_timer_irqs_and_syscall": true,
+    "instructions": 6035512,
+    "frames_in": 25,
+    "frames_out": 31,
+    "connections": 2,
+    "echoed_bytes": 193,
+    "syn_data_fin_loss_recovered": true,
+    "out_of_order_and_duplicate_input": true,
+    "sequence_wrap": true,
+    "negotiated_peer_mss": 24,
+    "stack_used_bytes_tasks_kernel": [
+      204,
+      144,
+      112
+    ],
+    "syscalls": 176,
+    "timer_irqs": 27,
+    "uptime_ticks": 6525,
+    "simulated_clock_advance_ticks": 6500,
+    "mac_native_tcp": "UNVERIFIED",
+    "physical_enc": "UNVERIFIED",
+    "preemption": {
+      "nic_irq_injections": 0,
+      "deferred_irqs": 1,
+      "forced_switches": 5,
+      "max_disabled_clocks": 7754,
+      "injected_clocks_per_frame": 0,
+      "shared_borrow_released_before_completion": true
+    }
+  },
+  "preemption/tcp-summary.json": {
+    "host_packet_peer": "PASS (synthetic peer, not native Mac TCP)",
+    "public_mem_snapshot_checked": true,
+    "gp_preserved_across_timer_irqs_and_syscall": true,
+    "instructions": 6524105,
+    "frames_in": 25,
+    "frames_out": 30,
+    "connections": 2,
+    "echoed_bytes": 193,
+    "syn_data_fin_loss_recovered": true,
+    "out_of_order_and_duplicate_input": true,
+    "sequence_wrap": true,
+    "negotiated_peer_mss": 24,
+    "stack_used_bytes_tasks_kernel": [
+      204,
+      144,
+      112
+    ],
+    "syscalls": 256,
+    "timer_irqs": 38,
+    "uptime_ticks": 6552,
+    "simulated_clock_advance_ticks": 6500,
+    "mac_native_tcp": "UNVERIFIED",
+    "physical_enc": "UNVERIFIED",
+    "preemption": {
+      "nic_irq_injections": 25,
+      "deferred_irqs": 32,
+      "forced_switches": 2,
+      "max_disabled_clocks": 248170,
+      "injected_clocks_per_frame": 240000,
+      "shared_borrow_released_before_completion": true
+    }
+  },
+  "preemption/tcp-budget.json": {
+    "flash_bytes": 13776,
+    "flash_limit": 16384,
+    "static_ram_bytes": 1580,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 1836,
+    "ram_limit": 2048
+  },
+  "preemption/enc-budget.json": {
+    "flash_bytes": 15884,
+    "flash_limit": 16384,
+    "static_ram_bytes": 1596,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 1852,
+    "ram_limit": 2048
+  },
+  "drivers-summary.json": {
+    "spi_packets": [
+      [
+        255
+      ],
+      [
+        191,
+        3
+      ],
+      [
+        159,
+        3
+      ],
+      [
+        18,
+        0
+      ]
+    ],
+    "spi_rising_edges": 56,
+    "nic_attached": false,
+    "instructions": 1869061,
+    "syscalls": 31,
+    "timer_irqs": 6,
+    "idle_polls": 3443,
+    "uptime_ticks": 7,
+    "wait_results": 127,
+    "stack_used_bytes_tasks_kernel": [
+      184,
+      184,
+      164
+    ],
+    "static_ram_bytes": 832,
+    "kernel_stack_reserved_bytes": 256
+  },
+  "drivers-budget.json": {
+    "flash_bytes": 10793,
+    "flash_limit": 16384,
+    "static_ram_bytes": 832,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 1088,
+    "ram_limit": 2048
+  }
+}
