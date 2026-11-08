@@ -10,14 +10,14 @@ use rv2k_drivers::{
     board::{self, Ch32Pins, Ch32Tx, Pad},
     enc28j60::Enc28j60,
     network::MAX_FRAME,
-    spi::SoftwareSpi,
+    spi::SoftwareDevice,
     uart::Console,
 };
 use rv2k_kernel::{memory::UserMemory, services::ConsoleWrite};
 
 // init runs once with interrupts masked, before either task can use a device.
 // Device state is ordinary RAM; only MMIO accesses and observer counters are volatile.
-static mut NIC: MaybeUninit<Enc28j60<SoftwareSpi<Ch32Pins>>> = MaybeUninit::uninit();
+static mut NIC: MaybeUninit<Enc28j60<SoftwareDevice<Ch32Pins>>> = MaybeUninit::uninit();
 static mut UART: MaybeUninit<UartService> = MaybeUninit::uninit();
 #[no_mangle]
 static mut DRIVER_STATUS: u32 = 0;
@@ -33,7 +33,7 @@ impl ConsoleWrite for UartService {
     }
 }
 #[cfg(feature = "net")]
-pub unsafe fn network() -> &'static mut Enc28j60<SoftwareSpi<Ch32Pins>> {
+pub unsafe fn network() -> &'static mut Enc28j60<SoftwareDevice<Ch32Pins>> {
     (&mut *addr_of_mut!(NIC)).assume_init_mut()
 }
 pub unsafe fn console() -> &'static mut UartService {
@@ -41,6 +41,9 @@ pub unsafe fn console() -> &'static mut UartService {
 }
 pub unsafe fn init() {
     let (spi, uart) = board::j4m6();
+    let spi = spi
+        .into_device()
+        .unwrap_or_else(|_| panic!("SPI selected during init"));
     (&mut *addr_of_mut!(UART)).write(UartService(uart));
     (&mut *addr_of_mut!(NIC)).write(Enc28j60::new(spi));
     assert_eq!(board::claim_gpio(Pad::Pd1), Err(Error::Busy));
