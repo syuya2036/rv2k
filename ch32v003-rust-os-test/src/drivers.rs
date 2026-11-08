@@ -1,5 +1,8 @@
 //! Driver integration probe. Renvo has GPIO/UART but no ENC on these SPI pins.
-use core::ptr::{addr_of_mut, write_volatile};
+use core::{
+    mem::MaybeUninit,
+    ptr::{addr_of_mut, write_volatile},
+};
 use rv2k_api::syscall::Error;
 #[cfg(not(feature = "net"))]
 use rv2k_drivers::network::NetworkDevice;
@@ -12,8 +15,10 @@ use rv2k_drivers::{
 };
 use rv2k_kernel::{memory::UserMemory, services::ConsoleWrite};
 
-static mut NIC: Option<Enc28j60<SoftwareSpi<Ch32Pins>>> = None;
-static mut UART: Option<UartService> = None;
+// init runs once with interrupts masked, before either task can use a device.
+// Device state is ordinary RAM; only MMIO accesses and observer counters are volatile.
+static mut NIC: MaybeUninit<Enc28j60<SoftwareSpi<Ch32Pins>>> = MaybeUninit::uninit();
+static mut UART: MaybeUninit<UartService> = MaybeUninit::uninit();
 #[no_mangle]
 static mut DRIVER_STATUS: u32 = 0;
 pub struct UartService(Console<Ch32Tx>);
@@ -29,19 +34,19 @@ impl ConsoleWrite for UartService {
 }
 #[cfg(feature = "net")]
 pub unsafe fn network() -> &'static mut Enc28j60<SoftwareSpi<Ch32Pins>> {
-    (&mut *addr_of_mut!(NIC)).as_mut().unwrap()
+    (&mut *addr_of_mut!(NIC)).assume_init_mut()
 }
 pub unsafe fn console() -> &'static mut UartService {
-    (&mut *addr_of_mut!(UART)).as_mut().unwrap()
+    (&mut *addr_of_mut!(UART)).assume_init_mut()
 }
 pub unsafe fn init() {
     let (spi, uart) = board::j4m6();
-    write_volatile(addr_of_mut!(UART), Some(UartService(uart)));
-    write_volatile(addr_of_mut!(NIC), Some(Enc28j60::new(spi)));
+    (&mut *addr_of_mut!(UART)).write(UartService(uart));
+    (&mut *addr_of_mut!(NIC)).write(Enc28j60::new(spi));
     assert_eq!(board::claim_gpio(Pad::Pd1), Err(Error::Busy));
     assert_eq!(board::claim_gpio(Pad::Pa1), Err(Error::Busy));
     assert_eq!(board::claim_gpio(Pad::Pc5), Err(Error::Invalid));
-    let nic = (&mut *addr_of_mut!(NIC)).as_mut().unwrap();
+    let nic = (&mut *addr_of_mut!(NIC)).assume_init_mut();
     let status = match nic.reset([2, 0, 0, 0, 0, 1]) {
         Err(Error::Io) => 1, // expected on Renvo: no NIC, floating/zero MISO
         Ok(_) => {
