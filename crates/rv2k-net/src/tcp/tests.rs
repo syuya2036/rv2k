@@ -48,7 +48,7 @@ impl Harness {
     }
     fn input(&mut self, s: Segment, data: &[u8]) {
         self.tcp
-            .receive(&mut self.socket, s, self.now, |skip, out| {
+            .receive(&mut self.socket, &s, self.now, |skip, out| {
                 out.copy_from_slice(&data[skip..skip + out.len()]);
                 Ok(())
             })
@@ -56,7 +56,7 @@ impl Harness {
     }
     fn output(&mut self) -> Option<Outbound> {
         let out = self.tcp.next_segment(&mut self.socket, self.now)?;
-        self.tcp.sent(&self.socket, out, self.now);
+        self.tcp.sent(&self.socket, &out, self.now);
         Some(out)
     }
     fn connected() -> Self {
@@ -205,7 +205,7 @@ fn tx_state_does_not_advance_until_device_commit_and_ack_copy_failure_preserves_
     assert_eq!(h.tcp.next, h.ack);
     let s = segment(h.seq, h.ack, ACK, 4);
     assert_eq!(
-        h.tcp.receive(&mut h.socket, s, h.now, |_, out| {
+        h.tcp.receive(&mut h.socket, &s, h.now, |_, out| {
             out.fill(0x99);
             Err(Error::Io)
         }),

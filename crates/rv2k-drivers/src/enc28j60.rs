@@ -156,18 +156,28 @@ impl<S: SpiBus> Enc28j60<S> {
             return Err(Error::Io);
         }
         self.bit(ECON2, 0x80, true)?;
-        self.word(0x08, 0)?;
-        self.word(0x0a, RX_END)?;
-        self.word(0x0c, RX_END)?;
-        self.word(0x04, TX_START)?;
-        self.write(0x38, 0xa1)?; // unicast+broadcast+CRC filter
-        self.write(0xc0, 1)?;
-        self.write(0xc2, 0x32)?;
-        self.write(0xc3, 0x40)?;
-        self.write(0xc4, 0x12)?;
-        self.write(0xc6, 0x12)?;
-        self.write(0xc7, 0x0c)?;
-        self.word(0xca, 1518)?;
+        // Flat byte-register table avoids repeating command setup at each call.
+        for &(reg, value) in &[
+            (0x08, 0),
+            (0x09, 0),
+            (0x0a, 0xff),
+            (0x0b, 0x17),
+            (0x0c, 0xff),
+            (0x0d, 0x17),
+            (0x04, 0),
+            (0x05, 0x18),
+            (0x38, 0xa1), // unicast+broadcast+CRC filter
+            (0xc0, 1),
+            (0xc2, 0x32),
+            (0xc3, 0x40),
+            (0xc4, 0x12),
+            (0xc6, 0x12),
+            (0xc7, 0x0c),
+            (0xca, 0xee),
+            (0xcb, 5), // maximum frame incl. FCS = 1518
+        ] {
+            self.write(reg, value)?;
+        }
         for (reg, value) in [0xe4, 0xe5, 0xe2, 0xe3, 0xe0, 0xe1].into_iter().zip(mac) {
             self.write(reg, value)?;
         }

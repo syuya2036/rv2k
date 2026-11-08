@@ -105,7 +105,8 @@ impl<I: VirtualIo> NetworkDevice for VirtualNic<I> {
         self.active = Some(f);
         Ok(Some(f))
     }
-    #[inline(always)]
+    #[cfg_attr(not(feature = "compact"), inline(always))]
+    #[cfg_attr(feature = "compact", inline(never))]
     fn rx_read_at(&mut self, f: RxFrame, offset: usize, out: &mut [u8]) -> Result<(), Error> {
         if self.active != Some(f)
             || offset
@@ -142,7 +143,8 @@ impl<I: VirtualIo> NetworkDevice for VirtualNic<I> {
         self.building = true;
         Ok(())
     }
-    #[inline(always)]
+    #[cfg_attr(not(feature = "compact"), inline(always))]
+    #[cfg_attr(feature = "compact", inline(never))]
     fn tx_write(&mut self, bytes: &[u8]) -> Result<(), Error> {
         if !self.building {
             return Err(Error::Invalid);

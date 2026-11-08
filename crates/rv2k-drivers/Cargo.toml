@@ -2,5 +2,7 @@
 name = "rv2k-drivers"
 version = "0.1.0"
 edition = "2021"
+[features]
+compact = []
 [dependencies]
 rv2k-api = { path = "../rv2k-api" }
