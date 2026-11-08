@@ -9,7 +9,7 @@ jobs:
         with:
           components: rustfmt, clippy
       - run: cargo fmt --all -- --check
-      - run: cargo fmt --manifest-path host/net-harness/Cargo.toml -- --check
+      - run: rustfmt --edition 2021 --check host/net-harness/src/*.rs
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace --locked
   rv32ec:
