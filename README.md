@@ -60,7 +60,9 @@ Phase 6では仮想Ethernet、ARP・IPv4・ICMPのRV32ECフレーム注入試験
 21フレームの正常応答・不正破棄とスタック番兵を確認し、実機NIC構成も容量内でリンクしました。
 Macからの実pingはhost adapter経路が未検証のためPARTIALです。
 試験範囲は [ネットワーク検証](ch32v003-rust-os-test/docs/network.md) を参照してください。
-TCP、プリエンプション、CH32V003実機での動作はこれからです。
+Phase 7では単一接続TCPの状態機械・固定Socket領域・syscall境界の基礎をホスト上で検証中です。
+Ethernet/ゲストへの統合と通信試験は未完了です。[TCP実装状況](ch32v003-rust-os-test/docs/tcp.md) を参照してください。
+プリエンプション、CH32V003実機での動作はこれからです。
 実測ログ・再現手順は [検証用プロジェクト](ch32v003-rust-os-test/README.md) と [協調マルチタスク検証](ch32v003-rust-os-test/docs/cooperative.md) を参照してください。
 
 ## 最終アーキテクチャ
@@ -91,7 +93,7 @@ MMUによる分離がないため、この境界は論理的なAPI境界であ�
 |4 — 検証済み|メモリ管理・障害処理|静的割当、スタック監視、panic・トラップ診断、RAM/Flash予算の自動検査|
 |5 — PARTIAL|デバイスドライバ基盤|UART・GPIO・SPI・NetworkDevice、J4M6の配線とソフトウェアSPIを検証|
 |6 — PARTIAL|仮想Ethernet・ARP・IPv4・ICMP|フレーム注入試験とMacからの実ping。ホスト接続経路も検証|
-|7 — 次に実装|自作TCP/IP・Socket API|単一接続、listen / recv / send / close、再送・重複・切断・タイムアウト試験|
+|7 — 実装中|自作TCP/IP・Socket API|単一接続、listen / recv / send / close、再送・重複・切断・タイムアウト試験|
 |8|プリエンプティブスケジューラ|SysTick強制切り替え、非再入カーネル、同期と待機の競合試験|
 |9|HTTP Echo APIサーバー|POST /echo、最大64バイトの本文一致、分割受信、タイムアウト、再接続をMacから検証|
 |10|TCPシェル・OSユーティリティ|TCP接続からps / mem / uptime / netstatを実行し、公開APIによるOS状態取得、分割入力、切断・再接続を検証|
