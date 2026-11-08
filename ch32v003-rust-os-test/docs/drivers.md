@@ -50,7 +50,7 @@ bash scripts/setup-emulator.sh
 bash scripts/drivers.sh
 ```
 
-[ホスト試験](logs/drivers-host-tests.log)は計30件（driver 12件）。独立したSPI register/RAM modelで、
+[ホスト試験](logs/drivers-host-tests.log)は計31件（driver 13件）。独立したSPI register/RAM modelで、
 bank/dummy/MII/reset/MAC順序、1514byteの分割RX/TX、RX ring wrap・再読取り・二重解放拒否、
 不正status/length/next、TX未完成/busy/error/abort/deadline wrap、SPI障害・reset復旧、
 未接続/旧revisionの拒否を確認する。pin/alias、SPIエッジ順、UARTの部分write・wrap・失敗コピーも試験する。

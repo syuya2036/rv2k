@@ -8,7 +8,7 @@
   },
   "cpu": {
     "architecture": "RiscV32",
-    "pc": 7450,
+    "pc": 7454,
     "registers": [
       {
         "name": "x0",
@@ -17,7 +17,7 @@
       },
       {
         "name": "x1",
-        "value": 7426,
+        "value": 7430,
         "bits": 32
       },
       {
@@ -122,7 +122,7 @@
       },
       {
         "name": "mepc",
-        "value": 10120,
+        "value": 10124,
         "bits": 32
       },
       {

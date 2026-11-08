@@ -19,7 +19,7 @@ ElfHeader {
   Version: 1
   Entry: 0x0
   ProgramHeaderOffset: 0x34
-  SectionHeaderOffset: 0x15ECA0
+  SectionHeaderOffset: 0x15EC9C
   Flags [ (0x9)
     EF_RISCV_RVC (0x1)
     EF_RISCV_RVE (0x8)
@@ -57,7 +57,7 @@ Sections [
     ]
     Address: 0x0
     Offset: 0x1000
-    Size: 12787
+    Size: 12791
     Link: 0
     Info: 0
     AddressAlignment: 4
@@ -233,7 +233,7 @@ Sections [
     ]
     Address: 0x0
     Offset: 0x10E860
-    Size: 122180
+    Size: 122175
     Link: 0
     Info: 0
     AddressAlignment: 1
@@ -246,7 +246,7 @@ Sections [
     Flags [ (0x0)
     ]
     Address: 0x0
-    Offset: 0x12C5A4
+    Offset: 0x12C5A0
     Size: 153920
     Link: 16
     Info: 9586
@@ -260,7 +260,7 @@ Sections [
     Flags [ (0x0)
     ]
     Address: 0x0
-    Offset: 0x151EE4
+    Offset: 0x151EE0
     Size: 173
     Link: 0
     Info: 0
@@ -274,7 +274,7 @@ Sections [
     Flags [ (0x0)
     ]
     Address: 0x0
-    Offset: 0x151F91
+    Offset: 0x151F8D
     Size: 52494
     Link: 0
     Info: 0

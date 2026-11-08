@@ -265,7 +265,8 @@ impl<S: SpiBus> NetworkDevice for Enc28j60<S> {
             self.ready = false;
             return Err(Error::Io);
         }
-        if !(64..=1518).contains(&len) || header[4] & 0x80 == 0 || header[4] & 0x70 != 0 {
+        // RSV bit 22 marks an Ethernet II type field (>1500), not an error.
+        if !(64..=1518).contains(&len) || header[4] & 0x80 == 0 || header[4] & 0x30 != 0 {
             self.release_next(next)?;
             return Err(Error::Io);
         }
@@ -554,6 +555,21 @@ mod tests {
         d.spi.phy[0x11] = 0;
         assert!(!d.poll(1).unwrap().link_up);
         assert!(d.spi.selects.chunks(2).all(|pair| pair == [true, false]));
+    }
+    #[test]
+    fn ethernet_ii_arp_and_ipv4_type_status_is_informational() {
+        for ethertype in [0x0806u16, 0x0800] {
+            let mut d = device();
+            let mut payload = [0u8; 60];
+            payload[12..14].copy_from_slice(&ethertype.to_be_bytes());
+            d.spi.inject(0, 70, &payload, 0xc0);
+            let frame = d.rx_begin().unwrap().unwrap();
+            let mut header = [0; 14];
+            d.rx_read_at(frame, 0, &mut header).unwrap();
+            assert_eq!(&header[12..14], &ethertype.to_be_bytes());
+            d.rx_release(frame).unwrap();
+            assert_eq!(d.spi.regs[1][0x19], 0);
+        }
     }
     #[test]
     fn rx_stream_wrap_reread_release_and_stale_handles() {
