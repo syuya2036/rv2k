@@ -30,10 +30,13 @@ struct Task {
     wait: Wait,
     finite: bool,
     result_ready: bool,
+    // A 32-byte RV32 record uses one shift for dynamic task indexing on the
+    // M-less core, instead of multiplying a 28-byte stride at every service.
+    _reserved: [u8; 4],
 }
 
 #[cfg(target_pointer_width = "32")]
-const _: () = assert!(core::mem::size_of::<Task>() <= 32);
+const _: () = assert!(core::mem::size_of::<Task>() == 32);
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum Selection {
@@ -95,6 +98,7 @@ impl Scheduler {
                 wait: Wait::None,
                 finite: false,
                 result_ready: false,
+                _reserved: [0; 4],
             }; 2],
             current: Running::None,
             next: TaskId::Network,
@@ -104,9 +108,21 @@ impl Scheduler {
 
     /// Install initial context frames before selecting the first task.
     pub fn initialize(&mut self, frames: [usize; 2]) {
-        *self = Self::new();
+        self.current = Running::None;
+        self.next = TaskId::Network;
+        self.ticks = 0;
         for (task, sp) in self.tasks.iter_mut().zip(frames) {
             task.saved_sp = sp;
+            task.state = TaskState::Ready;
+            task.exit_code = 0;
+            task.deadline = 0;
+            task.wait_mask = 0;
+            task.pending_events = 0;
+            task.result = 0;
+            task.wait = Wait::None;
+            task.finite = false;
+            task.result_ready = false;
+            task._reserved = [0; 4];
         }
     }
 

@@ -11,23 +11,23 @@ pub trait VirtualIo {
     fn write_byte(&mut self, offset: usize, value: u8);
 }
 pub struct Mmio {
-    base: usize,
+    _private: (),
 }
 impl VirtualIo for Mmio {
     fn read(&mut self, offset: usize) -> u32 {
-        unsafe { core::ptr::read_volatile((self.base + offset) as *const u32) }
+        unsafe { core::ptr::read_volatile((BASE + offset) as *const u32) }
     }
     fn write(&mut self, offset: usize, value: u32) {
         unsafe {
-            core::ptr::write_volatile((self.base + offset) as *mut u32, value);
+            core::ptr::write_volatile((BASE + offset) as *mut u32, value);
         }
     }
     fn read_byte(&mut self, offset: usize) -> u8 {
-        unsafe { core::ptr::read_volatile((self.base + offset) as *const u8) }
+        unsafe { core::ptr::read_volatile((BASE + offset) as *const u8) }
     }
     fn write_byte(&mut self, offset: usize, value: u8) {
         unsafe {
-            core::ptr::write_volatile((self.base + offset) as *mut u8, value);
+            core::ptr::write_volatile((BASE + offset) as *mut u8, value);
         }
     }
 }
@@ -60,7 +60,7 @@ impl VirtualNic<Mmio> {
     /// The virtual device window BASE..BASE+4096 must be mapped, have the documented
     /// register semantics, and be exclusively owned by this network task.
     pub const unsafe fn mapped() -> Self {
-        Self::from_io(Mmio { base: BASE })
+        Self::from_io(Mmio { _private: () })
     }
 }
 impl<I: VirtualIo> NetworkDevice for VirtualNic<I> {

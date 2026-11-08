@@ -9,6 +9,7 @@ pub const ALL: u32 = (1 << 7) - 1;
 pub const FOREVER: u32 = u32::MAX;
 
 #[cfg(target_arch = "riscv32")]
+#[inline(always)]
 pub fn wait(mask: u32, timeout: u32) -> Result<u32, crate::syscall::Error> {
     use crate::syscall::{raw, Error, Number};
     unsafe {
@@ -21,6 +22,7 @@ pub fn wait(mask: u32, timeout: u32) -> Result<u32, crate::syscall::Error> {
 }
 
 #[cfg(target_arch = "riscv32")]
+#[inline(always)]
 pub fn signal(id: crate::TaskId, mask: u32) -> Result<(), crate::syscall::Error> {
     use crate::syscall::{raw, Error, Number};
     unsafe {

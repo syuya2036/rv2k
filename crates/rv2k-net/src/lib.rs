@@ -166,6 +166,30 @@ impl Network {
         self.config = config;
         self.tcp.configure_boot(seed, quiet_until);
     }
+    /// Observe without consuming events, acknowledgements, or pending requests.
+    #[cfg(feature = "tcp")]
+    pub fn info(&self) -> rv2k_api::net::NetInfo {
+        use rv2k_api::net::{NetInfo, LINK_UP, PEER_PRESENT, VERSION};
+        let peer = self.tcp.peer();
+        NetInfo {
+            version: VERSION,
+            state: self.tcp.state(),
+            flags: (if self.link_up { LINK_UP } else { 0 })
+                | (if peer.is_some() { PEER_PRESENT } else { 0 }),
+            local_ip: self.config.ip,
+            peer_ip: peer.map_or([0; 4], |p| p.ip),
+            local_port: self.socket.port(),
+            peer_port: peer.map_or(0, |p| p.port),
+            received: self.stats.received,
+            transmitted: self.stats.transmitted,
+            dropped: self.stats.dropped,
+            bad_checksum: self.stats.bad_checksum,
+            fragments: self.stats.fragments,
+            io_errors: self.stats.io_errors,
+            retransmissions: self.tcp.retransmissions,
+            resets: self.tcp.resets,
+        }
+    }
     pub const fn new(config: Config) -> Self {
         Self {
             config,
@@ -935,6 +959,82 @@ mod tests {
         fn inject(n: &mut Network, s: &mut Scratch, d: &mut Device, f: Vec<u8>, now: u32) {
             d.rx = Some(f);
             n.poll(d, s, now).unwrap();
+        }
+        #[test]
+        fn network_snapshot_follows_wire_state_and_is_a_nonconsuming_copy() {
+            use rv2k_api::{
+                event,
+                net::{LINK_UP, PEER_PRESENT, VERSION},
+            };
+            let (mut n, mut s, mut d, h) = setup();
+            let initial = n.info();
+            assert_eq!(
+                (initial.version, initial.state, initial.flags),
+                (VERSION, State::Closed, 0)
+            );
+            assert_eq!((initial.local_ip, initial.local_port), (config().ip, 80));
+            assert_eq!((initial.peer_ip, initial.peer_port), ([0; 4], 0));
+            n.poll(&mut d, &mut s, 0).unwrap();
+            assert_eq!((n.info().state, n.info().flags), (State::Listen, LINK_UP));
+            inject(&mut n, &mut s, &mut d, frame(999, 0, SYN, &[], &[], &[]), 0);
+            let syn = validate(d.out.last().unwrap());
+            let next = u32::from_be_bytes(syn[4..8].try_into().unwrap()).wrapping_add(1);
+            assert_eq!(n.info().state, State::SynReceived);
+            inject(
+                &mut n,
+                &mut s,
+                &mut d,
+                frame(1000, next, ACK, &[], &[], &[]),
+                1,
+            );
+            let ready = n.socket.readiness();
+            let connected = n.info();
+            assert_eq!(connected.state, State::Established);
+            assert_eq!(connected.flags, LINK_UP | PEER_PRESENT);
+            assert_eq!((connected.peer_ip, connected.peer_port), (HOST_IP, 50000));
+            assert_eq!((connected.received, connected.transmitted), (2, 1));
+            assert_eq!(n.socket.readiness(), ready);
+            assert_ne!(n.socket.take_events() & event::NET_CONNECTED, 0);
+            n.socket
+                .send_with(h, 3, |out| {
+                    out.copy_from_slice(b"abc");
+                    Ok(())
+                })
+                .unwrap();
+            n.poll(&mut d, &mut s, 2).unwrap();
+            n.poll(&mut d, &mut s, 102).unwrap();
+            assert_eq!(n.info().retransmissions, 1);
+            inject(
+                &mut n,
+                &mut s,
+                &mut d,
+                frame(1000, 0, RST, &[], &[], &[]),
+                103,
+            );
+            let closed = n.info();
+            assert_eq!((closed.state, closed.flags), (State::Closed, LINK_UP));
+            assert_eq!(
+                (closed.peer_ip, closed.peer_port, closed.resets),
+                ([0; 4], 0, 1)
+            );
+            n.stats.dropped = u16::MAX;
+            n.stats.bad_checksum = 4;
+            n.stats.fragments = 5;
+            n.stats.io_errors = 6;
+            let stats = n.info();
+            assert_eq!(
+                (
+                    stats.dropped,
+                    stats.bad_checksum,
+                    stats.fragments,
+                    stats.io_errors
+                ),
+                (65535, 4, 5, 6)
+            );
+            assert_eq!(
+                (connected.state, connected.received, connected.resets),
+                (State::Established, 2, 0)
+            );
         }
         #[test]
         fn tcp_wire_busy_maximal_headers_odd_payload_partial_ack_and_streaming_checksum() {

@@ -25,6 +25,7 @@ jobs:
       - run: bash scripts/network.sh
       - run: bash scripts/tcp.sh
       - run: bash scripts/preempt.sh
+      - run: bash scripts/snapshot.sh
       - run: bash scripts/drivers.sh
       - run: bash scripts/diagnostics.sh
       - run: python3 scripts/diagnostics-negative.py

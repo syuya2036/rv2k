@@ -15,20 +15,7 @@ pub const ACK: u8 = 16;
 pub const TIME_WAIT_TICKS: u32 = 12000;
 const FIN_WAIT_TICKS: u32 = 6000;
 
-#[repr(u8)]
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum State {
-    Closed,
-    Listen,
-    SynReceived,
-    Established,
-    FinWait1,
-    FinWait2,
-    Closing,
-    CloseWait,
-    LastAck,
-    TimeWait,
-}
+pub use rv2k_api::net::TcpState as State;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Endpoint {
     pub mac: [u8; 6],

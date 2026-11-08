@@ -6,6 +6,8 @@ a6/a7は使わない。初版の実装対象はYield(0)、GetPid(2)、TaskExit(1
 その他の既知番号は後続Phaseの予約でNoSys、未知番号もNoSysを返す。
 全番号の試験はサービス全体の実装完了を意味しない。
 
+後続で追加した network snapshot（14）の固定レイアウトと現在の利用可能な snapshot 一覧は [Phase 10 検証](snapshot.md) を参照。以下は Phase 2 当時の実装範囲・測定結果です。
+
 ## トラップ境界
 
 `rv2k-arch`は80byteのrepr(C)フレームとRV32E専用asmを持つ。
