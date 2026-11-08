@@ -1,8 +1,8 @@
 {
-  "flash_bytes": 16322,
+  "flash_bytes": 16018,
   "flash_limit": 16384,
-  "static_ram_bytes": 1748,
+  "static_ram_bytes": 1696,
   "kernel_stack_reserved_bytes": 256,
-  "total_reserved_ram_bytes": 2004,
+  "total_reserved_ram_bytes": 1952,
   "ram_limit": 2048
 }

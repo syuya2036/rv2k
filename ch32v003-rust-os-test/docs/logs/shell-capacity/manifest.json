@@ -1,0 +1,424 @@
+{
+  "source_commit": "8f4e2b89a602af498a5951d68bdb055f727f901e",
+  "compiler": "nightly-2026-03-12",
+  "source_sha256": {
+    "crates/rv2k-arch/src/clock.rs": "38a095b69c02fe7d166f3b38d62aad6a3db3d0231e4569d474426728ccbd10ef",
+    "crates/rv2k-arch/src/lib.rs": "be90670eec18f56e3e0628565a9348d373a90ac03e94379e7c310432444b69d6",
+    "crates/rv2k-arch/src/preempt.rs": "34320e876d480447eeffa2f2cad31b1f6b93ccaf63e04acebfc1ff2316d5bcc1",
+    "crates/rv2k-arch/src/stack.rs": "54d020bc7fea03cf595279d938e03bab1961e1e1c4eb8c938e51a0a105c34ab7",
+    "crates/rv2k-api/src/ipc.rs": "88efa904b5c79a3d47005540ed6337d7d6afaa988adcc92e905e8564475b9912",
+    "crates/rv2k-api/src/net.rs": "e223c4cfaa054878c158b9c31436da71c40bd48243fc221b9d68c37a9ba1e960",
+    "crates/rv2k-api/src/lib.rs": "b626aad8e04b888d0eabb7b3f6cf902382616442b9af88c698e6a23a7f2b1b74",
+    "crates/rv2k-api/src/time.rs": "bec92bd37e660ad93811c677c1463fd47ce21fd69a5af690872a5eb3af4aeb81",
+    "crates/rv2k-api/src/event.rs": "471811d8ef6de0a8934e45aac5e94dde13d59972f72783f6c409d160a1beae51",
+    "crates/rv2k-api/src/task.rs": "c6096a0b73e0b6334baa58ee6cf2aa277baacaf36f813a752af16984e605de0d",
+    "crates/rv2k-api/src/console.rs": "70a279e28bfca1be6a54755a2e6fdd33f425eff7c8c6f0ba534bc49f6baa254c",
+    "crates/rv2k-api/src/socket.rs": "7e976c93f078b03e137d6a6a5fe35070c9794c2b72188198b95e1d6de8852b5d",
+    "crates/rv2k-api/src/syscall.rs": "e8434a98ed1c9cb5c6c1dd4ae9a8ce651db7db025e51759e9f0d18fcef45b0e4",
+    "crates/rv2k-api/src/integer.rs": "d32a1f05f13114a05e0f3ce8b32c8fd01848a49b6a7b62ec4b9f36c0b89365d5",
+    "crates/rv2k-api/src/mem.rs": "436e9bc5d39d915537613e8e3056fbf649f5bab4592b263eff7927fc1a23853e",
+    "crates/rv2k-apps/src/shell.rs": "9bc8c995343bdc2c6de728725fb9676966f31712546c04e981caeb44091b9262",
+    "crates/rv2k-apps/src/monitor.rs": "26bb39321324274f949906056301f55bd3e32f7f9466dd550af49a7726903a7e",
+    "crates/rv2k-apps/src/lib.rs": "8102f57f51c19f7893b9508e2711ffff56ac9092b78411f767faf6e4d144d014",
+    "crates/rv2k-apps/src/http.rs": "5ccd74d6b39480b37778d6d64f835efced21e08644d294784432b7b10a18ee0a",
+    "crates/rv2k-kernel/src/diagnostics.rs": "7eceb3f4a64b32e6c39ee482ceafc15fc27b0be6fdcc3a733492c2edb692b238",
+    "crates/rv2k-kernel/src/ipc.rs": "69c75ac7957510e985f4e72463bf403081c1eb0d523828bbd54ad238ee986ada",
+    "crates/rv2k-kernel/src/lib.rs": "0f6c54727a58447364f14acdd539eeb2a4a7d0fc4456d46291a5122a4b6a4b3e",
+    "crates/rv2k-kernel/src/memory.rs": "d2a5a9e7b6f868af8a2a09efc4efcfc23cc8b9e4743a153a11885d0b75b25072",
+    "crates/rv2k-kernel/src/services.rs": "84b84f9bce2643cef55620ace6be6fe545ab28735877f4a011f472cbde825f41",
+    "crates/rv2k-kernel/src/socket.rs": "9bc9cf778accd3fb1cb5f70e32a7ac13c39b1d77a4925df7685252eaeff596b9",
+    "crates/rv2k-kernel/src/syscall.rs": "ae8963b13d262edea24aaaa7ab5afee3c556e4a8564fbd4c0758dfc5e4e75e73",
+    "crates/rv2k-net/src/checksum.rs": "ca7aa01ac3b631ba0ba1040a25112da2a1d34518379738078285d3759b5e1672",
+    "crates/rv2k-net/src/lib.rs": "993e64a93944768faae3fe8e4e6ab3b3f7c9cab76534b162104f8e1247669629",
+    "crates/rv2k-net/src/wire.rs": "f1e595028fab25ee16c525978eb3738e232ee931543389bb94cb01881c4a4ab7",
+    "crates/rv2k-net/src/tcp/rto.rs": "dc61b957fc6eab337475df97220b2bb3cc6cccfb382c6aaaf9bff9625466213e",
+    "crates/rv2k-net/src/tcp/mod.rs": "4bbb19cebf570b2f507878c7c619fcc1ba166009f0496913f22268646dbdbf47",
+    "crates/rv2k-net/src/tcp/socket.rs": "986948224d268cf4d47f369c4e86e1b74a115b293092313d9035ec7a655e5e02",
+    "crates/rv2k-net/src/tcp/tests.rs": "21ce1d3a206f06fb7b987f235a48e724735afd2f56045e2a9784b9a5cd6e1787",
+    "crates/rv2k-drivers/src/lib.rs": "ddbbdf7e57fd38d310f90b124a3610d2db357473807fd90f1acc72354fc49741",
+    "crates/rv2k-drivers/src/virtual_nic.rs": "68e98bd4e975e962f4c64a6cd2fd1cf81391fd255f4a8099bedb44b8d4cd0fad",
+    "crates/rv2k-drivers/src/board.rs": "51d4c0e6dc3fd94ce4a580a948d76831d1258e8866276c761e39c123f0540adc",
+    "crates/rv2k-drivers/src/spi.rs": "843e3a446223abc5f5421ce359e0f474a1c404a4aa4bee17bd09c0bde0abc67e",
+    "crates/rv2k-drivers/src/enc28j60.rs": "06e3eef3b4c34386f862ccc8f8643ce2a957485be81ba915becf4b6ef29013bd",
+    "crates/rv2k-drivers/src/uart.rs": "a086ce36d2565be252212b9a06c2f47becd7ce9af5035496658c4ccbb39aa1d5",
+    "crates/rv2k-drivers/src/network.rs": "499a1772fe5698b61f9051e7aff517c168d04a45cd3f5fdc64953e8f45d54b54",
+    "ch32v003-rust-os-test/src/compact.rs": "f4cf1c91f154ce8ba368c093fc52c15ad6a2d3bd7395e86235676b8114e527cf",
+    "ch32v003-rust-os-test/src/diagnostics.rs": "0aea6160fc2da1ce37f61e2dcf03df08711d915927d8250d65a252ceb15afb24",
+    "ch32v003-rust-os-test/src/netinfo_probe.rs": "8a51bd1f73b1f073e46ee53c51a472a4733bdb9c6f6868be7e7c6df272754ea2",
+    "ch32v003-rust-os-test/src/shell.rs": "973f0821085148c97a5856f143af0d97d421d19681d14a272a975bd9625e730b",
+    "ch32v003-rust-os-test/src/drivers.rs": "26416d109da1652f4bb03561aed1a5a6b0cf1de4ee9f29dd32c6ec858000052d",
+    "ch32v003-rust-os-test/src/coop.rs": "ba9aa6b09d8a2e4f1e1c45466f955307ec35650759cba4f1bf77214d38757157",
+    "ch32v003-rust-os-test/src/services.rs": "f58181f1b438a22a6af4f1f1ac3300fbdbb7caf42fdfa32839803ac5eb6e55b0",
+    "ch32v003-rust-os-test/src/scheduler.rs": "7544d9e6d7375b2798218c0c1a7d5dd9e0639656c47e7cf9848d163860a1508e",
+    "ch32v003-rust-os-test/src/main.rs": "c8fc8e6b5ee91e532c6fd8bfb9b128103406053ab37e5ffd4bd0a187a2e1736f",
+    "ch32v003-rust-os-test/src/preemption_probe.rs": "265aa655a54dbdcf61d97992d363ebecb535a5904f3210afdccfc86fe0c2cdb0",
+    "ch32v003-rust-os-test/src/http.rs": "44383869eafd9960128a275ec33c63768f13569eb76754671a36824464d03b45",
+    "ch32v003-rust-os-test/src/syscall.rs": "ae6faf4ff45644b161f1653cd642a4044863ccb09916226703e76f88a685f9da",
+    "ch32v003-rust-os-test/src/network.rs": "cebcc760b485de4a449b3aba111fc14be52c38dc1870569d2d0b58038ad28616",
+    "ch32v003-rust-os-test/src/coop_probe.S": "a94db70da96c92e4ca2affb3c6a9eb994f2399910b39f891823d2383eba524c9",
+    "ch32v003-rust-os-test/src/syscall_probe.S": "ce4ad3570e75965523fa02e468a0a6119205b08c2b691278288ff8fb3a3b74c7",
+    "ch32v003-rust-os-test/scripts/check-budget.py": "5c6bdafefaa141f1ebc1109c9b66ca729dcee0aa7259ab5c4412ffdc17061c6e",
+    "ch32v003-rust-os-test/scripts/check-services.py": "b750d5c3ed73eb73a42745b55c9929232de366188147a8d7d4779cb7a806a134",
+    "ch32v003-rust-os-test/scripts/tcp.sh": "dbe14ce7dbdc8f7b8d3006d9f000d8246a11f95e9fd07a08a391222fcdf93c7d",
+    "ch32v003-rust-os-test/scripts/setup-emulator.sh": "5dbeb3818da1eecaebf6894bf1d0c275ff20374dda767a8fda118f69d13e3f01",
+    "ch32v003-rust-os-test/scripts/check-syscall.py": "6321d733fc80d4edcdfe99eb1e5371aab82ab51713f39ec77afcfe78074641fe",
+    "ch32v003-rust-os-test/scripts/syscall.sh": "59a00039802ae2eb53f1c036d6d8b4aab8634fd51abe20cadc9875c90eab3dfd",
+    "ch32v003-rust-os-test/scripts/network.sh": "c9e183aecd0a47665a543eb117b3c38dcd4ccfaefd45bb0b5da6dc655f65a8c8",
+    "ch32v003-rust-os-test/scripts/budget-negative.py": "9e7b31328dff00a7994f0223d0c535b955dd766d8ba03f8e978d7f6d843d7b86",
+    "ch32v003-rust-os-test/scripts/check-scheduler.py": "3a2c573fdb28aa7af458cb59fd751f0c0d25d7fa16d54d4e8a144b9926f1cfd7",
+    "ch32v003-rust-os-test/scripts/check-coop.py": "be11117d888266c9c734cffee4d263f6dbed9a99accf5fb4e180c05b09806730",
+    "ch32v003-rust-os-test/scripts/check.py": "e6130ac15d1f477f2dfa2fb388216cc554b644489766733f0838eab72b55769b",
+    "ch32v003-rust-os-test/scripts/check-diagnostics.py": "c3e9585439399f356ef00f820a6a8a323100794e56b46a76d8fddc36b6a0eb85",
+    "ch32v003-rust-os-test/scripts/elf-for-remu.py": "d03e7b1019c84bd124e6174207073641b30180f8126bcfd44bf47b27883067cd",
+    "ch32v003-rust-os-test/scripts/check-preempt.py": "f79122c385793ebf91bedb2ef9f8e3cd392ca2fe7c5af19f2af3d52270b110ed",
+    "ch32v003-rust-os-test/scripts/http.sh": "9e9051272600a1c1019ff56fd92375216633c1f84abaa65d722effbb70e818e4",
+    "ch32v003-rust-os-test/scripts/preempt.sh": "7e65c560f001ab5c1df7f5637b9b4826a4b9270c88b396ae5c6f9917fce0583d",
+    "ch32v003-rust-os-test/scripts/scheduler.sh": "17405288533481b590ed887d97380b6a2bc28f5860ce5e4a177773633fb6f170",
+    "ch32v003-rust-os-test/scripts/snapshot.sh": "c3d4c9500f6b93ecd6ab5ecb5384a4df0494e910c39dee17b780618153978a7b",
+    "ch32v003-rust-os-test/scripts/check-netinfo.py": "8de950f41c6e2b1714b1197c113bfaf7665f9a9f5d57458015201c7438738c56",
+    "ch32v003-rust-os-test/scripts/coop-negative.py": "69270384c760cad3a0022819614c3d831c7ee4d6b79ecdb5622a894ef1316e47",
+    "ch32v003-rust-os-test/scripts/run.sh": "9d211e1be55b349256be03e15a0bd877263765d202c9554af4057dd8d756c07d",
+    "ch32v003-rust-os-test/scripts/check-http.py": "9f05962e18958fa69c49f6be0321cc07969759fe95ef21ae17ce9d4d57671730",
+    "ch32v003-rust-os-test/scripts/services.sh": "a8402f9248dc3da9e3d3f30e39c8521febd62dd66277cada0083023bc57e66c5",
+    "ch32v003-rust-os-test/scripts/build.sh": "c521988d109a6fe2035ba7e03fd292a3185c0d69ba57a45ad7de2eb257394a38",
+    "ch32v003-rust-os-test/scripts/coop.sh": "d59f614563a7d9dd9e1c995280e2443959317a915a08b027109384ffc6adad53",
+    "ch32v003-rust-os-test/scripts/preempt-negative.py": "c4e02b15889f66055d4074afad22a8ab988540b65639518a93404717d0468389",
+    "ch32v003-rust-os-test/scripts/drivers.sh": "2ea6223f0ada0f5a58d64dfb7f10d5fbf68b064f62916268fbf9af59e0f43501",
+    "ch32v003-rust-os-test/scripts/check-drivers.py": "cc09d8772c7362d915f0fbeb4d4f5263f7ca7aaefcfbb87cc7a5e019f800a2f6",
+    "ch32v003-rust-os-test/scripts/network-fixtures.py": "8b99c342fc451082f42e14455073a15da35dea9665d249637137f431c817ac98",
+    "ch32v003-rust-os-test/scripts/diagnostics-negative.py": "7c541ca24b736ab5b60f1f76f0ba28fb6f91f4ca15139593e0151bc66d4d24c2",
+    "ch32v003-rust-os-test/scripts/probes.py": "bc3b0a811a1401205de960e0b13b0bdb7a9fb8fbc59f2fa8831cc1efea62bd3b",
+    "ch32v003-rust-os-test/scripts/shell.sh": "3fe98b336ad9b97313ba34b76edd12a553ccdcc8c7a1db2ff67f42408aa76d32",
+    "ch32v003-rust-os-test/scripts/syscall-negative.py": "bfb800d16ea5432002257e26cb9d193f5ec54c84cbe396620381630a67f06f3f",
+    "ch32v003-rust-os-test/scripts/timer.sh": "89d306a81dd574a3b65664b2a69ec05d357d850f098158ff4bffb0f7074ddd5a",
+    "ch32v003-rust-os-test/scripts/check-tcp.py": "874ec40f4b2724033abe35815df8cf3bc461028b27e8a00de229e181d94733ae",
+    "ch32v003-rust-os-test/scripts/diagnostics.sh": "7e96bc2d67a7ca2f81d00ee986aa63542ddd3fc451b2c615d303b394d1d808d8",
+    "ch32v003-rust-os-test/scripts/check-shell.py": "2e50368a62e2d5d2b650a572e8af3e32c3409e9a2006596b7efdd13ca22b94d0",
+    "host/net-harness/src/tcp_probe.rs": "325c604a874eb7adcdce1154692f4a8a38a20ad3f18a7297d59ae08c8a8641c0",
+    "host/net-harness/src/device.rs": "37e11ac96d396d8e9b9dcf6631a005bd1a317d7cb92ce1fa92d2c5ecd0adbd2c",
+    "host/net-harness/src/pcap.rs": "acdcb9642c993a54b9ba64b27246462064fde824795e542f42eb43d217a94edc",
+    "host/net-harness/src/shell_probe.rs": "65ddd781331b00b32e9224cfd05596527da5b5d312750812d92683340946f2e2",
+    "host/net-harness/src/main.rs": "e614554d191b3e496108711cf402cd9da6ce038b237ddc8d9d1e7dbed79e926b",
+    "host/net-harness/src/http_probe.rs": "cf6f964002863225e9ac8ae3f804a029e72825670ea28c8c82d440441649cb04",
+    "host/net-harness/src/peer.rs": "7f458db8ab5484d5cb2abf4701282419b7a2db2c1e12699fbba16d37289d1df1",
+    "Cargo.toml": "f087a03dec839affe4c8fd343b7041eaf76a156b196b818fc1d4f37f45749cc0",
+    "ch32v003-rust-os-test/Cargo.toml": "cf0a8f5872921425c67764d623dccb49c9d85e23753a7b03443e2ba359ee2723",
+    "ch32v003-rust-os-test/Cargo.lock": "b9b770b9b0743430f551cb13ff8078efa7fe4682753a89f59e51ea9b614dbb97",
+    "ch32v003-rust-os-test/memory.x": "6b2c6a92b31ce3d3fbd80dc3226241b6ab13cdbd4ac206ed4f1ecb6f2b5dd27d",
+    "ch32v003-rust-os-test/riscv32ec-unknown-none-elf.json": "e9415326e2bbef02a6bd5bf326949d79b46a20047483fac7121bc4da524b3576",
+    "ch32v003-rust-os-test/rust-toolchain.toml": "84e95459462a7f2d969533465a197f10ee71cee91eae676cc2f5ccdb0eb6c0c2",
+    "crates/rv2k-arch/Cargo.toml": "6d099c098456b22fd5bf9b4588ebe591ed7983eab1dce4204317618f1137e68a",
+    ".github/workflows/kernel.yml": "2e0dabd8b0538473f0907f41e0591f8b2863edbfe1dd9cdcd4aaff47fa624302"
+  },
+  "builds": {
+    "shell": {
+      "elf_sha256": "acf84cd38f044bb6334a64cfa817c3067bb5d88e097893bbee4d800046d49bf5",
+      "load_spans": [
+        {
+          "vma": 0,
+          "lma": 0,
+          "filesz": 15048,
+          "memsz": 15048,
+          "sha256": "cdab3bc1cff0e14037258b87563fab4b0d049a86be740b26cc9b9ed1c8ec448e"
+        },
+        {
+          "vma": 536870912,
+          "lma": 536870912,
+          "filesz": 0,
+          "memsz": 1652,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "flash_bytes": 15048,
+      "static_ram_bytes": 1652,
+      "kernel_stack_bytes": 256,
+      "observer_symbols": [
+        "TIMER_IRQS",
+        "IDLE_POLLS",
+        "UPTIME",
+        "TRAPS",
+        "LAST_CAUSE",
+        "LAST_PC",
+        "STACK_USED",
+        "PREEMPT_SWITCHES",
+        "PREEMPT_BLOCKED_CALLS",
+        "PREEMPT_DEFERRED"
+      ],
+      "required_runtime_symbols": {
+        "FAULT_INFO": 536870928,
+        "SERVICES_STATUS": 536870984,
+        "TASK_STACKS": 536871008,
+        "rv2k_prepare_frame": 8702,
+        "rv2k_timer_irq": 9016,
+        "rv2k_trap_dispatch": 9128
+      }
+    },
+    "shell-enc": {
+      "elf_sha256": "5126375a1d566f8f87dab120c70afbcf96f2b58f3f079d34dc1b10862c2a8379",
+      "load_spans": [
+        {
+          "vma": 0,
+          "lma": 0,
+          "filesz": 16382,
+          "memsz": 16382,
+          "sha256": "28dc2e01c94a1e76770d14e014c9597f631ad7f95b2cd0d56493026ee7dbd6cf"
+        },
+        {
+          "vma": 536870912,
+          "lma": 536870912,
+          "filesz": 0,
+          "memsz": 1608,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "flash_bytes": 16382,
+      "static_ram_bytes": 1608,
+      "kernel_stack_bytes": 256,
+      "observer_symbols": [],
+      "required_runtime_symbols": {
+        "FAULT_INFO": 536870912,
+        "SERVICES_STATUS": 536870936,
+        "TASK_STACKS": 536870944,
+        "rv2k_prepare_frame": 9980,
+        "rv2k_timer_irq": 10290,
+        "rv2k_trap_dispatch": 10382
+      }
+    },
+    "http": {
+      "elf_sha256": "1fa34b3a3bad4a641cf4e16e1a9433f472322c0091273b5b0f6d966f961a5f93",
+      "load_spans": [
+        {
+          "vma": 0,
+          "lma": 0,
+          "filesz": 14924,
+          "memsz": 14924,
+          "sha256": "dcc3b4fd9b205ad0383e93843c0ebc594b9711a537bbbff677e6ca2f85a395a2"
+        },
+        {
+          "vma": 536870912,
+          "lma": 536870912,
+          "filesz": 0,
+          "memsz": 1764,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "flash_bytes": 14924,
+      "static_ram_bytes": 1764,
+      "kernel_stack_bytes": 256,
+      "observer_symbols": [
+        "TIMER_IRQS",
+        "IDLE_POLLS",
+        "UPTIME",
+        "TRAPS",
+        "LAST_CAUSE",
+        "LAST_PC",
+        "STACK_USED",
+        "PREEMPT_SWITCHES",
+        "PREEMPT_BLOCKED_CALLS",
+        "PREEMPT_DEFERRED"
+      ],
+      "required_runtime_symbols": {
+        "FAULT_INFO": 536870928,
+        "SERVICES_STATUS": 536871000,
+        "TASK_STACKS": 536871024,
+        "rv2k_prepare_frame": 9140,
+        "rv2k_timer_irq": 9454,
+        "rv2k_trap_dispatch": 9566
+      }
+    },
+    "http-enc": {
+      "elf_sha256": "c41e97ee4dbd3fc172f4e2c8edecd0ad80ce056d164283a8e531ca7b46051b22",
+      "load_spans": [
+        {
+          "vma": 0,
+          "lma": 0,
+          "filesz": 16018,
+          "memsz": 16018,
+          "sha256": "29f1b4f44c121dc6261b6b623394c59ca48bc65db1373d0a8d2611c1a7cb6279"
+        },
+        {
+          "vma": 536870912,
+          "lma": 536870912,
+          "filesz": 0,
+          "memsz": 1696,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "flash_bytes": 16018,
+      "static_ram_bytes": 1696,
+      "kernel_stack_bytes": 256,
+      "observer_symbols": [],
+      "required_runtime_symbols": {
+        "FAULT_INFO": 536870912,
+        "SERVICES_STATUS": 536870936,
+        "TASK_STACKS": 536870944,
+        "rv2k_prepare_frame": 10180,
+        "rv2k_timer_irq": 10490,
+        "rv2k_trap_dispatch": 10582
+      }
+    },
+    "netinfo": {
+      "elf_sha256": "021bce87bda2fced56b9f77b62e5bdfc12e2cc1ebbd54f9cd452a2b1c3b12106",
+      "load_spans": [
+        {
+          "vma": 0,
+          "lma": 0,
+          "filesz": 14312,
+          "memsz": 14312,
+          "sha256": "94ca964fa5989505f3f1b61bff4cfc83e849368aab2c8e0c702a4298a0004339"
+        },
+        {
+          "vma": 536870912,
+          "lma": 536870912,
+          "filesz": 0,
+          "memsz": 1676,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "flash_bytes": 14312,
+      "static_ram_bytes": 1676,
+      "kernel_stack_bytes": 256,
+      "observer_symbols": [
+        "TIMER_IRQS",
+        "IDLE_POLLS",
+        "UPTIME",
+        "TRAPS",
+        "LAST_CAUSE",
+        "LAST_PC",
+        "STACK_USED",
+        "PREEMPT_SWITCHES",
+        "PREEMPT_BLOCKED_CALLS",
+        "PREEMPT_DEFERRED"
+      ],
+      "required_runtime_symbols": {
+        "FAULT_INFO": 536871064,
+        "SERVICES_STATUS": 536871120,
+        "TASK_STACKS": 536871136,
+        "rv2k_prepare_frame": 9368,
+        "rv2k_timer_irq": 9682,
+        "rv2k_trap_dispatch": 9794
+      }
+    },
+    "preempt-enc": {
+      "elf_sha256": "9808fff2ff5477d060f0d776fb97bd683ef0025c7d287f6142d7fa81f95d4c33",
+      "load_spans": [
+        {
+          "vma": 0,
+          "lma": 0,
+          "filesz": 14076,
+          "memsz": 14076,
+          "sha256": "b41f265b3c054c9d85f4a657315db8885bd28bdaa33b5c8fb06ab72b82aa719b"
+        },
+        {
+          "vma": 536870912,
+          "lma": 536870912,
+          "filesz": 0,
+          "memsz": 1528,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "flash_bytes": 14076,
+      "static_ram_bytes": 1528,
+      "kernel_stack_bytes": 256,
+      "observer_symbols": [],
+      "required_runtime_symbols": {
+        "FAULT_INFO": 536870944,
+        "SERVICES_STATUS": 536870968,
+        "TASK_STACKS": 536870976,
+        "rv2k_prepare_frame": 9238,
+        "rv2k_timer_irq": 9548,
+        "rv2k_trap_dispatch": 9640
+      }
+    },
+    "preempt": {
+      "elf_sha256": "0d30ce61a860c26a4a8dc09c83f2bb930f5a0192f52122a80316348f97b3610b",
+      "load_spans": [
+        {
+          "vma": 0,
+          "lma": 0,
+          "filesz": 6562,
+          "memsz": 6562,
+          "sha256": "ab39823ed7dbcdfe23e4bfee221f4cbe4129cc3c8d62f2de4dc395d3382e3575"
+        },
+        {
+          "vma": 536870912,
+          "lma": 536870912,
+          "filesz": 0,
+          "memsz": 932,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "flash_bytes": 6562,
+      "static_ram_bytes": 932,
+      "kernel_stack_bytes": 256,
+      "observer_symbols": [
+        "TIMER_IRQS",
+        "IDLE_POLLS",
+        "UPTIME",
+        "TRAPS",
+        "LAST_CAUSE",
+        "LAST_PC",
+        "STACK_USED",
+        "PREEMPT_SWITCHES",
+        "PREEMPT_BLOCKED_CALLS",
+        "PREEMPT_DEFERRED"
+      ],
+      "required_runtime_symbols": {
+        "FAULT_INFO": 536870912,
+        "SERVICES_STATUS": 536871108,
+        "TASK_STACKS": 536871136,
+        "rv2k_prepare_frame": 3256,
+        "rv2k_timer_irq": 3570,
+        "rv2k_trap_dispatch": 3682
+      }
+    },
+    "drivers": {
+      "elf_sha256": "b64d3bada3845d64a0f2d98fb1c2dd0210679169df948d59c405cae1cc075699",
+      "load_spans": [
+        {
+          "vma": 0,
+          "lma": 0,
+          "filesz": 10449,
+          "memsz": 10449,
+          "sha256": "64c30cb625caf1dcdddcaaa7ed0e95c09a2d5da3ac2d824efa558da6faee6f98"
+        },
+        {
+          "vma": 536870912,
+          "lma": 536870912,
+          "filesz": 0,
+          "memsz": 832,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      ],
+      "flash_bytes": 10449,
+      "static_ram_bytes": 832,
+      "kernel_stack_bytes": 256,
+      "observer_symbols": [
+        "TIMER_IRQS",
+        "IDLE_POLLS",
+        "UPTIME",
+        "TRAPS",
+        "LAST_CAUSE",
+        "LAST_PC",
+        "STACK_USED",
+        "DRIVER_STATUS"
+      ],
+      "required_runtime_symbols": {
+        "FAULT_INFO": 536870912,
+        "SERVICES_STATUS": 536870956,
+        "TASK_STACKS": 536871232,
+        "rv2k_prepare_frame": 6762,
+        "rv2k_timer_irq": 7190,
+        "rv2k_trap_dispatch": 7246
+      }
+    }
+  },
+  "workspace_tests": 88,
+  "clippy": "PASS",
+  "fmt": "PASS",
+  "all_checks": "PASS; raw command logs included",
+  "hardware_margin_flash_bytes": 2,
+  "hardware_margin_ram_bytes": 184,
+  "physical_nic_execution": "UNVERIFIED: no hardware",
+  "native_mac": "UNVERIFIED: sudo authentication required before vmnet startup"
+}

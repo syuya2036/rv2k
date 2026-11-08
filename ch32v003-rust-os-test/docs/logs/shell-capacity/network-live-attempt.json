@@ -1,0 +1,11 @@
+{
+  "attempt_utc": "2026-11-08T14:18:36.872369+00:00",
+  "command": "sudo -n /Users/shuya/Documents/personal/rv2k/host/vmnet/target/bridge 60",
+  "exit_code": 1,
+  "stderr": "sudo: a password is required",
+  "network_started": false,
+  "native_ping": "UNVERIFIED",
+  "native_tcp": "UNVERIFIED",
+  "native_http": "UNVERIFIED",
+  "physical_board": "NOT AVAILABLE"
+}
