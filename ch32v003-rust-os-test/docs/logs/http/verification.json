@@ -36,7 +36,7 @@
     "crates/rv2k-net/src/tcp/mod.rs": "0e5ac18c79a8aa6a889deb08d849e8437668e2271d66a7d3ae5c4f3717c5e41a",
     "crates/rv2k-net/src/tcp/socket.rs": "986948224d268cf4d47f369c4e86e1b74a115b293092313d9035ec7a655e5e02",
     ".github/workflows/kernel.yml": "2e0dabd8b0538473f0907f41e0591f8b2863edbfe1dd9cdcd4aaff47fa624302",
-    "crates/rv2k-apps/src/shell.rs": "bd2e8b6e0f36786b5fc4d617121cf7f8df773348f95181c5e885481ec65c3376",
+    "crates/rv2k-apps/src/shell.rs": "9bc8c995343bdc2c6de728725fb9676966f31712546c04e981caeb44091b9262",
     "crates/rv2k-net/src/lib.rs": "993e64a93944768faae3fe8e4e6ab3b3f7c9cab76534b162104f8e1247669629"
   },
   "original_elf_sha256": "2f3c89388c75a87bdfb6ae42debf90e12e5783d6bb4cac4ad68cba7e439df95b",
@@ -66,7 +66,7 @@
   "guest_instruction_ceiling": 200000000,
   "http_absolute_deadline_ticks": 500,
   "watchdog_regression": "PASS: normal and IRQ stress, all absolute deadline checks",
-  "source_parent_commit": "fabe8b460ab0d93b2578bfa2f67b375470321608",
+  "source_parent_commit": "ec48b78eefa547365951531d8a31053c6403f6be",
   "compiler_mir_inlining": "yes; pinned nightly-2026-03-12",
   "absolute_event_deadlines": "PASS: native preempted registration / expiry readiness / u32 wrap / both dispatchers + guest HTTP and shell",
   "timeout_read_ticks": {
@@ -91,5 +91,6 @@
     "ram_limit": 2048
   },
   "http_ci_command": "bash scripts/http.sh",
-  "compiler_llvm_inline_threshold": 25
+  "compiler_llvm_inline_threshold": 25,
+  "test_only_ci_lint_fix": "PASS: shell/HTTP/HTTP+ENC every PT_LOAD byte and RAM span identical; ../shell-compact/ci-lint-rebuild.json"
 }

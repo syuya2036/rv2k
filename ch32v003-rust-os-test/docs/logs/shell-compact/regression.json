@@ -1,5 +1,5 @@
 {
-  "source_parent_commit": "fabe8b460ab0d93b2578bfa2f67b375470321608",
+  "source_parent_commit": "ec48b78eefa547365951531d8a31053c6403f6be",
   "compiler": "nightly-2026-03-12; flags unchanged from PR #17",
   "source_sha256": {
     "ch32v003-rust-os-test/src/http.rs": "44383869eafd9960128a275ec33c63768f13569eb76754671a36824464d03b45",
@@ -38,7 +38,7 @@
     "crates/rv2k-net/src/tcp/mod.rs": "0e5ac18c79a8aa6a889deb08d849e8437668e2271d66a7d3ae5c4f3717c5e41a",
     "crates/rv2k-net/src/tcp/socket.rs": "986948224d268cf4d47f369c4e86e1b74a115b293092313d9035ec7a655e5e02",
     ".github/workflows/kernel.yml": "2e0dabd8b0538473f0907f41e0591f8b2863edbfe1dd9cdcd4aaff47fa624302",
-    "crates/rv2k-apps/src/shell.rs": "bd2e8b6e0f36786b5fc4d617121cf7f8df773348f95181c5e885481ec65c3376",
+    "crates/rv2k-apps/src/shell.rs": "9bc8c995343bdc2c6de728725fb9676966f31712546c04e981caeb44091b9262",
     "crates/rv2k-net/src/lib.rs": "993e64a93944768faae3fe8e4e6ab3b3f7c9cab76534b162104f8e1247669629"
   },
   "host_tests": 88,
@@ -189,6 +189,8 @@
     "ch32v003-rust-os-test/docs/logs/snapshot/tcp-output.pcap": "bb64c540db59064319fe988068b1f68e1e4c7da825c5b09089f0bfd5bcc3b22f",
     "ch32v003-rust-os-test/docs/logs/snapshot/tcp-output.rx.pcap": "2deb3e8adfa5708b8e610bfa25b7c55d39c7ee73866287aa2e7688528377d738",
     "ch32v003-rust-os-test/docs/logs/snapshot/tcp-run.json": "397bdc5198a0b06e4f4153612002be82674986223dbed9a38099914938c72d4e",
-    "ch32v003-rust-os-test/docs/logs/snapshot/tcp-summary.json": "d58651212432479a7eefc62e0d5ebfa8be14d403e288101da2357d149693d6e9"
-  }
+    "ch32v003-rust-os-test/docs/logs/snapshot/tcp-summary.json": "d58651212432479a7eefc62e0d5ebfa8be14d403e288101da2357d149693d6e9",
+    "ch32v003-rust-os-test/docs/logs/shell-compact/ci-lint-rebuild.json": "f3b417d779f1949d005dc6ba3d94e0417cec988d87491e7b81610ff83c2b9540"
+  },
+  "test_only_ci_lint_fix": "PASS: shell/HTTP/HTTP+ENC every PT_LOAD byte and RAM span identical; ../shell-compact/ci-lint-rebuild.json"
 }
