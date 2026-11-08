@@ -1,0 +1,1 @@
+PASS: real memory.x linker boundaries: [{'case': 'ram-boundary', 'link_succeeded': True}, {'case': 'ram-overflow', 'link_succeeded': False}, {'case': 'flash-overflow', 'link_succeeded': False}]

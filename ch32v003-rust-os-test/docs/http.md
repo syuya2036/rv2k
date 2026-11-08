@@ -40,15 +40,15 @@ HTTP の対向 harness はホスト監視時間を 180 秒とします。17 接�
 
 |項目|通常|IRQ ストレス|
 |---|---:|---:|
-|実行命令数|88,570,941|88,342,633|
-|RX / TX フレーム|230 / 231|230 / 231|
-|強制切替 / 延期 IRQ|12 / 8|4 / 248|
+|実行命令数|88,571,055|88,342,611|
+|RX / TX フレーム|230 / 232|230 / 231|
+|強制切替 / 延期 IRQ|12 / 8|4 / 246|
 |T0 / T1 / kernel スタック使用 byte|176 / 176 / 120|176 / 176 / 120|
 |番兵破損 / fault|0 / 0|0 / 0|
 
-仮想 NIC ELF は Flash 14,940 / 16,384 byte、静的 RAM 1,764 byte + kernel/IRQ/boot 予約 256 byte = 2,020 / 2,048 byte です。タスクの各 256 byte スタックと番兵は静的 RAM に含みます。
+仮想 NIC ELF は Flash 14,924 / 16,384 byte、静的 RAM 1,764 byte + kernel/IRQ/boot 予約 256 byte = 2,020 / 2,048 byte です。タスクの各 256 byte スタックと番兵は静的 RAM に含みます。
 
-ENC28J60 構成の元 ELF は Flash 16,322 / 16,384 byte、予約 RAM 2,004 / 2,048 byte です。Flash の残りは 62 byte なので、CI の strict link と load span 検査で増加を検出します。このリンク成功は実機の SPI タイミングやスタック高水位の証明ではありません。以前の 460 byte 超過は [当時のログ](logs/deadlines/http-enc-link-failure.txt) に残しています。
+ENC28J60 構成の元 ELF は Flash 16,018 / 16,384 byte、予約 RAM 1,952 / 2,048 byte です。Flash の残りは 366 byte なので、CI の strict link と load span 検査で増加を検出します。このリンク成功は実機の SPI タイミングやスタック高水位の証明ではありません。以前の 460 byte 超過は [当時のログ](logs/deadlines/http-enc-link-failure.txt) に残しています。
 
 ## 共通部分の回帰と未完了ゲート
 
@@ -67,3 +67,5 @@ TCB を RV32 で 32 byte stride とし、初期化の一時コピー、固定 MM
 [絶対期限の回帰](logs/deadlines) に、残り時間取得後の preemption の反例、両 dispatcher・u32 wrap・期限切れ時のイベント非消費、MIR 構成の preemption / SPI / 診断負例を保存しています。実行予算を超えた harness も PCAP / RAM / 停止理由を保存し、成功としては扱いません。
 
 シェル入力・表示と RX 所有状態の削減後の結果は [こちら](shell-compact.md) を参照してください。
+
+実機用の計測専用コードの分離と共通回帰は [シェル ENC 収容](shell-capacity.md) を参照してください。公開診断・番兵・実際の時刻 / preemption 状態は保持します。

@@ -1,5 +1,7 @@
 # TCP シェルの入力・表示と RX 状態の削減
 
+このページは PR #18 時点の履歴です。その後、シェル＋ENC は元の容量制約に合格しました。[現在の容量と検査](shell-capacity.md) を参照してください。
+
 シェル＋ENC の Flash 超過を 1,000 byte から 444 byte へ減らしました。まだ元の 16KB linker gate に合格しておらず、Phase 10 は未完了です。仮想 NIC 版は Flash 15,204 / 16,384 byte、全スタック込み RAM 1,908 / 2,048 byte で、通常・IRQ 注入の各 5 接続・12 コマンドが PASS です。
 
 |構成|変更前 Flash / RAM|今回 Flash / RAM|

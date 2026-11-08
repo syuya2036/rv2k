@@ -64,7 +64,7 @@ Phase 7では単一接続TCPをEthernet/guestへ接続し、公開Socket APIに�
 仮想NIC版とENC28J60版はRAM 2KB・Flash 16KB以内です。Mac native TCPは未検証のためPhase 7全体はPARTIALです。[TCP実装状況](ch32v003-rust-os-test/docs/tcp.md) を参照してください。
 Phase 8ではSysTickによる強制切替、共有状態更新中の延期、SPI bit途中のIRQ、レジスタ・PC復元の負例を検証しました。
 Phase 8時点のENC構成は予約RAM 1,844byte / Flash 16,380byteでした。[プリエンプション検証](ch32v003-rust-os-test/docs/preemption.md) を参照してください。
-HTTP Echoサーバー、公開network snapshot APIとTCPシェルを追加しました。HTTPは仮想NICで分割受信・期限・再接続を検証しています。[HTTP実装状況](ch32v003-rust-os-test/docs/http.md) を参照してください。シェルは仮想NICで全コマンド・入力復帰・再接続が検証済みです。HTTPのENC構成は元のFlash 16KB・RAM 2KB以内でリンク済みです。シェルのENC構成は444byte超過しており、容量削減とMac接続検証を継続しています。[シェル検証](ch32v003-rust-os-test/docs/shell.md) を参照してください。[公開snapshot検証](ch32v003-rust-os-test/docs/snapshot.md) を参照してください。
+HTTP Echoサーバー、公開network snapshot APIとTCPシェルを追加しました。HTTPは仮想NICで分割受信・期限・再接続を検証しています。[HTTP実装状況](ch32v003-rust-os-test/docs/http.md) を参照してください。シェルは仮想NICで全コマンド・入力復帰・再接続が検証済みです。HTTPのENC構成は元のFlash 16KB・RAM 2KB以内でリンク済みです。シェルのENC構成もFlash 16,382byte・全スタック込みRAM 1,864byteでリンク済みです。Mac接続検証は残っています。[シェル検証](ch32v003-rust-os-test/docs/shell.md) を参照してください。[公開snapshot検証](ch32v003-rust-os-test/docs/snapshot.md) を参照してください。
 CH32V003実機での動作はこれからです。
 実測ログ・再現手順は [検証用プロジェクト](ch32v003-rust-os-test/README.md) と [協調マルチタスク検証](ch32v003-rust-os-test/docs/cooperative.md) を参照してください。
 
@@ -98,8 +98,8 @@ MMUによる分離がないため、この境界は論理的なAPI境界であ�
 |6 — PARTIAL|仮想Ethernet・ARP・IPv4・ICMP|フレーム注入試験とMacからの実ping。ホスト接続経路も検証|
 |7 — PARTIAL|自作TCP/IP・Socket API|単一接続、listen / recv / send / close、再送・重複・切断・タイムアウト試験|
 |8 — 仮想HW検証済み|プリエンプティブスケジューラ|SysTick強制切り替え、非再入カーネル、同期と待機の競合試験|
-|9 — 実装中|HTTP Echo APIサーバー|POST /echo、最大64バイトの本文一致、分割受信、タイムアウト、再接続をMacから検証|
-|10 — 実装中|TCPシェル・OSユーティリティ|TCP接続からps / mem / uptime / netstatを実行し、公開APIによるOS状態取得、分割入力、切断・再接続を検証|
+|9 — PARTIAL|HTTP Echo APIサーバー|POST /echo、最大64バイトの本文一致、分割受信、タイムアウト、再接続をMacから検証|
+|10 — PARTIAL|TCPシェル・OSユーティリティ|TCP接続からps / mem / uptime / netstatを実行し、公開APIによるOS状態取得、分割入力、切断・再接続を検証|
 |11|実機移植・耐久試験|CH32V003J4M6＋ENC28J60でEcho APIを実行し、実LAN、通信損失・再接続・長時間運転を検証|
 |12|rv2k 2.0リリース|全機能を同じ構成で統合、RAM 2KB・Flash 16KB、仕様と再現手順を固定|
 

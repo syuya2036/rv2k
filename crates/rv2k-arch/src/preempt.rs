@@ -34,9 +34,11 @@ impl State {
 #[cfg(target_arch = "riscv32")]
 mod target {
     use super::State;
+    #[cfg(feature = "test-observers")]
+    use core::ptr::{read_volatile, write_volatile};
     use core::{
         marker::PhantomData,
-        ptr::{addr_of, addr_of_mut, read_volatile, write_volatile},
+        ptr::{addr_of, addr_of_mut},
     };
     #[no_mangle]
     static mut PREEMPT_STATE: State = State::new();
@@ -45,6 +47,7 @@ mod target {
     #[cfg(feature = "preempt-timing")]
     #[no_mangle]
     static mut PREEMPT_MAX_CLOCKS: u32 = 0;
+    #[cfg(feature = "test-observers")]
     #[no_mangle]
     static mut PREEMPT_DEFERRED: u32 = 0;
     #[cfg(feature = "preempt-timing")]
@@ -91,6 +94,7 @@ mod target {
     pub unsafe fn irq_request() -> bool {
         let state = &mut *addr_of_mut!(PREEMPT_STATE);
         state.pending = true;
+        #[cfg(feature = "test-observers")]
         if state.depth != 0 {
             write_volatile(
                 addr_of_mut!(PREEMPT_DEFERRED),

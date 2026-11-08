@@ -50,38 +50,41 @@ pub unsafe fn init() {
     assert_eq!(board::claim_gpio(Pad::Pa1), Err(Error::Busy));
     assert_eq!(board::claim_gpio(Pad::Pc5), Err(Error::Invalid));
     let nic = (&mut *addr_of_mut!(NIC)).assume_init_mut();
-    let status = match nic.reset([2, 0, 0, 0, 0, 1]) {
-        Err(Error::Io) => 1, // expected on Renvo: no NIC, floating/zero MISO
-        Ok(_) => {
-            #[cfg(not(feature = "net"))]
-            {
-                // Keep all streaming driver methods in the RV32EC link. Actual RX/TX
-                // execution requires an attached NIC and is a separate hardware gate.
-                let _ = nic.poll(0);
-                if let Ok(Some(frame)) = nic.rx_begin() {
-                    let mut scratch = [0u8; 16];
-                    let count = (frame.len as usize).min(scratch.len());
-                    let _ = nic.rx_read_at(frame, 0, &mut scratch[..count]);
-                    let _ = nic.rx_release(frame);
-                }
-                let mut header = [0u8; 14];
-                header[..6].fill(0xff);
-                header[6] = 2;
-                header[11] = 1;
-                header[12..].copy_from_slice(&[0x88, 0xb5]);
-                if nic.tx_begin(header.len()).is_ok() {
-                    let _ = nic.tx_write(&header);
-                    let _ = nic.tx_commit(0);
-                    let _ = nic.tx_abort();
-                }
-            }
-            2
-        }
-        _ => 3,
-    };
     assert!(core::mem::size_of_val(nic) < 64);
     assert_eq!(MAX_FRAME, 1514);
-    write_volatile(addr_of_mut!(DRIVER_STATUS), status);
+    let reset = nic.reset([2, 0, 0, 0, 0, 1]);
+    if crate::services::OBSERVE {
+        let status = match reset {
+            Err(Error::Io) => 1, // expected on Renvo: no NIC, floating/zero MISO
+            Ok(_) => {
+                #[cfg(not(feature = "net"))]
+                {
+                    // Keep all streaming driver methods in the RV32EC link. Actual RX/TX
+                    // execution requires an attached NIC and is a separate hardware gate.
+                    let _ = nic.poll(0);
+                    if let Ok(Some(frame)) = nic.rx_begin() {
+                        let mut scratch = [0u8; 16];
+                        let count = (frame.len as usize).min(scratch.len());
+                        let _ = nic.rx_read_at(frame, 0, &mut scratch[..count]);
+                        let _ = nic.rx_release(frame);
+                    }
+                    let mut header = [0u8; 14];
+                    header[..6].fill(0xff);
+                    header[6] = 2;
+                    header[11] = 1;
+                    header[12..].copy_from_slice(&[0x88, 0xb5]);
+                    if nic.tx_begin(header.len()).is_ok() {
+                        let _ = nic.tx_write(&header);
+                        let _ = nic.tx_commit(0);
+                        let _ = nic.tx_abort();
+                    }
+                }
+                2
+            }
+            _ => 3,
+        };
+        write_volatile(addr_of_mut!(DRIVER_STATUS), status);
+    }
 }
 pub unsafe fn poll() {
     let _ = console().0.poll(4);

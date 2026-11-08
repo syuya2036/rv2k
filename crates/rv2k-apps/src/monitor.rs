@@ -1,6 +1,33 @@
 //! Bounded text views of public OS snapshots; no formatter machinery or heap.
 use rv2k_api::{mem::MemInfo, net::NetInfo, TaskInfo};
 pub const CAPACITY: usize = 64;
+
+// Source tables stay readable; lengths are checked and encoded at compile time.
+const fn prefixed<const N: usize>(text: [u8; N]) -> [u8; N] {
+    assert!(N != 0 && text[N - 1] == 0);
+    let mut out = [0; N];
+    let mut start = 0;
+    let mut used = 0u8;
+    let mut i = 0;
+    while i < N {
+        if text[i] == 0 {
+            out[start] = used;
+            start = i + 1;
+            used = 0;
+        } else {
+            out[i + 1] = text[i];
+            used += 1;
+        }
+        i += 1;
+    }
+    out
+}
+macro_rules! entries {
+    ($text:literal) => {
+        &const { prefixed(*$text) }
+    };
+}
+#[repr(align(4))]
 pub struct Line {
     bytes: [u8; CAPACITY],
     used: u8,
@@ -54,7 +81,7 @@ impl Line {
             self.digits[first] = b'0' + carry as u8;
             // Inspect the stored limbs after division rather than keeping an
             // OR accumulator live across every helper call on RV32E.
-            if self.words[0] | self.words[1] | self.words[2] | self.words[3] == 0 {
+            if self.words == [0; 4] {
                 break;
             }
         }
@@ -63,19 +90,19 @@ impl Line {
     /// Private snapshot patterns: u16 offsets, 0x80|offset for u8,
     /// 0xa0|offset for i16, 0xc0/0xe0|offset for task/TCP state.
     /// 0x1f displays the sum of the memory report's static/kernel fields.
-    #[inline(never)]
+    #[inline(always)]
     fn view(&mut self, pattern: &[u8], source: &[u8]) {
-        let mut start = 0;
-        for (index, &tag) in pattern.iter().enumerate() {
-            if !(32..128).contains(&tag) {
-                self.push(&pattern[start..index]);
+        for &tag in pattern {
+            if (32..128).contains(&tag) {
+                self.push(core::slice::from_ref(&tag));
+            } else {
                 let offset = (tag & 31) as usize;
                 let kind = tag & 0xe0;
                 if kind >= 0xc0 {
-                    let names = if kind == 0xc0 {
-                        b"READY\0RUNNING\0BLOCKED\0EXITED\0".as_slice()
+                    let names: &[u8] = if kind == 0xc0 {
+                        entries!(b"READY\0RUNNING\0BLOCKED\0EXITED\0")
                     } else {
-                        b"CLOSED\0LISTEN\0SYN_RECEIVED\0ESTABLISHED\0FIN_WAIT_1\0FIN_WAIT_2\0CLOSING\0CLOSE_WAIT\0LAST_ACK\0TIME_WAIT\0"
+                        entries!(b"CLOSED\0LISTEN\0SYN_RECEIVED\0ESTABLISHED\0FIN_WAIT_1\0FIN_WAIT_2\0CLOSING\0CLOSE_WAIT\0LAST_ACK\0TIME_WAIT\0")
                     };
                     self.push(entry(names, source[offset]).unwrap());
                 } else {
@@ -85,7 +112,8 @@ impl Line {
                             + u16::from_le_bytes([pair[2], pair[3]]) as u32
                     } else {
                         let mut value = source[offset] as u16;
-                        if kind != 0x80 {
+                        // Numeric tags below 0x80 are u16; 0xa0 is i16.
+                        if kind < 0x80 || kind == 0xa0 {
                             value |= (source[offset + 1] as u16) << 8;
                             if kind == 0xa0 {
                                 if (value as i16) < 0 {
@@ -98,10 +126,8 @@ impl Line {
                     };
                     self.number(value as u64);
                 }
-                start = index + 1;
             }
         }
-        self.push(&pattern[start..]);
     }
     #[inline(never)]
     fn parts(&mut self, source: &[u8], patterns: &[u8], part: u8) {
@@ -113,12 +139,12 @@ impl Line {
     }
     #[inline(never)]
     pub fn task(&mut self, info: &TaskInfo) {
-        info.with_bytes(|bytes| self.parts(bytes, b"pid=\x81 state=\xc2 exit=\xa4\0", 0));
+        info.with_bytes(|bytes| self.parts(bytes, entries!(b"pid=\x81 state=\xc2 exit=\xa4\0"), 0));
     }
     #[inline(never)]
     pub fn memory(&mut self, info: &MemInfo, part: u8) {
         info.with_bytes(|bytes| self.parts(bytes,
-            b"ram=\x1f/\x12 flash=\x10/\x14\0static=\x02 kernel=\x04 task=\x06\0stack0=\x08 stack1=\x0a kernel=\x0c guards=\x0e\0", part));
+            entries!(b"ram=\x1f/\x12 flash=\x10/\x14\0static=\x02 kernel=\x04 task=\x06\0stack0=\x08 stack1=\x0a kernel=\x0c guards=\x0e\0"), part));
     }
     #[inline(never)]
     pub fn uptime(&mut self, ticks: u64) {
@@ -130,18 +156,19 @@ impl Line {
     #[inline(never)]
     pub fn network(&mut self, info: &NetInfo, part: u8) {
         info.with_bytes(|bytes| self.parts(bytes,
-            b"net state=\xe2 flags=\x83\0local=\x84.\x85.\x86.\x87:\x0c peer=\x88.\x89.\x8a.\x8b:\x0e\0rx=\x10 tx=\x12 drop=\x14 csum=\x16\0frag=\x18 io=\x1a retrans=\x1c reset=\x1e\0", part));
+            entries!(b"net state=\xe2 flags=\x83\0local=\x84.\x85.\x86.\x87:\x0c peer=\x88.\x89.\x8a.\x8b:\x0e\0rx=\x10 tx=\x12 drop=\x14 csum=\x16\0frag=\x18 io=\x1a retrans=\x1c reset=\x1e\0"), part));
     }
 }
 
 #[inline(never)]
 fn entry(mut table: &[u8], mut index: u8) -> Option<&[u8]> {
     loop {
-        let end = table.iter().position(|b| *b == 0)?;
+        let (&size, rest) = table.split_first()?;
+        let (row, next) = rest.split_at_checked(size as usize)?;
         if index == 0 {
-            return Some(&table[..end]);
+            return Some(row);
         }
-        table = &table[end + 1..];
+        table = next;
         index -= 1;
     }
 }

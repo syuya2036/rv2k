@@ -1,0 +1,9 @@
+   Compiling ch32v003-rust-os-test v0.1.0 (/Users/shuya/Documents/personal/rv2k/ch32v003-rust-os-test)
+   Compiling rv2k-api v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-api)
+   Compiling rv2k-kernel v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-kernel)
+   Compiling rv2k-arch v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-arch)
+   Compiling rv2k-drivers v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-drivers)
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.64s
+   text	   data	    bss	    dec	    hex	filename
+   5741	      0	    736	   6477	   194d	target/services/riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test
+PASS: timed sleep/event/IPC and IRQ-enabled idle: {'instructions': 1688141, 'syscalls': 29, 'timer_irqs': 6, 'idle_polls': 6482, 'uptime_ticks': 7, 'wait_results': 127, 'stack_used_bytes_tasks_kernel': [112, 112, 112], 'static_ram_bytes': 736, 'kernel_stack_reserved_bytes': 256}

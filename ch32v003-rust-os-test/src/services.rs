@@ -35,6 +35,11 @@ static mut TASK_STACKS: [Stack; 2] = [Stack([0; 64]), Stack([0; 64])];
 static mut SCHEDULER: Scheduler = Scheduler::new();
 static mut MAILBOX: Mailbox = Mailbox::new();
 const CLOCKS_PER_TICK: u32 = 240_000; // 24 MHz HCLK, 10 ms target
+
+// Raw observer exports and the success transcript serve the integration probes.
+// Public snapshots, canary checks, fault records and all services remain active.
+pub(super) const OBSERVE: bool = cfg!(any(not(feature = "net"), feature = "emulator-stop"));
+
 static mut CLOCK: Clock = Clock::new(CLOCKS_PER_TICK, 0);
 #[no_mangle]
 static mut TIMER_IRQS: u32 = 0;
@@ -184,9 +189,11 @@ unsafe extern "C" fn rv2k_trap_dispatch(frame: *mut TrapFrame) -> usize {
     update_clock();
     let scheduler = &mut *addr_of_mut!(SCHEDULER);
     let saved = &mut *frame;
-    write_volatile(addr_of_mut!(TRAPS), read_volatile(addr_of!(TRAPS)) + 1);
-    write_volatile(addr_of_mut!(LAST_CAUSE), saved.cause);
-    write_volatile(addr_of_mut!(LAST_PC), saved.pc);
+    if OBSERVE {
+        write_volatile(addr_of_mut!(TRAPS), read_volatile(addr_of!(TRAPS)) + 1);
+        write_volatile(addr_of_mut!(LAST_CAUSE), saved.cause);
+        write_volatile(addr_of_mut!(LAST_PC), saved.pc);
+    }
     if !saved.advance_ecall() {
         #[cfg(feature = "diagnostics")]
         crate::diagnostics::fail(rv2k_kernel::diagnostics::Reason::TaskTrap, Some(saved), 0);
@@ -232,10 +239,12 @@ unsafe extern "C" fn rv2k_trap_dispatch(frame: *mut TrapFrame) -> usize {
     {
         // Reject before dispatch can publish a wait/exit. Shared borrows must
         // not survive a syscall that suspends their owning task.
-        write_volatile(
-            addr_of_mut!(PREEMPT_BLOCKED_CALLS),
-            read_volatile(addr_of!(PREEMPT_BLOCKED_CALLS)).wrapping_add(1),
-        );
+        if OBSERVE {
+            write_volatile(
+                addr_of_mut!(PREEMPT_BLOCKED_CALLS),
+                read_volatile(addr_of!(PREEMPT_BLOCKED_CALLS)).wrapping_add(1),
+            );
+        }
         saved.registers[8] = Error::Busy.code() as u32;
         return frame as usize;
     }
@@ -536,10 +545,12 @@ unsafe extern "C" fn rv2k_timer_irq(_frame: *const TrapFrame) -> usize {
     let count = read_volatile(0xe000f008 as *const u32);
     write_volatile(0xe000f010 as *mut u32, count.wrapping_add(CLOCKS_PER_TICK));
     write_volatile(0xe000f004 as *mut u32, 0);
-    write_volatile(
-        addr_of_mut!(TIMER_IRQS),
-        read_volatile(addr_of!(TIMER_IRQS)) + 1,
-    );
+    if OBSERVE {
+        write_volatile(
+            addr_of_mut!(TIMER_IRQS),
+            read_volatile(addr_of!(TIMER_IRQS)) + 1,
+        );
+    }
     #[cfg(feature = "preempt")]
     {
         update_clock();
@@ -566,10 +577,12 @@ unsafe extern "C" fn rv2k_preempt_dispatch(frame: *mut TrapFrame) -> usize {
     }
     // Timer frames retain their interrupted PC; ecall Complete already wrote
     // its result and advanced PC before joining this path.
-    write_volatile(
-        addr_of_mut!(PREEMPT_SWITCHES),
-        read_volatile(addr_of!(PREEMPT_SWITCHES)).wrapping_add(1),
-    );
+    if OBSERVE {
+        write_volatile(
+            addr_of_mut!(PREEMPT_SWITCHES),
+            read_volatile(addr_of!(PREEMPT_SWITCHES)).wrapping_add(1),
+        );
+    }
     let scheduler = &mut *addr_of_mut!(SCHEDULER);
     #[cfg(feature = "preempt-probe")]
     let from = scheduler.current().unwrap().index() as u32;
@@ -618,10 +631,12 @@ unsafe fn select_next() -> usize {
 }
 #[no_mangle]
 unsafe extern "C" fn rv2k_idle_poll() -> usize {
-    write_volatile(
-        addr_of_mut!(IDLE_POLLS),
-        read_volatile(addr_of!(IDLE_POLLS)) + 1,
-    );
+    if OBSERVE {
+        write_volatile(
+            addr_of_mut!(IDLE_POLLS),
+            read_volatile(addr_of!(IDLE_POLLS)) + 1,
+        );
+    }
     update_clock();
     select_next()
 }
@@ -635,27 +650,34 @@ unsafe fn watermark(base: *const u32, words: usize) -> u32 {
 }
 fn finish() -> ! {
     unsafe {
-        for id in 0..2 {
-            let base = addr_of!(TASK_STACKS).cast::<u32>().add(id * 64);
+        if OBSERVE {
+            for id in 0..2 {
+                let base = addr_of!(TASK_STACKS).cast::<u32>().add(id * 64);
+                write_volatile(
+                    addr_of_mut!(STACK_USED).cast::<u32>().add(id),
+                    watermark(base, 64),
+                );
+            }
+            let bottom = addr_of!(_stack_bottom);
+            let words = (addr_of!(_stack_top) as usize - bottom as usize) / 4;
             write_volatile(
-                addr_of_mut!(STACK_USED).cast::<u32>().add(id),
-                watermark(base, 64),
+                addr_of_mut!(STACK_USED).cast::<u32>().add(2),
+                watermark(bottom, words),
             );
+        } else {
+            #[cfg(feature = "diagnostics")]
+            crate::diagnostics::check(None);
         }
-        let bottom = addr_of!(_stack_bottom);
-        let words = (addr_of!(_stack_top) as usize - bottom as usize) / 4;
-        write_volatile(
-            addr_of_mut!(STACK_USED).cast::<u32>().add(2),
-            watermark(bottom, words),
-        );
         write_volatile(0xe000f000 as *mut u32, 0);
-        write_volatile(addr_of_mut!(UPTIME), (&*addr_of!(SCHEDULER)).uptime());
-        #[cfg(feature = "drivers")]
-        crate::drivers::complete();
-        #[cfg(not(feature = "drivers"))]
-        for byte in b"SERVICES OK\n" {
-            while read_volatile(0x40013800 as *const u32) & (1 << 7) == 0 {}
-            write_volatile(0x40013804 as *mut u32, *byte as u32);
+        if OBSERVE {
+            write_volatile(addr_of_mut!(UPTIME), (&*addr_of!(SCHEDULER)).uptime());
+            #[cfg(feature = "drivers")]
+            crate::drivers::complete();
+            #[cfg(not(feature = "drivers"))]
+            for byte in b"SERVICES OK\n" {
+                while read_volatile(0x40013800 as *const u32) & (1 << 7) == 0 {}
+                write_volatile(0x40013804 as *mut u32, *byte as u32);
+            }
         }
     }
     stop(0x600d)

@@ -1,0 +1,21 @@
+   Compiling compiler_builtins v0.1.160 (/Users/shuya/.rustup/toolchains/nightly-2026-03-12-aarch64-apple-darwin/lib/rustlib/src/rust/library/compiler-builtins/compiler-builtins)
+   Compiling core v0.0.0 (/Users/shuya/.rustup/toolchains/nightly-2026-03-12-aarch64-apple-darwin/lib/rustlib/src/rust/library/core)
+   Compiling ch32v003-rust-os-test v0.1.0 (/Users/shuya/Documents/personal/rv2k/ch32v003-rust-os-test)
+   Compiling rv2k-api v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-api)
+warning: unstable feature specified for `-Ctarget-feature`: `relax`
+  |
+  = note: this feature is not stably supported; its behavior can change in the future
+
+   Compiling rv2k-drivers v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-drivers)
+   Compiling rv2k-apps v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-apps)
+   Compiling rv2k-kernel v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-kernel)
+   Compiling rv2k-arch v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-arch)
+warning: `rv2k-api` (lib) generated 1 warning
+warning: `rv2k-arch` (lib) generated 1 warning (1 duplicate)
+   Compiling rv2k-net v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-net)
+warning: `rv2k-drivers` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-apps` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-kernel` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-net` (lib) generated 1 warning (1 duplicate)
+warning: `ch32v003-rust-os-test` (bin "ch32v003-rust-os-test") generated 1 warning (1 duplicate)
+    Finished `release` profile [optimized + debuginfo] target(s) in 4.87s

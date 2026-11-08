@@ -1,0 +1,10 @@
+   Compiling rv2k-api v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-api)
+   Compiling rv2k-drivers v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-drivers)
+   Compiling rv2k-arch v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-arch)
+   Compiling rv2k-kernel v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-kernel)
+   Compiling ch32v003-rust-os-test v0.1.0 (/Users/shuya/Documents/personal/rv2k/ch32v003-rust-os-test)
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.53s
+   text	   data	    bss	    dec	    hex	filename
+  10449	      0	    832	  11281	   2c11	target/drivers/riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test
+PASS: timed sleep/event/IPC and IRQ-enabled idle: {'spi_packets': [[255], [191, 3], [159, 3], [18, 0]], 'spi_rising_edges': 56, 'nic_attached': False, 'instructions': 1840493, 'syscalls': 31, 'timer_irqs': 6, 'idle_polls': 3664, 'uptime_ticks': 7, 'wait_results': 127, 'stack_used_bytes_tasks_kernel': [184, 184, 184], 'static_ram_bytes': 832, 'kernel_stack_reserved_bytes': 256}
+PASS: ELF budgets including load alignment and all stacks: {'flash_bytes': 10449, 'flash_limit': 16384, 'static_ram_bytes': 832, 'kernel_stack_reserved_bytes': 256, 'total_reserved_ram_bytes': 1088, 'ram_limit': 2048}

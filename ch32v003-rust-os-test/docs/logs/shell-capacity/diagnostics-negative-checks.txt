@@ -1,0 +1,105 @@
+   Compiling rv2k-api v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-api)
+warning: unstable feature specified for `-Ctarget-feature`: `relax`
+  |
+  = note: this feature is not stably supported; its behavior can change in the future
+
+   Compiling rv2k-drivers v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-drivers)
+   Compiling rv2k-kernel v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-kernel)
+   Compiling rv2k-arch v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-arch)
+warning: `rv2k-api` (lib) generated 1 warning
+warning: `rv2k-arch` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-drivers` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-kernel` (lib) generated 1 warning (1 duplicate)
+   Compiling ch32v003-rust-os-test v0.1.0 (/Users/shuya/Documents/personal/rv2k/ch32v003-rust-os-test)
+warning: `ch32v003-rust-os-test` (bin "ch32v003-rust-os-test") generated 1 warning (1 duplicate)
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.44s
+warning: unstable feature specified for `-Ctarget-feature`: `relax`
+  |
+  = note: this feature is not stably supported; its behavior can change in the future
+
+warning: `rv2k-api` (lib) generated 1 warning
+   Compiling rv2k-arch v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-arch)
+warning: `rv2k-drivers` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-kernel` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-arch` (lib) generated 1 warning (1 duplicate)
+   Compiling ch32v003-rust-os-test v0.1.0 (/Users/shuya/Documents/personal/rv2k/ch32v003-rust-os-test)
+warning: `ch32v003-rust-os-test` (bin "ch32v003-rust-os-test") generated 1 warning (1 duplicate)
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.22s
+warning: unstable feature specified for `-Ctarget-feature`: `relax`
+  |
+  = note: this feature is not stably supported; its behavior can change in the future
+
+warning: `rv2k-api` (lib) generated 1 warning
+warning: `rv2k-drivers` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-arch` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-kernel` (lib) generated 1 warning (1 duplicate)
+   Compiling ch32v003-rust-os-test v0.1.0 (/Users/shuya/Documents/personal/rv2k/ch32v003-rust-os-test)
+warning: `ch32v003-rust-os-test` (bin "ch32v003-rust-os-test") generated 1 warning (1 duplicate)
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.20s
+warning: unstable feature specified for `-Ctarget-feature`: `relax`
+  |
+  = note: this feature is not stably supported; its behavior can change in the future
+
+warning: `rv2k-api` (lib) generated 1 warning
+warning: `rv2k-arch` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-drivers` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-kernel` (lib) generated 1 warning (1 duplicate)
+   Compiling ch32v003-rust-os-test v0.1.0 (/Users/shuya/Documents/personal/rv2k/ch32v003-rust-os-test)
+warning: `ch32v003-rust-os-test` (bin "ch32v003-rust-os-test") generated 1 warning (1 duplicate)
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.21s
+warning: unstable feature specified for `-Ctarget-feature`: `relax`
+  |
+  = note: this feature is not stably supported; its behavior can change in the future
+
+warning: `rv2k-api` (lib) generated 1 warning
+warning: `rv2k-kernel` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-arch` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-drivers` (lib) generated 1 warning (1 duplicate)
+   Compiling ch32v003-rust-os-test v0.1.0 (/Users/shuya/Documents/personal/rv2k/ch32v003-rust-os-test)
+warning: `ch32v003-rust-os-test` (bin "ch32v003-rust-os-test") generated 1 warning (1 duplicate)
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.19s
+warning: unstable feature specified for `-Ctarget-feature`: `relax`
+  |
+  = note: this feature is not stably supported; its behavior can change in the future
+
+warning: `rv2k-api` (lib) generated 1 warning
+warning: `rv2k-arch` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-drivers` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-kernel` (lib) generated 1 warning (1 duplicate)
+   Compiling ch32v003-rust-os-test v0.1.0 (/Users/shuya/Documents/personal/rv2k/ch32v003-rust-os-test)
+warning: `ch32v003-rust-os-test` (bin "ch32v003-rust-os-test") generated 1 warning (1 duplicate)
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.18s
+warning: unstable feature specified for `-Ctarget-feature`: `relax`
+  |
+  = note: this feature is not stably supported; its behavior can change in the future
+
+warning: `rv2k-api` (lib) generated 1 warning
+warning: `rv2k-kernel` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-arch` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-drivers` (lib) generated 1 warning (1 duplicate)
+   Compiling ch32v003-rust-os-test v0.1.0 (/Users/shuya/Documents/personal/rv2k/ch32v003-rust-os-test)
+warning: `ch32v003-rust-os-test` (bin "ch32v003-rust-os-test") generated 1 warning (1 duplicate)
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.21s
+warning: unstable feature specified for `-Ctarget-feature`: `relax`
+  |
+  = note: this feature is not stably supported; its behavior can change in the future
+
+warning: `rv2k-api` (lib) generated 1 warning
+warning: `rv2k-drivers` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-kernel` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-arch` (lib) generated 1 warning (1 duplicate)
+   Compiling ch32v003-rust-os-test v0.1.0 (/Users/shuya/Documents/personal/rv2k/ch32v003-rust-os-test)
+warning: `ch32v003-rust-os-test` (bin "ch32v003-rust-os-test") generated 1 warning (1 duplicate)
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.18s
+warning: unstable feature specified for `-Ctarget-feature`: `relax`
+  |
+  = note: this feature is not stably supported; its behavior can change in the future
+
+warning: `rv2k-api` (lib) generated 1 warning
+warning: `rv2k-drivers` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-kernel` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-arch` (lib) generated 1 warning (1 duplicate)
+   Compiling ch32v003-rust-os-test v0.1.0 (/Users/shuya/Documents/personal/rv2k/ch32v003-rust-os-test)
+warning: `ch32v003-rust-os-test` (bin "ch32v003-rust-os-test") generated 1 warning (1 duplicate)
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.19s
+PASS: diagnostic fault injections: [{'case': 'fault-irq-canary', 'reason': 2, 'task': 0, 'pc': 172, 'cause': 2147483660, 'tval': 1, 'sp': 536871248, 'instructions': 243493}, {'case': 'fault-no-debugger', 'reason': 1, 'task': 0, 'pc': 0, 'cause': 0, 'tval': 0, 'sp': 536871248, 'instructions': 100000}, {'case': 'fault-canary', 'reason': 2, 'task': 0, 'pc': 1208, 'cause': 11, 'tval': 1, 'sp': 536871144, 'instructions': 4715}, {'case': 'fault-kernel-canary', 'reason': 2, 'task': 0, 'pc': 1208, 'cause': 11, 'tval': 4, 'sp': 536871144, 'instructions': 4715}, {'case': 'fault-panic', 'reason': 1, 'task': 0, 'pc': 0, 'cause': 0, 'tval': 0, 'sp': 536871248, 'instructions': 4677}, {'case': 'fault-illegal', 'reason': 4, 'task': 0, 'pc': 1402, 'cause': 2, 'tval': 4294967295, 'sp': 536871248, 'instructions': 5101}, {'case': 'fault-kernel-illegal', 'reason': 5, 'task': 4294967295, 'pc': 3506, 'cause': 2, 'tval': 4294967295, 'sp': 536872884, 'instructions': 3752}, {'case': 'fault-sp', 'reason': 3, 'task': 0, 'pc': 1404, 'cause': 11, 'tval': 0, 'sp': 0, 'instructions': 4858}, {'case': 'fault-uart-stuck', 'reason': 1, 'task': 0, 'pc': 0, 'cause': 0, 'tval': 0, 'sp': 536871248, 'instructions': 1003804}]

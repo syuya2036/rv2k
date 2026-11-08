@@ -8,4 +8,6 @@ rv2k-api = { path = "../rv2k-api" }
 [features]
 timer = []
 preempt = ["timer"]
-preempt-timing = ["preempt"]
+preempt-timing = ["preempt", "test-observers"]
+# Raw emulator counters; the preemption depth/pending state is always enabled.
+test-observers = []

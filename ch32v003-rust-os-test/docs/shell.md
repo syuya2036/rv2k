@@ -1,6 +1,6 @@
 # Phase 10: TCP シェル統合（仮想 NIC 検証済み）
 
-Renvo 上の実 RV32EC 命令で TCP 接続から全 4 コマンドを実行し、独立 PCAP 検査が PASS しました。仮想 NIC 版は Flash 15,204 / 16,384 byte、全スタックを含む予約 RAM 1,908 / 2,048 byte です。ENC28J60 版は専有 SPI と MIR 最適化後も Flash が 444 byte 超過し、Mac native TCP と実機は未検証です。Phase 10 全体は未完了です。
+Renvo 上の実 RV32EC 命令で TCP 接続から全 4 コマンドを実行し、独立 PCAP 検査が PASS しました。仮想 NIC 版は Flash 15,048 / 16,384 byte、全スタックを含む予約 RAM 1,908 / 2,048 byte です。ENC28J60 版も Flash 16,382 / 16,384 byte、全スタック込み RAM 1,864 / 2,048 byte でリンク済みです。Mac native TCP と実機は未検証です。Phase 10 全体は未完了です。
 
 ## 実装
 
@@ -32,7 +32,7 @@ cd ch32v003-rust-os-test
 bash scripts/shell.sh
 ```
 
-固定 nightly / 元の memory.x / 256 byte kernel stack / 既存のサイズ最適化フラグでビルドします。元 ELF の load span と RAM を検査してから、エミュレータ用 ELF を生成します。入力・整形・整数処理を含む workspace 88 tests、clippy、fmt が PASS です。
+固定 nightly / 元の memory.x / 256 byte kernel stack / 既存のサイズ最適化フラグでビルドします。通常・IRQ 注入の後に shell,drivers の strict link も必須とし、CI もこの容量検査まで実行します。元 ELF の load span と RAM を検査してから、エミュレータ用 ELF を生成します。入力・整形・整数処理を含む workspace 88 tests、clippy、fmt が PASS です。
 
 各 run は次の 5 接続を TCP MSS=24、受信窓=128 で検査します。
 
@@ -48,8 +48,8 @@ bash scripts/shell.sh
 |---|---:|---:|
 |接続 / 入力 byte / コマンド|5 / 138 / 12|5 / 138 / 12|
 |RX / TX frame|103 / 114|103 / 110|
-|T0 / T1 / kernel 高水位 byte|176 / 236 / 120|176 / 208 / 120|
-|強制切替 / 延期 IRQ|11 / 3|0 / 110|
+|T0 / T1 / kernel 高水位 byte|176 / 216 / 120|176 / 208 / 120|
+|強制切替 / 延期 IRQ|11 / 4|0 / 111|
 |NIC 読出し中の 1 tick 注入|0|103|
 
 ストレス試験では全 IRQ が T0 の保護された NIC 読出し中に届き、T1 が待機中なら強制切替は不要です。延期・共有借用の終了・全通信結果を検査します。強制切替自体は通常 run と、非 yield loop の専用 preemption probe（47 回）で確認しています。最大除外時間の計測は `preempt-timing` 専用で、shell の値は未計測です。
@@ -58,14 +58,14 @@ bash scripts/shell.sh
 
 ## 残る完了条件
 
-ENC 版は次の元 linker 制約で失敗し、容量上限は変更していません。初回の超過は 2,360 byte（[当時の build log](logs/shell/enc-build.txt)）、専有 SPI デバイスへの変更後は 1,616 byte（[当時の build log](logs/spi-device/shell-enc-link-failure.txt)）です。[SPI 変更と検証](drivers.md) も参照してください。
+ENC 版は次の元 linker 制約に合格しました。Flash の余裕は 2 byte のため、CI の strict link で回帰を拒否します。容量上限は変更していません。初回の超過は 2,360 byte（[当時の build log](logs/shell/enc-build.txt)）、専有 SPI デバイスへの変更後は 1,616 byte（[当時の build log](logs/spi-device/shell-enc-link-failure.txt)）です。[SPI 変更と検証](drivers.md) も参照してください。
 
 ```sh
 RUSTFLAGS='-Z inline-mir=yes -C opt-level=z -C llvm-args=-inline-threshold=25 -C target-feature=+relax -C llvm-args=-riscv-enable-global-merge=false -C link-arg=--defsym=_kernel_stack_size=256 -C link-arg=-Tmemory.x -C link-arg=--icf=all -C link-arg=--relax -C link-arg=--relax-gp' cargo build --locked --release --features shell,drivers --target-dir target/shell-enc
 ```
 
-ENC 構成の収容、Mac native TCP、統合 PR のレビュー / マージが残ります。実機は未保有です。仮想 packet peer の成功を Mac や実機の PASS として扱いません。
+Mac native TCP が残ります。実機は未保有です。仮想 packet peer の成功を Mac や実機の PASS として扱いません。
 
-現在の最適化構成は固定 nightly の `-Z inline-mir=yes` を含みます。十進変換は保存した 4 limb を除算後に検査し、全 helper call をまたいで非ゼロ集計値を保持しません。RV32E のスタック spill を抑え、T1 の全番兵を検査しています。[絶対期限・最適化後の共通回帰](logs/deadlines) も参照してください。LLVM の展開しきい値も 25 とし、TCP 終了・ハンドル検証等を共有します。ENC の最新失敗証跡は [こちら](logs/shell-compact/shell-enc-link-failure.txt) です。[容量削減後の回帰](flash-fit.md) も参照してください。
+現在の最適化構成は固定 nightly の `-Z inline-mir=yes` を含みます。十進変換は保存した 4 limb を除算後に検査し、全 helper call をまたいで非ゼロ集計値を保持しません。RV32E のスタック spill を抑え、T1 の全番兵を検査しています。[絶対期限・最適化後の共通回帰](logs/deadlines) も参照してください。LLVM の展開しきい値も 25 とし、TCP 終了・ハンドル検証等を共有します。前回の超過証跡は [こちら](logs/shell-compact/shell-enc-link-failure.txt) に履歴として残します。[容量削減後の回帰](flash-fit.md) も参照してください。
 
-入力・表示・RX 状態の削減と最新回帰は [シェル省メモリ化](shell-compact.md) を参照してください。
+入力・表示・RX 状態の削減履歴は [シェル省メモリ化](shell-compact.md)、今回の計測用コードの分離・最終容量・共通回帰は [シェル ENC 収容](shell-capacity.md) を参照してください。

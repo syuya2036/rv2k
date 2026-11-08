@@ -11,7 +11,7 @@
   "commands": 12,
   "frames_in": 103,
   "frames_out": 110,
-  "instructions": 38182413,
+  "instructions": 38182368,
   "stack_used_bytes_tasks_kernel": [
     176,
     208,
@@ -24,7 +24,7 @@
   ],
   "nic_irq_injections": 103,
   "forced_switches": 0,
-  "deferred_irqs": 110,
+  "deferred_irqs": 111,
   "max_disabled_clocks": null,
   "mac_native_tcp": "UNVERIFIED",
   "physical_enc": "UNVERIFIED"
