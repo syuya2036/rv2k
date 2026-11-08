@@ -293,9 +293,10 @@ mod tests {
         let a = reference.0.into_pins();
         let b = specialized.into_pins();
         assert_eq!(a, b);
-        let bytes: Vec<_> = b
-            .wire
-            .chunks_exact(8)
+        let (octets, remainder) = b.wire.as_chunks::<8>();
+        assert!(remainder.is_empty());
+        let bytes: Vec<_> = octets
+            .iter()
             .map(|bits| bits.iter().fold(0u8, |n, bit| (n << 1) | u8::from(*bit)))
             .collect();
         assert_eq!(
