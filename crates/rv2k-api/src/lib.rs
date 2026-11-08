@@ -1,5 +1,9 @@
 #![no_std]
 
+pub mod syscall;
+#[cfg(target_arch = "riscv32")]
+pub mod task;
+
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum TaskId {
@@ -39,3 +43,5 @@ pub struct TaskInfo {
     pub reserved: u8,
     pub exit_code: i16,
 }
+
+const _: () = assert!(core::mem::size_of::<TaskInfo>() == 6);

@@ -7,11 +7,16 @@ name = "ch32v003-rust-os-test"
 version = "0.1.0"
 dependencies = [
  "rv2k-api",
+ "rv2k-arch",
  "rv2k-kernel",
 ]
 
 [[package]]
 name = "rv2k-api"
+version = "0.1.0"
+
+[[package]]
+name = "rv2k-arch"
 version = "0.1.0"
 
 [[package]]

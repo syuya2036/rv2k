@@ -5,6 +5,7 @@ edition = "2021"
 [dependencies]
 rv2k-api = { path = "../crates/rv2k-api" }
 rv2k-kernel = { path = "../crates/rv2k-kernel" }
+rv2k-arch = { path = "../crates/rv2k-arch" }
 [profile.release]
 opt-level = "s"
 lto = true
@@ -16,3 +17,6 @@ debug = true
 timer = []
 coop = []
 scheduler = []
+syscall = []
+syscall-bad-sp = ["syscall"]
+syscall-kernel-fault = ["syscall"]

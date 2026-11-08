@@ -1,4 +1,4 @@
 [workspace]
-members = ["crates/rv2k-api", "crates/rv2k-kernel"]
+members = ["crates/rv2k-api", "crates/rv2k-kernel", "crates/rv2k-arch"]
 exclude = ["ch32v003-rust-os-test"]
 resolver = "2"

@@ -10,7 +10,8 @@ SECTIONS {
  _sidata = LOADADDR(.data);
  .bss (NOLOAD) : ALIGN(4) { _sbss = .; *(.bss .bss.* .sbss .sbss.*) *(COMMON) . = ALIGN(4); _ebss = .; } > RAM
  _stack_top = ORIGIN(RAM) + LENGTH(RAM);
- _stack_bottom = _stack_top - 512;
- ASSERT(_ebss <= _stack_bottom, "RAM exceeds budget including 512-byte stack")
+ PROVIDE(_kernel_stack_size = 512);
+ _stack_bottom = _stack_top - _kernel_stack_size;
+ ASSERT(_ebss <= _stack_bottom, "RAM exceeds budget including kernel stack")
  /DISCARD/ : { *(.eh_frame*) }
 }

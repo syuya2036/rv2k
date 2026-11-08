@@ -11,3 +11,21 @@ jobs:
       - run: cargo fmt --all -- --check
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace --locked
+  rv32ec:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ch32v003-rust-os-test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: rustup toolchain install nightly-2026-03-12 --profile minimal --component rust-src --component llvm-tools-preview
+      - run: bash scripts/setup-emulator.sh
+      - run: bash scripts/syscall.sh
+      - run: python3 scripts/syscall-negative.py
+      - run: bash scripts/scheduler.sh
+      - run: bash scripts/coop.sh
+      - run: python3 scripts/coop-negative.py
+      - run: bash scripts/build.sh
+      - run: bash scripts/run.sh
+      - run: bash scripts/timer.sh

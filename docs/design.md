@@ -1,6 +1,6 @@
 # rv2k 2.0 設計書
 
-状態: Phase 1のタスク管理を実装・検証済み。Phase 2以降は設計案。Phase 0/1の実測を土台に、後続の契約と検証条件を定める。設計上の予算やAPIを実装済みと解釈しない。リリース名は **rv2k 2.0** に統一する。
+状態: Phase 2のsyscall基盤を実装・検証済み。Phase 3以降は設計案。Phase 0/1の実測を土台に、後続の契約と検証条件を定める。設計上の予算やAPIを実装済みと解釈しない。リリース名は **rv2k 2.0** に統一する。
 
 ## 1. 目的と決定事項
 
@@ -76,7 +76,7 @@ host/
   net-harness/    # PCAP、フレーム注入、損失・遅延・重複、Mac接続
 ```
 
-api/kernelはPhase 1で導入済み。残りは予定パス。アプリはapiだけを参照し、kernel内部TCBやsocket構造体を公開しない。netはdriverの具体型を知らず、静的ディスパッチのNetworkDeviceを使う。trait object、ヒープ、動的なタスク／socket生成を導入しない。unsafeはarch、MMIO、静的領域の限定した所有権境界へ集約する。
+api/kernelはPhase 1、archはPhase 2で導入済み。残りは予定パス。アプリはapiだけを参照し、kernel内部TCBやsocket構造体を公開しない。netはdriverの具体型を知らず、静的ディスパッチのNetworkDeviceを使う。trait object、ヒープ、動的なタスク／socket生成を導入しない。unsafeはarch、MMIO、静的領域の限定した所有権境界へ集約する。
 
 ## 5. タスク管理とスケジューラ
 
@@ -114,7 +114,7 @@ api/kernelはPhase 1で導入済み。残りは予定パス。アプリはapiだ
 
 Phase 1は既存の64バイトRV32E協調フレームを利用する。ra、gp、tp、t0〜t2、s0〜s1、a0〜a5、元spを保存。x0は不変、x16以降は使わない。初回entryと再開時レジスタを明示初期化する。
 
-Phase 2以降はecall/IRQ共通の80バイトフレームへ移行する案:
+Phase 2でecall共通の80バイトフレームへ移行済み。IRQ統合はPhase 8:
 
 |オフセット|内容|
 |---|---|
@@ -125,6 +125,7 @@ Phase 2以降はecall/IRQ共通の80バイトフレームへ移行する案:
 |72|mtvalまたは該当QingKeで利用可能な診断値|
 |76|予約・アラインメント|
 
+[Phase 2検証](../ch32v003-rust-os-test/docs/syscalls.md) は下記の交換・検査・復帰をRenvoで実証した。実機は未検証。
 トラップ入口はRust関数のプロローグより前の専用asmとする。`mscratch` にkernel stack topを準備し、最初にspを交換してカーネルスタック上の一時80バイトへレジスタと元spを退避する案。scratchレジスタを使う前に保存する。元spと80バイト分の範囲・アラインメントを検査してから、タスクスタックへフレームをコピーしTCB.saved_spを更新する。壊れたspに対して先にstoreしない。カーネル側の一時フレームはdispatch前に解消し、同じkernel stackを再利用する。この交換経路とQingKeのmscratch動作はPhase 2で実証する。
 
 通常のecallでは保存mepcを4進める。IRQでは進めない。ecallとIRQの復帰は保存mepc/mstatusとレジスタを復元してmret。初回起動もtrampolineをmepcに置く。カーネル内の同期例外は再開を試みずfatal診断とする。MIE禁止だけで同期例外が抑止されるとは考えない。

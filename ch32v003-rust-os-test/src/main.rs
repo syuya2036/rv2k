@@ -1,5 +1,9 @@
 #![no_std]
 #![no_main]
+#[cfg(feature = "syscall")]
+mod syscall;
+#[cfg(all(feature = "syscall", any(feature = "coop", feature = "timer", feature = "scheduler")))]
+compile_error!("syscall must be tested separately");
 #[cfg(feature = "coop")]
 mod coop;
 #[cfg(feature = "scheduler")]
@@ -9,7 +13,7 @@ compile_error!("scheduler, coop and timer must be tested separately");
 #[cfg(all(feature = "coop", feature = "timer"))]
 compile_error!("coop and timer must be tested separately");
 use core::arch::global_asm;
-#[cfg(not(any(feature = "coop", feature = "scheduler")))]
+#[cfg(not(any(feature = "coop", feature = "scheduler", feature = "syscall")))]
 use core::{arch::asm, ptr::{read_volatile, write_volatile}};
 global_asm!(r#"
 .section .init,"ax"
@@ -33,10 +37,22 @@ la a2, _ebss
 sw zero, 0(a1)
 addi a1, a1, 4
 j 3b
-4: call rust_main
+4:
+.if {fill_stack}
+li gp, 0
+li tp, 0
+la t0, _stack_bottom
+li t1, 0xa5a5a5a5
+6: bgeu t0, sp, 7f
+sw t1, 0(t0)
+addi t0, t0, 4
+j 6b
+7:
+.endif
+call rust_main
 5: j 5b
 .option pop
-"#);
+"#, fill_stack = const cfg!(feature = "syscall") as usize);
 #[cfg(feature = "timer")]
 global_asm!(r#"
 .section .text
@@ -70,7 +86,10 @@ extern "C" fn rust_main() -> ! { coop::start() }
 #[cfg(feature = "scheduler")]
 #[no_mangle]
 extern "C" fn rust_main() -> ! { scheduler::start() }
-#[cfg(not(any(feature = "coop", feature = "scheduler")))]
+#[cfg(feature = "syscall")]
+#[no_mangle]
+extern "C" fn rust_main() -> ! { syscall::start() }
+#[cfg(not(any(feature = "coop", feature = "scheduler", feature = "syscall")))]
 #[no_mangle]
 extern "C" fn rust_main() -> ! {
     unsafe {

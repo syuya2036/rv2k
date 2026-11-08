@@ -1,5 +1,8 @@
 #![no_std]
 
+pub mod memory;
+pub mod syscall;
+
 use rv2k_api::{TaskId, TaskInfo, TaskState};
 
 #[repr(C)]
