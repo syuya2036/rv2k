@@ -1,6 +1,6 @@
 # Phase 10: TCP シェル統合（仮想 NIC 検証済み）
 
-Renvo 上の実 RV32EC 命令で TCP 接続から全 4 コマンドを実行し、独立 PCAP 検査が PASS しました。仮想 NIC 版は Flash 16,320 / 16,384 byte、全スタックを含む予約 RAM 1,964 / 2,048 byte です。ENC28J60 版は Flash が 2,360 byte 超過し、Mac native TCP と実機は未検証です。Phase 10 全体は未完了です。
+Renvo 上の実 RV32EC 命令で TCP 接続から全 4 コマンドを実行し、独立 PCAP 検査が PASS しました。仮想 NIC 版は Flash 16,320 / 16,384 byte、全スタックを含む予約 RAM 1,964 / 2,048 byte です。ENC28J60 版は専有 SPI デバイスへの変更後も Flash が 1,616 byte 超過し、Mac native TCP と実機は未検証です。Phase 10 全体は未完了です。
 
 ## 実装
 
@@ -58,7 +58,7 @@ bash scripts/shell.sh
 
 ## 残る完了条件
 
-ENC 版は次の元 linker 制約で失敗し、容量上限は変更していません。[build log](logs/shell/enc-build.txt) を保存しています。
+ENC 版は次の元 linker 制約で失敗し、容量上限は変更していません。初回の超過は 2,360 byte（[当時の build log](logs/shell/enc-build.txt)）、専有 SPI デバイスへの変更後は 1,616 byte（[最新の build log](logs/spi-device/shell-enc-link-failure.txt)）です。[SPI 変更と検証](drivers.md) も参照してください。
 
 ```sh
 RUSTFLAGS='-C opt-level=z -C target-feature=+relax -C llvm-args=-riscv-enable-global-merge=false -C link-arg=--defsym=_kernel_stack_size=256 -C link-arg=-Tmemory.x -C link-arg=--icf=all -C link-arg=--relax -C link-arg=--relax-gp' cargo build --locked --release --features shell,drivers --target-dir target/shell-enc

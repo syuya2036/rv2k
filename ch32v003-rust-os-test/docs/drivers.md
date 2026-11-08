@@ -87,6 +87,6 @@ SWIOを保持した繰返し書込み、MISO実読取りとreset/link、SPI mode
 
 workspace 83 tests、clippy、fmt が PASS。従来 byte adapter と専有デバイスの MOSI / MISO / CS / クロック数を照合し、adapter では command・read・write の全 transfer 位置と select / deassert 失敗を検査します。モデルでの ENC RX ring / TX / reset / timeout 試験も継続しています。
 
-RV32EC driver probe は従来と同じ SPI packet `[FF] [BF 03] [9F 03] [12 00]` と SCK 56 回を観測し、UART / GPIO / 全番兵も PASS。専用 preemption probe の MOSI `A5 3C` の途中 IRQ、レジスタ復元と負例 3 件、TCP 通常 / RX 中 IRQ 注入も PASS です。
+RV32EC driver probe は従来と同じ SPI packet `[FF] [BF 03] [9F 03] [12 00]` と SCK 56 回を観測し、UART / GPIO / 全番兵も PASS。専用 preemption probe の MOSI `A5 3C` の途中 IRQ、レジスタ復元と負例 3 件、TCP 通常 / RX 中 IRQ 注入も PASS です。`scripts/shell.sh` も変更後に再実行し、元 ELF の 16,320 byte Flash / 1,964 byte 予約 RAM、5 接続ずつの通常・IRQ 注入、全コマンドと番兵の結果が同じであることを確認しました。
 
 `tcp,preempt,drivers` の元 ELF は Flash 15,072 / 16,384 byte、全 stack を含む予約 RAM 1,844 / 2,048 byte です。`shell,drivers` の strict link はなお Flash が 1,616 byte 超過します（変更前 2,360 byte）。[測定・失敗ログ](logs/spi-device) を保存しています。Flash / RAM 上限を変えずに引き続き収容を進めます。NIC は実機未保有で、実転送・SPI 時間・実機高水位はこの結果から証明しません。

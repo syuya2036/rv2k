@@ -10,5 +10,6 @@
   "production_tcp_enc_flash_bytes": 15072,
   "production_tcp_enc_reserved_ram_bytes": 1844,
   "shell_enc_flash_overflow_bytes": 1616,
-  "physical_spi_timing_and_streaming": "UNVERIFIED"
+  "physical_spi_timing_and_streaming": "UNVERIFIED",
+  "shell_normal_and_irq_stress": "PASS: same ELF budgets and packet/stack observations as PR #14"
 }
