@@ -187,6 +187,7 @@ impl Tcp {
     pub fn receive_window(&self) -> u16 {
         self.right.wrapping_sub(self.receive).min(128) as u16
     }
+    #[inline(never)]
     fn finish(&mut self, socket: &mut Socket, error: Error) {
         self.state = State::Closed;
         self.peer = None;

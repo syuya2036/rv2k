@@ -118,6 +118,7 @@ impl<S: SpiDevice> Enc28j60<S> {
         self.word(MIWRL, value)?;
         self.mii_ready()
     }
+    #[inline(never)]
     fn phy_read(&mut self, reg: u8) -> Result<u16, Error> {
         self.write(MIREGADR, reg)?;
         self.write(MICMD, 1)?;
