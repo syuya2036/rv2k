@@ -2,8 +2,8 @@
   "target": "ch32v003",
   "reason": "Halted",
   "stats": {
-    "instructions": 1689649,
-    "time": 1689649,
+    "instructions": 1689692,
+    "time": 1689692,
     "events": 0
   },
   "cpu": {
@@ -122,7 +122,7 @@
       },
       {
         "name": "mepc",
-        "value": 4194,
+        "value": 4226,
         "bits": 32
       },
       {

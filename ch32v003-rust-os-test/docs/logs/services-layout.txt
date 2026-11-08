@@ -19,7 +19,7 @@ ElfHeader {
   Version: 1
   Entry: 0x0
   ProgramHeaderOffset: 0x34
-  SectionHeaderOffset: 0x13FF64
+  SectionHeaderOffset: 0x13FFB4
   Flags [ (0x9)
     EF_RISCV_RVC (0x1)
     EF_RISCV_RVE (0x8)
@@ -57,7 +57,7 @@ Sections [
     ]
     Address: 0x0
     Offset: 0x1000
-    Size: 6469
+    Size: 6501
     Link: 0
     Info: 0
     AddressAlignment: 4
@@ -103,7 +103,7 @@ Sections [
     ]
     Address: 0x0
     Offset: 0x3090
-    Size: 373280
+    Size: 373258
     Link: 0
     Info: 0
     AddressAlignment: 1
@@ -116,7 +116,7 @@ Sections [
     Flags [ (0x0)
     ]
     Address: 0x0
-    Offset: 0x5E2B0
+    Offset: 0x5E29A
     Size: 3248
     Link: 0
     Info: 0
@@ -130,8 +130,8 @@ Sections [
     Flags [ (0x0)
     ]
     Address: 0x0
-    Offset: 0x5EF60
-    Size: 349130
+    Offset: 0x5EF4A
+    Size: 349152
     Link: 0
     Info: 0
     AddressAlignment: 1
@@ -159,7 +159,7 @@ Sections [
     ]
     Address: 0x0
     Offset: 0xB5F72
-    Size: 59888
+    Size: 59896
     Link: 0
     Info: 0
     AddressAlignment: 1
@@ -174,8 +174,8 @@ Sections [
       SHF_STRINGS (0x20)
     ]
     Address: 0x0
-    Offset: 0xC4962
-    Size: 184429
+    Offset: 0xC496A
+    Size: 184441
     Link: 0
     Info: 0
     AddressAlignment: 1
@@ -190,7 +190,7 @@ Sections [
       SHF_STRINGS (0x20)
     ]
     Address: 0x0
-    Offset: 0xF19CF
+    Offset: 0xF19E3
     Size: 161
     Link: 0
     Info: 0
@@ -204,7 +204,7 @@ Sections [
     Flags [ (0x0)
     ]
     Address: 0x0
-    Offset: 0xF1A70
+    Offset: 0xF1A84
     Size: 40
     Link: 0
     Info: 0
@@ -218,7 +218,7 @@ Sections [
     Flags [ (0x0)
     ]
     Address: 0x0
-    Offset: 0xF1A98
+    Offset: 0xF1AAC
     Size: 22520
     Link: 0
     Info: 0
@@ -232,8 +232,8 @@ Sections [
     Flags [ (0x0)
     ]
     Address: 0x0
-    Offset: 0xF7290
-    Size: 115765
+    Offset: 0xF72A4
+    Size: 115788
     Link: 0
     Info: 0
     AddressAlignment: 1
@@ -246,10 +246,10 @@ Sections [
     Flags [ (0x0)
     ]
     Address: 0x0
-    Offset: 0x1136C8
-    Size: 137568
+    Offset: 0x1136F0
+    Size: 137600
     Link: 16
-    Info: 8570
+    Info: 8572
     AddressAlignment: 4
     EntrySize: 16
   }
@@ -260,7 +260,7 @@ Sections [
     Flags [ (0x0)
     ]
     Address: 0x0
-    Offset: 0x135028
+    Offset: 0x135070
     Size: 173
     Link: 0
     Info: 0
@@ -274,8 +274,8 @@ Sections [
     Flags [ (0x0)
     ]
     Address: 0x0
-    Offset: 0x1350D5
-    Size: 44684
+    Offset: 0x13511D
+    Size: 44694
     Link: 0
     Info: 0
     AddressAlignment: 1

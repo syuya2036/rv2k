@@ -44,10 +44,10 @@ cd ch32v003-rust-os-test
 bash scripts/services.sh
 ```
 
-[実測結果](logs/services-summary.json): 1689649命令、29 syscall、6 timer IRQ、
+[実測結果](logs/services-summary.json): 1689692命令、29 syscall、6 timer IRQ、
 uptime 7 tick。タスクスタック各104/256byte、カーネル148/256byte、静的RAM736byte
 （2タスクスタック、TCB、64byte mailbox、clock等を含む）。総予約RAMは992byte。
-Flash text6469byte＋data初期値144byte（alignmentを除く）。
+Flash text6501byte＋data初期値144byte（alignmentを除く）。
 逆アセンブル・ELF配置・サイズ・実行結果も`logs/services-*`へ保存する。
 大きなbus/coverageは再現時に生成し、Gitへは追加しない。
 

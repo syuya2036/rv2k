@@ -192,11 +192,15 @@ impl Scheduler {
             return Err(Error::Invalid);
         }
         let id = self.current.ok_or(Error::Invalid)?;
+        let peer_exited = self.tasks[1 - id.index()].state == TaskState::Exited;
         let task = &mut self.tasks[id.index()];
         let bits = (task.pending_events | level) & mask;
         if bits != 0 {
             task.pending_events &= !bits;
             return Ok(Some(bits));
+        }
+        if peer_exited && mask & !event::DRIVER_POLL != 0 {
+            return Err(Error::Closed);
         }
         if timeout == 0 {
             return Err(Error::Timeout);
@@ -341,6 +345,32 @@ mod wait_tests {
         s.initialize([0x100, 0x200]);
         s.select_next();
         s
+    }
+    #[test]
+    fn resource_wait_after_peer_exit_is_closed_but_ready_data_wins() {
+        let mut s = kernel();
+        s.suspend(0x110, Action::Exit(0));
+        s.select_next();
+        for timeout in [0, 5, event::FOREVER] {
+            assert_eq!(
+                s.wait_event(event::MSG_AVAILABLE, timeout, 0),
+                Err(Error::Closed)
+            );
+            assert_eq!(s.info(B).state, TaskState::Running);
+        }
+        assert_eq!(
+            s.wait_event(event::MSG_AVAILABLE, event::FOREVER, event::MSG_AVAILABLE),
+            Ok(Some(event::MSG_AVAILABLE))
+        );
+        s.signal(B, event::NET_RX).unwrap();
+        assert_eq!(
+            s.wait_event(event::NET_RX, event::FOREVER, 0),
+            Ok(Some(event::NET_RX))
+        );
+        assert_eq!(s.wait_event(event::DRIVER_POLL, 1, 0), Ok(None));
+        s.suspend(0x210, Action::Block);
+        s.tick();
+        assert_eq!(s.take_result(B), Some(Error::Timeout.code()));
     }
     #[test]
     fn tick_wrap_sleep_zero_and_timeout_limits() {
