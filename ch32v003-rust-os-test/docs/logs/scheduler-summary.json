@@ -1,0 +1,18 @@
+{
+  "instructions": 5952,
+  "counters": [
+    8,
+    3
+  ],
+  "exit_codes": [
+    0,
+    -7
+  ],
+  "selections": 23,
+  "task_stack_used_bytes": [
+    108,
+    108
+  ],
+  "static_ram_bytes": 592,
+  "kernel_stack_reserved_bytes": 512
+}

@@ -1,0 +1,2 @@
+   text	   data	    bss	    dec	    hex	filename
+   1797	     20	    560	   2377	    949	target/scheduler/riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test

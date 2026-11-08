@@ -1,0 +1,7 @@
+[package]
+name = "rv2k-kernel"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+rv2k-api = { path = "../rv2k-api" }

@@ -1,6 +1,6 @@
 # rv2k 2.0 設計書
 
-状態: 実装前の設計案。Phase 0の実測を土台に、Phase 1以降の契約と検証条件を定める。設計上の予算やAPIを実装済みと解釈しない。リリース名は **rv2k 2.0** に統一する。
+状態: Phase 1のタスク管理を実装・検証済み。Phase 2以降は設計案。Phase 0/1の実測を土台に、後続の契約と検証条件を定める。設計上の予算やAPIを実装済みと解釈しない。リリース名は **rv2k 2.0** に統一する。
 
 ## 1. 目的と決定事項
 
@@ -16,11 +16,11 @@ CH32V003J4M6のMCU内RAM 2048バイト、Flash 16384バイトで、カーネル�
 
 [RFC 9006](https://www.rfc-editor.org/rfc/rfc9006.html#name-uip) のuIPは小メモリTCPの先例である。rv2kはsingle-MSS方式を参考にするが、OSサービスとして送信データの再送責務をカーネルに置く。アプリケーションに再送時のデータ再生成を要求するuIPの方式をそのまま採用するわけではない。
 
-## 2. 現状との差分
+## 2. Phase 0からの差分
 
-現在の [協調検証](../ch32v003-rust-os-test/docs/cooperative.md) は独立2タスク・各256バイト・32回切替を実証している。固定xor切替、IRQ禁止、テスト用ebreak停止であり、BLOCKED/EXITEDや一般的なsyscallはまだない。
+Phase 0の [協調検証](../ch32v003-rust-os-test/docs/cooperative.md) は独立2タスク・各256バイト・32回切替を実証している。固定xor切替、IRQ禁止、テスト用ebreak停止であり、BLOCKED/EXITEDや一般的なsyscallはまだない。
 
-実測値: 静的RAM592バイト、起動スタック予約512バイト、Flash text1553バイト。以下の1792バイト予算は、テスト用状態の縮小、起動スタックの変更、ドライバ・TCPの追加を伴う将来設計。現在の領域に単純加算して収まるという意味ではない。
+Phase 0実測値: 静的RAM592バイト、起動スタック予約512バイト、Flash text1553バイト。以下の1792バイト予算は、テスト用状態の縮小、起動スタックの変更、ドライバ・TCPの追加を伴う将来設計。現在の領域に単純加算して収まるという意味ではない。
 
 実機ELFとRenvo用LMA補完ELFの分離を継続する。Renvoの仮想NIC、Macへのネットワーク接続、ENC28J60のSPIモデルは、今回まだ作成・実行していない。
 
@@ -76,7 +76,7 @@ host/
   net-harness/    # PCAP、フレーム注入、損失・遅延・重複、Mac接続
 ```
 
-これらはまだ存在しない予定パス。アプリはapiだけを参照し、kernel内部TCBやsocket構造体を公開しない。netはdriverの具体型を知らず、静的ディスパッチのNetworkDeviceを使う。trait object、ヒープ、動的なタスク／socket生成を導入しない。unsafeはarch、MMIO、静的領域の限定した所有権境界へ集約する。
+api/kernelはPhase 1で導入済み。残りは予定パス。アプリはapiだけを参照し、kernel内部TCBやsocket構造体を公開しない。netはdriverの具体型を知らず、静的ディスパッチのNetworkDeviceを使う。trait object、ヒープ、動的なタスク／socket生成を導入しない。unsafeはarch、MMIO、静的領域の限定した所有権境界へ集約する。
 
 ## 5. タスク管理とスケジューラ
 
@@ -313,9 +313,10 @@ Flashの作業予算案: arch/kernel/syscall 5KB、driver 3KB、protocol 6KB、s
 |6|ARP応答、IPv4/ICMP checksumと奇数長、不正長drop、Macの実pingとパケット記録|
 |7|handshake、部分送受信、データ/ACK/SYN/FIN損失、重複、順不同、seq wrap、窓0と回復、再接続|
 |8|レジスタsentinelを保持した強制切替、syscall中tick、SPI/共有状態非再入、wait/wake競合|
-|9|TCPシェルの全コマンド、長い行、不完全受信、backpressure、切断後再接続|
-|10|J4M6で24時間以上の通信、1万回の接続/切断、NICリンク断/復帰、最大スタックとサイズ報告|
-|11|同一の最終ELFで全機能、2KB/16KB、再現可能なビルドと実機配線、ABI/制限の仕様固定|
+|9|HTTP Echo: POST /echo、0〜64byte、過大本文拒否、分割受信、timeout、Macから本文一致・再接続|
+|10|TCPシェル: ps/mem/uptime/netstat、公開snapshot API、長い行、不完全受信、backpressure、切断後再接続|
+|11|J4M6で24時間以上の通信、1万回の接続/切断、NICリンク断/復帰、最大スタックとサイズ報告|
+|12|同一の最終ELFで全機能、2KB/16KB、再現可能なビルドと実機配線、ABI/制限の仕様固定|
 
 ### 仮想EthernetとMac接続のゲート
 
@@ -325,7 +326,7 @@ Renvoに未実装のコマンドを前提にしない。Phase 6の前にvirtual 
 
 仮想ネットワーク接続が成立しない間も、フレーム注入試験でprotocol開発は進められるが、Phase 6はPARTIALに留める。ENC28J60の電気的・SPIタイミングの検証はvirtual NICで代替しない。
 
-## 13. 次の実装単位
+## 13. Phase 1の実装単位
 
 1. Phase 0検証を残したまま、TaskId、TCB、TaskStateを導入する。
 2. `select_next()` をREADY走査へ置換し、現在の固定xorを廃止する。
@@ -334,7 +335,9 @@ Renvoに未実装のコマンドを前提にしない。Phase 6の前にvirtual 
 5. 片方終了後も他方のカウンタとstack/regsが保たれるRenvo試験を追加する。
 6. 並行してJ4M6のピン／software SPIゲートを検証し、ボード設定を固定する。
 
-Phase 1にTCPパーサやecallの本実装を混ぜず、完了後にPhase 2へ進む。
+1〜5は実装済み。実測・再現は [Phase 1検証](../ch32v003-rust-os-test/docs/scheduler.md) を参照。
+6の物理ボード検証は未実施であり、Phase 5の実機ゲートとして残す。
+Phase 1にTCPパーサやecallの本実装を混ぜず、次にPhase 2へ進む。
 
 ## 14. 未確定事項と決定期限
 

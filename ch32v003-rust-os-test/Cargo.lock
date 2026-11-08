@@ -5,3 +5,18 @@ version = 4
 [[package]]
 name = "ch32v003-rust-os-test"
 version = "0.1.0"
+dependencies = [
+ "rv2k-api",
+ "rv2k-kernel",
+]
+
+[[package]]
+name = "rv2k-api"
+version = "0.1.0"
+
+[[package]]
+name = "rv2k-kernel"
+version = "0.1.0"
+dependencies = [
+ "rv2k-api",
+]
