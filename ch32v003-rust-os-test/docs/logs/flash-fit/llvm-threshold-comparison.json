@@ -1,0 +1,74 @@
+[
+  {
+    "threshold": 10,
+    "app": "http",
+    "code": 101,
+    "overflow": 312
+  },
+  {
+    "threshold": 10,
+    "app": "shell",
+    "code": 101,
+    "overflow": 1332
+  },
+  {
+    "threshold": 50,
+    "app": "http",
+    "code": 101,
+    "overflow": 800
+  },
+  {
+    "threshold": 50,
+    "app": "shell",
+    "code": 101,
+    "overflow": 1856
+  },
+  {
+    "threshold": 75,
+    "app": "http",
+    "code": 101,
+    "overflow": 1156
+  },
+  {
+    "threshold": 75,
+    "app": "shell",
+    "code": 101,
+    "overflow": 2196
+  },
+  {
+    "threshold": 100,
+    "app": "http",
+    "code": 101,
+    "overflow": 1632
+  },
+  {
+    "threshold": 100,
+    "app": "shell",
+    "code": 101,
+    "overflow": 2672
+  },
+  {
+    "threshold": 150,
+    "app": "http",
+    "code": 101,
+    "overflow": 3128
+  },
+  {
+    "threshold": 150,
+    "app": "shell",
+    "code": 101,
+    "overflow": 4152
+  },
+  {
+    "threshold": 250,
+    "app": "http",
+    "code": 101,
+    "overflow": 4180
+  },
+  {
+    "threshold": 250,
+    "app": "shell",
+    "code": 101,
+    "overflow": 5208
+  }
+]

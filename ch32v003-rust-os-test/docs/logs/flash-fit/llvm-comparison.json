@@ -1,0 +1,62 @@
+[
+  {
+    "flags": "-C opt-level=s",
+    "app": "http",
+    "code": 101,
+    "overflow": 1488
+  },
+  {
+    "flags": "-C opt-level=s",
+    "app": "shell",
+    "code": 101,
+    "overflow": 2536
+  },
+  {
+    "flags": "-C opt-level=2",
+    "app": "http",
+    "code": 101,
+    "overflow": 5444
+  },
+  {
+    "flags": "-C opt-level=2",
+    "app": "shell",
+    "code": 101,
+    "overflow": 6312
+  },
+  {
+    "flags": "-C opt-level=z -C llvm-args=-inline-threshold=0",
+    "app": "http",
+    "code": 101,
+    "overflow": 460
+  },
+  {
+    "flags": "-C opt-level=z -C llvm-args=-inline-threshold=0",
+    "app": "shell",
+    "code": 101,
+    "overflow": 1488
+  },
+  {
+    "flags": "-C opt-level=z -C llvm-args=-inline-threshold=25",
+    "app": "http",
+    "code": 101,
+    "overflow": 292
+  },
+  {
+    "flags": "-C opt-level=z -C llvm-args=-inline-threshold=25",
+    "app": "shell",
+    "code": 101,
+    "overflow": 1300
+  },
+  {
+    "flags": "-C opt-level=z -C llvm-args=-enable-machine-outliner=always",
+    "app": "http",
+    "code": 101,
+    "overflow": 460
+  },
+  {
+    "flags": "-C opt-level=z -C llvm-args=-enable-machine-outliner=always",
+    "app": "shell",
+    "code": 101,
+    "overflow": 1484
+  }
+]

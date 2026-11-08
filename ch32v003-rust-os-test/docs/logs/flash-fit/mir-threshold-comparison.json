@@ -1,0 +1,62 @@
+[
+  {
+    "flags": "-Z inline-mir-threshold=0",
+    "app": "http",
+    "code": 101,
+    "overflow": 456
+  },
+  {
+    "flags": "-Z inline-mir-threshold=0",
+    "app": "shell",
+    "code": 101,
+    "overflow": 1480
+  },
+  {
+    "flags": "-Z inline-mir-threshold=10",
+    "app": "http",
+    "code": 101,
+    "overflow": 460
+  },
+  {
+    "flags": "-Z inline-mir-threshold=10",
+    "app": "shell",
+    "code": 101,
+    "overflow": 1484
+  },
+  {
+    "flags": "-Z inline-mir-threshold=25",
+    "app": "http",
+    "code": 101,
+    "overflow": 460
+  },
+  {
+    "flags": "-Z inline-mir-threshold=25",
+    "app": "shell",
+    "code": 101,
+    "overflow": 1484
+  },
+  {
+    "flags": "-Z inline-mir-hint-threshold=50",
+    "app": "http",
+    "code": 101,
+    "overflow": 476
+  },
+  {
+    "flags": "-Z inline-mir-hint-threshold=50",
+    "app": "shell",
+    "code": 101,
+    "overflow": 1496
+  },
+  {
+    "flags": "-Z inline-mir-hint-threshold=0",
+    "app": "http",
+    "code": 101,
+    "overflow": 736
+  },
+  {
+    "flags": "-Z inline-mir-hint-threshold=0",
+    "app": "shell",
+    "code": 101,
+    "overflow": 1688
+  }
+]

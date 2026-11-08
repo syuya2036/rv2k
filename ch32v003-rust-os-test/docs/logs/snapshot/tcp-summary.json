@@ -2,7 +2,7 @@
   "host_packet_peer": "PASS (synthetic peer, not native Mac TCP)",
   "public_mem_snapshot_checked": true,
   "gp_preserved_across_timer_irqs_and_syscall": true,
-  "instructions": 6729923,
+  "instructions": 6729834,
   "frames_in": 25,
   "frames_out": 30,
   "connections": 2,
@@ -25,8 +25,8 @@
   "preemption": {
     "nic_irq_injections": 0,
     "deferred_irqs": 0,
-    "forced_switches": 7,
-    "max_disabled_clocks": 7490,
+    "forced_switches": 5,
+    "max_disabled_clocks": 7473,
     "injected_clocks_per_frame": 0,
     "shared_borrow_released_before_completion": true
   }

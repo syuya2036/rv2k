@@ -1,0 +1,62 @@
+[
+  {
+    "file": "net/src/tcp/mod.rs",
+    "fn": "    pub fn receive_window(",
+    "code": 101,
+    "overflow": 60
+  },
+  {
+    "file": "net/src/tcp/socket.rs",
+    "fn": "    pub(super) fn terminal(",
+    "code": 101,
+    "overflow": 24
+  },
+  {
+    "file": "net/src/tcp/socket.rs",
+    "fn": "    pub fn readiness(",
+    "code": 101,
+    "overflow": 52
+  },
+  {
+    "file": "net/src/lib.rs",
+    "fn": "    fn local_peer(",
+    "code": 101,
+    "overflow": 72
+  },
+  {
+    "file": "drivers/src/enc28j60.rs",
+    "fn": "    fn ensure(",
+    "code": 101,
+    "overflow": 176
+  },
+  {
+    "file": "drivers/src/enc28j60.rs",
+    "fn": "    fn phy_read(",
+    "code": 101,
+    "overflow": 44
+  },
+  {
+    "file": "drivers/src/enc28j60.rs",
+    "fn": "    fn reset_tx(",
+    "code": 101,
+    "overflow": 60
+  },
+  {
+    "file": "kernel/src/lib.rs",
+    "fn": "    pub fn info(",
+    "code": 101,
+    "overflow": 148
+  },
+  {
+    "file": "kernel/src/lib.rs",
+    "fn": "    pub fn signal(",
+    "code": 101,
+    "overflow": 60
+  },
+  {
+    "file": "kernel/src/lib.rs",
+    "fn": "    pub fn wait_event_until(",
+    "code": 101,
+    "overflow": 92
+  }
+]
