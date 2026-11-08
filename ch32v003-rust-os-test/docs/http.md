@@ -16,10 +16,11 @@ Content-Length と Connection: close を出力し、1 接続につき 1 リク�
 
 ```sh
 cd ch32v003-rust-os-test
-bash scripts/http.sh
+bash scripts/http.sh --virtual-only # 仮想 NIC の CI と同じ検査
+bash scripts/http.sh                # ENC の strict link まで含む完了ゲート
 ```
 
-スクリプトは通常試験、RX ごとの IRQ 注入試験、元の ELF の容量検査を実行し、最後に ENC28J60 構成をビルドします。**現時点では最後の ENC リンクが Flash 超過で失敗し、スクリプト全体は非ゼロ終了します。** リンカの 16,384 byte 制約を緩めていません。未達のため HTTP は CI の成功ゲートへまだ追加していません。
+スクリプトは通常試験、RX ごとの IRQ 注入試験、元の ELF の容量検査を実行し、最後に ENC28J60 構成をビルドします。**現時点では最後の ENC リンクが Flash 超過で失敗し、スクリプト全体は非ゼロ終了します。** リンカの 16,384 byte 制約を緩めていません。CI は明示的な `--virtual-only` で仮想 NIC の試験を実行します。引数なしの完了ゲートは引き続き ENC の strict link を必須とし、未達の現在は失敗します。
 
 結果は [logs/http](logs/http) にあります。`check-http.py` は PCAP の IP/TCP checksum、ストリームの再構築、Python 標準ライブラリの HTTPResponse による応答解析、独立した期待本文、ゲスト SRAM の状態・スタック番兵を照合します。ホスト peer と rv2k パーサの実装を共有しません。PCAP / SRAM の raw log を保存しています。
 
@@ -35,20 +36,22 @@ bash scripts/http.sh
 
 |項目|通常|IRQ ストレス|
 |---|---:|---:|
-|実行命令数|86,196,717|85,724,958|
+|実行命令数|84,996,360|85,484,179|
 |RX / TX フレーム|230 / 230|230 / 231|
-|強制切替 / 延期 IRQ|20 / 10|6 / 240|
-|T0 / T1 / kernel スタック使用 byte|204 / 216 / 112|204 / 216 / 112|
+|強制切替 / 延期 IRQ|21 / 8|6 / 256|
+|T0 / T1 / kernel スタック使用 byte|204 / 184 / 112|204 / 184 / 112|
 |番兵破損 / fault|0 / 0|0 / 0|
 
-仮想 NIC ELF は Flash 15,918 / 16,384 byte、静的 RAM 1,772 byte + kernel/IRQ/boot 予約 256 byte = 2,028 / 2,048 byte です。タスクの各 256 byte スタックと番兵は静的 RAM に含みます。
+仮想 NIC ELF は Flash 15,630 / 16,384 byte、静的 RAM 1,764 byte + kernel/IRQ/boot 予約 256 byte = 2,020 / 2,048 byte です。タスクの各 256 byte スタックと番兵は静的 RAM に含みます。
 
-ENC28J60 構成は最終リンクで Flash を 1,600 byte 超過しました。実機用の合格 ELF は生成できていません。`enc-link-failure.txt` が失敗証跡です。
+ENC28J60 構成は最終リンクで Flash を 700 byte 超過しました。実機用の合格 ELF は生成できていません。`enc-link-failure.txt` が失敗証跡です。
 
 ## 共通部分の回帰と未完了ゲート
 
+HTTP と shell は選択式 feature とし、併用や HTTP と snapshot 専用 probe の併用をビルド時に拒否します。公開 snapshot の Service と専有 SPI デバイスを維持して現在の main に統合しました。Content-Length の十進変換は既存の word 除算へ共有し、別の compiler runtime の取り込みを避けて 196 byte 削減しました。
+
 TCB を RV32 で 32 byte stride とし、初期化の一時コピー、固定 MMIO base の保持、syscall wrapper の中間 Result コピーを減らしました。UART/NIC は IRQ マスク中に一度初期化してから使い、デバイスの通常 RAM 状態に volatile な構造体コピーを使いません。OS サービスや TCP 機能は削除していません。
 
-[regression.json](logs/http/regression.json) に、共通部分変更後の services、TCP、preemption、SPI/UART と負例の再検証を保存しています。workspace 67 tests とホスト NIC の所有権試験も PASS です。従来フェーズのログは履歴として保持しています。
+[regression.json](logs/http/regression.json) は初期統合時の共通部分・ホスト NIC 所有権試験の履歴です。現在の統合後は workspace 83 tests / clippy / fmt と、shell / snapshot / TCP の通常・IRQ 注入を再検査して PASS です。[最新回帰](logs/http/integration-regression) と [source / ELF hash](logs/http/verification.json) を保存しています。preemption の除外時間計測は別の `preempt-timing` profile の機能であり、HTTP の `max_disabled_clocks` は未計測（null）です。従来フェーズのログは履歴として保持しています。
 
 未完了は ENC 構成の Flash 収容、Mac native HTTP、Phase 9 統合変更の PR レビュー / マージです。Mac vmnet は実行許可済みですが、前回の `sudo -n` が OS 認証を要求して起動前に失敗しており、ネットワークは作成されていません。[実接続試行](logs/network-live-attempt.json) を参照してください。CH32V003J4M6＋ENC28J60 は未保有で、実機検証は行っていません。

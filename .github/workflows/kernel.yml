@@ -27,6 +27,7 @@ jobs:
       - run: bash scripts/preempt.sh
       - run: bash scripts/snapshot.sh
       - run: bash scripts/shell.sh
+      - run: bash scripts/http.sh --virtual-only
       - run: bash scripts/drivers.sh
       - run: bash scripts/diagnostics.sh
       - run: python3 scripts/diagnostics-negative.py

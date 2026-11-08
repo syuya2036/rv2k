@@ -1,4 +1,23 @@
-Profile: --features http,drivers; target=http-enc; memory.x unchanged (Flash=16384, RAM=2048).
+warning: unstable feature specified for `-Ctarget-feature`: `relax`
+  |
+  = note: this feature is not stably supported; its behavior can change in the future
+
+warning: `rv2k-api` (lib) generated 1 warning
+warning: `rv2k-drivers` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-apps` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-kernel` (lib) generated 1 warning (1 duplicate)
+warning: `rv2k-arch` (lib) generated 1 warning (1 duplicate)
+   Compiling rv2k-net v0.1.0 (/Users/shuya/Documents/personal/rv2k/crates/rv2k-net)
+warning: `rv2k-net` (lib) generated 1 warning (1 duplicate)
+   Compiling ch32v003-rust-os-test v0.1.0 (/Users/shuya/Documents/personal/rv2k/ch32v003-rust-os-test)
+error: linking with `rust-lld` failed: exit status: 1
+  |
+  = note:  "rust-lld" "-flavor" "gnu" "<1 object files omitted>" "--as-needed" "-Bstatic" "/Users/shuya/Documents/personal/rv2k/ch32v003-rust-os-test/target/http-enc/riscv32ec-unknown-none-elf/release/deps/libcompiler_builtins-72131a8fd721919d.rlib" "-L" "/Users/shuya/Documents/personal/rv2k/ch32v003-rust-os-test/target/http-enc/riscv32ec-unknown-none-elf/release/deps/rustcYfpYQX/raw-dylibs" "-Bdynamic" "-z" "noexecstack" "-o" "/Users/shuya/Documents/personal/rv2k/ch32v003-rust-os-test/target/http-enc/riscv32ec-unknown-none-elf/release/deps/ch32v003_rust_os_test-4d2b33c2c37b9aea" "--gc-sections" "--defsym=_kernel_stack_size=256" "-Tmemory.x" "--icf=all" "--relax" "--relax-gp"
+  = note: some arguments are omitted. use `--verbose` to show all linker arguments
   = note: rust-lld: error: Flash exceeds 16384-byte budget
-          rust-lld: error: section '.text' will not fit in region 'FLASH': overflowed by 1598 bytes
-          rust-lld: error: section '.data' will not fit in region 'FLASH': overflowed by 1600 bytes
+          rust-lld: error: section '.text' will not fit in region 'FLASH': overflowed by 698 bytes
+          rust-lld: error: section '.data' will not fit in region 'FLASH': overflowed by 700 bytes
+
+
+warning: `ch32v003-rust-os-test` (bin "ch32v003-rust-os-test") generated 1 warning (1 duplicate)
+error: could not compile `ch32v003-rust-os-test` (bin "ch32v003-rust-os-test") due to 1 previous error; 1 warning emitted

@@ -2,6 +2,11 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 ROOT="$PWD"
+case "${1:-}" in
+  "") CHECK_ENC=1 ;;
+  --virtual-only) CHECK_ENC=0 ;;
+  *) echo 'usage: http.sh [--virtual-only]' >&2; exit 2 ;;
+esac
 LOG=docs/logs/http
 mkdir -p "$LOG" "$LOG/stress"
 (cd ..; cargo +stable build --locked --release --manifest-path host/net-harness/Cargo.toml --target-dir "$ROOT/vendor/renvo_emu/target")
@@ -14,5 +19,7 @@ python3 scripts/check-http.py "$LOG"
 python3 scripts/check-budget.py "$ELF" "$LOG/budget.json"
 vendor/renvo_emu/target/release/rv2k-net-harness "$ELF.remu" probe "$LOG/stress/http-output.pcap" "$LOG/stress/http-run.json" http-preempt
 python3 scripts/check-http.py "$LOG/stress"
-cargo build --locked --release --features http,drivers --target-dir target/http-enc
-python3 scripts/check-budget.py target/http-enc/riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test "$LOG/enc-budget.json"
+if [ "$CHECK_ENC" = 1 ]; then
+  cargo build --locked --release --features http,drivers --target-dir target/http-enc
+  python3 scripts/check-budget.py target/http-enc/riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test "$LOG/enc-budget.json"
+fi
