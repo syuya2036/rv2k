@@ -96,6 +96,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut nic_irq_armed = false;
     let mut rx_reads_before = 0;
     let mut nic_irq_injections = 0u32;
+    let mut budget_error = None;
     let final_result = loop {
         if let Some(frame) = state.borrow_mut().take_tx() {
             if let Some(probe) = &mut probe {
@@ -224,13 +225,17 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             break result;
         }
         if socket.is_none() && instructions > 200_000_000 {
-            return Err(format!("guest exceeded 200M instruction ceiling: {instructions}").into());
+            budget_error = Some(format!(
+                "guest exceeded 200M instruction ceiling: {instructions}"
+            ));
+            break result;
         }
         if began.elapsed() > Duration::from_secs(watchdog_seconds) {
-            return Err(format!(
+            budget_error = Some(format!(
                 "host watchdog exceeded {watchdog_seconds}s in {} mode: {instructions} guest instructions, {:.1}s elapsed",
                 args[5], began.elapsed().as_secs_f64()
-            ).into());
+            ));
+            break result;
         }
     };
     if let Some(frame) = state.borrow_mut().take_tx() {
@@ -254,7 +259,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ram = machine.debug_read_memory(0x20000000, 2048)?;
     let report = serde_json::json!({"reason":final_result.reason,"instructions":instructions,"uart":String::from_utf8_lossy(&final_result.uart),
         "injected":state.borrow().received,"released":state.borrow().released,"transmitted":state.borrow().transmitted,
-        "symbols":symbols,"ram_hex":ram.iter().map(|b|format!("{b:02x}")).collect::<String>(),"mode":args[5],"rx_overflow":overflow,"nic_irq_injections":nic_irq_injections,"tcp_probe":probe.as_ref().map(|p|p.summary())});
+        "symbols":symbols,"ram_hex":ram.iter().map(|b|format!("{b:02x}")).collect::<String>(),"mode":args[5],"rx_overflow":overflow,"nic_irq_injections":nic_irq_injections,"tcp_probe":probe.as_ref().map(|p|p.summary()),"budget_error":budget_error});
     fs::write(&args[4], serde_json::to_vec_pretty(&report)?)?;
     println!(
         "guest {:?}: {} instructions, {} RX, {} TX",
@@ -263,6 +268,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         state.borrow().received,
         state.borrow().transmitted
     );
+    if let Some(error) = budget_error {
+        return Err(error.into());
+    }
     if final_result.reason != StopReason::Halted {
         return Err("guest fault".into());
     }
