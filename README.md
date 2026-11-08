@@ -37,7 +37,7 @@ HTTPのメッセージ解析は [RFC 9112](https://www.rfc-editor.org/rfc/rfc911
 
 ## 現在地
 
-**Phase 1のタスク管理をホストとRenvoで検証済み、次はPhase 2です。**
+**Phase 2のsyscall基盤をホストとRenvoで検証済み、次はPhase 3です。**
 Apple Silicon macOS上で、RV32EC / ILP32EのRustプログラムをビルドし、Renvoで実命令を実行しました。
 
 - 起動処理、RAM更新、UART出力、SysTick割り込みと復帰。
@@ -47,7 +47,9 @@ Apple Silicon macOS上で、RV32EC / ILP32EのRustプログラムをビルドし
 Phase 1ではREADY走査、タスクreturn・明示終了、終了後の単独継続をRenvoで確認しました。
 全待機・wake・全終了の状態遷移はホストでも試験しています。
 再現手順と制約は [タスク管理検証](ch32v003-rust-os-test/docs/scheduler.md) を参照してください。
-ネットワーク、ecall、プリエンプション、CH32V003実機での動作はこれからです。
+Phase 2ではRV32E専用ecall、80byteトラップフレーム、ポインタ検査、公開task APIを検証しました。
+実装済み番号と予約番号、計測・再現手順は [syscall検証](ch32v003-rust-os-test/docs/syscalls.md) を参照してください。
+ネットワーク、待機・IPC、プリエンプション、CH32V003実機での動作はこれからです。
 実測ログ・再現手順は [検証用プロジェクト](ch32v003-rust-os-test/README.md) と [協調マルチタスク検証](ch32v003-rust-os-test/docs/cooperative.md) を参照してください。
 
 ## 最終アーキテクチャ
@@ -73,8 +75,8 @@ MMUによる分離がないため、この境界は論理的なAPI境界であ�
 |---|---|---|
 |0 — 実証済み|Rust起動・協調マルチタスク|Renvoで独立2タスク・32回切り替え・レジスタ保持を確認|
 |1 — 検証済み|タスク管理・スケジューラ|TCB、状態遷移、ラウンドロビン、タスク終了、実行可能タスクなしの処理|
-|2 — 次に実装|システムコール基盤|関数APIを整理し、RV32E専用syscall ABI・dispatch・ecallを独立検証|
-|3|タイマー・IPC・同期|monotonic tick、sleep、イベント、固定待機情報、取りこぼしのない通知|
+|2 — 検証済み|システムコール基盤|関数APIを整理し、RV32E専用syscall ABI・dispatch・ecallを独立検証|
+|3 — 次に実装|タイマー・IPC・同期|monotonic tick、sleep、イベント、固定待機情報、取りこぼしのない通知|
 |4|メモリ管理・障害処理|静的割当、スタック監視、panic・トラップ診断、RAM/Flash予算の自動検査|
 |5|デバイスドライバ基盤|UART・GPIO・SPI・NetworkDevice、J4M6の配線とソフトウェアSPIを検証|
 |6|仮想Ethernet・ARP・IPv4・ICMP|フレーム注入試験とMacからの実ping。ホスト接続経路も検証|

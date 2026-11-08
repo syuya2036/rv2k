@@ -1,3 +1,5 @@
 /target/
 /vendor/
 __pycache__/
+/docs/logs/syscall-bus.json
+/docs/logs/syscall-coverage.json

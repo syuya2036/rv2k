@@ -1,0 +1,17 @@
+[
+  {
+    "case": "syscall-bad-sp",
+    "status": 22,
+    "instructions": 1938
+  },
+  {
+    "case": "syscall-kernel-fault",
+    "status": 26,
+    "instructions": 1831
+  },
+  {
+    "case": "syscall-missing-t1",
+    "status": 55,
+    "instructions": 9911
+  }
+]
