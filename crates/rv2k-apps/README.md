@@ -27,3 +27,13 @@ cargo +stable clippy -p rv2k-apps --all-targets -- -D warnings
 ```
 
 0〜64 byte の全本文長、バイナリ本文、1 byte ずつの入力、最大本文の全 2 分割点、不正 framing / Host / 制限値、EOF / timeout / reset、および全ステータス × 全本文長の応答ヘッダを検証します。
+
+## TCP シェルの行入力（Phase 10）
+
+`shell::Line` は 64 byte 固定配列を持ち、`push(byte)` が改行ごとに `Command` を返します。`ps` / `mem` / `uptime` / `netstat` / `help` / `quit` を大文字小文字を区別して認識し、前後の SP / HTAB を無視します。引数や空白のある別コマンドは Unknown、空行は Empty です。
+
+CR、LF、CRLF に対応し、分割された CRLF を 1 改行として扱います。制限は前後の空白を含み、改行を除いて 64 byte です。超過または不正な byte の後は、次の改行まで全て捨ててエラーを 1 回返し、その次の行から復帰します。許可する入力は printable ASCII と HTAB で、backspace / terminal escape / 非 ASCII / Telnet 制御は扱いません。
+
+呼び出し側は新しい TCP 接続で `reset()` し、EOF の未完了行は実行しません。socket から複数行が一度に届いた場合も、全 byte を順番に push することで全コマンドを処理できます。このモジュールは行入力とコマンド識別だけを実装しており、公開 snapshot API による状態取得・送信や TCP シェル全体の完了を意味しません。
+
+試験は全チャンク幅 / 全 2 分割点、改行種別、64 / 65 byte 境界、5,000 byte の超過行からの復帰、全 byte 値の分類、接続変更時の reset を含みます。上記の test / clippy コマンドで HTTP と一緒に実行できます。
