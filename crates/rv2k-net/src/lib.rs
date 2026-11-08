@@ -170,7 +170,7 @@ impl Network {
     #[cfg(feature = "tcp")]
     pub fn info(&self) -> rv2k_api::net::NetInfo {
         use rv2k_api::net::{NetInfo, LINK_UP, PEER_PRESENT, VERSION};
-        let peer = self.tcp.peer();
+        let peer = self.tcp.peer_ref();
         NetInfo {
             version: VERSION,
             state: self.tcp.state(),
@@ -285,7 +285,7 @@ impl Network {
         if !status.link_up {
             return Ok(());
         }
-        if self.neighbor.is_some_and(|n| due(now, n.deadline)) {
+        if self.neighbor.as_ref().is_some_and(|n| due(now, n.deadline)) {
             self.neighbor = None;
         }
         if let Some(peer) = self.reply {

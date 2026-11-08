@@ -179,7 +179,10 @@ impl Tcp {
         self.quiet_done = false;
     }
     pub fn peer(&self) -> Option<Endpoint> {
-        self.peer
+        self.peer_ref().copied()
+    }
+    pub(crate) fn peer_ref(&self) -> Option<&Endpoint> {
+        self.peer.as_ref()
     }
     pub fn peer_window(&self) -> u16 {
         self.peer_window
@@ -202,6 +205,7 @@ impl Tcp {
     }
     fn matching(&self, segment: &Segment, socket: &Socket) -> bool {
         self.peer
+            .as_ref()
             .is_some_and(|p| p.ip == segment.peer.ip && p.port == segment.peer.port)
             && segment.local_port == socket.port()
     }

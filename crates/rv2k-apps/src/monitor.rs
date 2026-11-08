@@ -1,9 +1,5 @@
 //! Bounded text views of public OS snapshots; no formatter machinery or heap.
-use rv2k_api::{
-    mem::MemInfo,
-    net::{NetInfo, TcpState},
-    TaskInfo, TaskState,
-};
+use rv2k_api::{mem::MemInfo, net::NetInfo, TaskInfo};
 pub const CAPACITY: usize = 64;
 pub struct Line {
     bytes: [u8; CAPACITY],
@@ -64,13 +60,9 @@ impl Line {
         }
         append(&mut self.bytes, &mut self.used, &self.digits[first..]);
     }
-    #[inline(never)]
-    fn field(&mut self, name: &[u8], value: u64) {
-        self.push(name);
-        self.number(value);
-    }
-    /// Bytes below SP encode a little-endian u16 offset; 0x80|offset is u8,
-    /// 0xa0|offset is i16. Patterns are private, fixed ASCII snapshot layouts.
+    /// Private snapshot patterns: u16 offsets, 0x80|offset for u8,
+    /// 0xa0|offset for i16, 0xc0/0xe0|offset for task/TCP state.
+    /// 0x1f displays the sum of the memory report's static/kernel fields.
     #[inline(never)]
     fn view(&mut self, pattern: &[u8], source: &[u8]) {
         let mut start = 0;
@@ -78,93 +70,79 @@ impl Line {
             if !(32..128).contains(&tag) {
                 self.push(&pattern[start..index]);
                 let offset = (tag & 31) as usize;
-                let mut value = source[offset] as u16;
-                if tag & 0xe0 != 0x80 {
-                    value |= (source[offset + 1] as u16) << 8;
-                    if tag & 0xe0 == 0xa0 {
-                        if (value as i16) < 0 {
-                            self.push(b"-");
+                let kind = tag & 0xe0;
+                if kind >= 0xc0 {
+                    let names = if kind == 0xc0 {
+                        b"READY\0RUNNING\0BLOCKED\0EXITED\0".as_slice()
+                    } else {
+                        b"CLOSED\0LISTEN\0SYN_RECEIVED\0ESTABLISHED\0FIN_WAIT_1\0FIN_WAIT_2\0CLOSING\0CLOSE_WAIT\0LAST_ACK\0TIME_WAIT\0"
+                    };
+                    self.push(entry(names, source[offset]).unwrap());
+                } else {
+                    let value = if tag == 0x1f {
+                        let pair: [u8; 4] = source[2..6].try_into().unwrap();
+                        u16::from_le_bytes([pair[0], pair[1]]) as u32
+                            + u16::from_le_bytes([pair[2], pair[3]]) as u32
+                    } else {
+                        let mut value = source[offset] as u16;
+                        if kind != 0x80 {
+                            value |= (source[offset + 1] as u16) << 8;
+                            if kind == 0xa0 {
+                                if (value as i16) < 0 {
+                                    self.push(b"-");
+                                }
+                                value = (value as i16).unsigned_abs();
+                            }
                         }
-                        value = (value as i16).unsigned_abs();
-                    }
+                        value as u32
+                    };
+                    self.number(value as u64);
                 }
-                self.number(value as u64);
                 start = index + 1;
             }
         }
         self.push(&pattern[start..]);
     }
     #[inline(never)]
-    pub fn task(&mut self, info: &TaskInfo) {
+    fn parts(&mut self, source: &[u8], patterns: &[u8], part: u8) {
         self.clear();
-        info.with_bytes(|bytes| self.view(b"pid=\x81", bytes));
-        self.push(b" state=");
-        self.push(match info.state {
-            TaskState::Ready => b"READY",
-            TaskState::Running => b"RUNNING",
-            TaskState::Blocked => b"BLOCKED",
-            TaskState::Exited => b"EXITED",
-        });
-        info.with_bytes(|bytes| self.view(b" exit=\xa4", bytes));
-        self.push(b"\r\n");
+        if let Some(pattern) = entry(patterns, part) {
+            self.view(pattern, source);
+            self.push(b"\r\n");
+        }
+    }
+    #[inline(never)]
+    pub fn task(&mut self, info: &TaskInfo) {
+        info.with_bytes(|bytes| self.parts(bytes, b"pid=\x81 state=\xc2 exit=\xa4\0", 0));
     }
     #[inline(never)]
     pub fn memory(&mut self, info: &MemInfo, part: u8) {
-        self.clear();
-        match part {
-            0 => {
-                self.field(
-                    b"ram=",
-                    info.static_bytes as u64 + info.kernel_reserved as u64,
-                );
-                info.with_bytes(|bytes| self.view(b"/\x12 flash=\x10/\x14", bytes));
-            }
-            1 => info.with_bytes(|bytes| self.view(b"static=\x02 kernel=\x04 task=\x06", bytes)),
-            2 => info.with_bytes(|bytes| {
-                self.view(b"stack0=\x08 stack1=\x0a kernel=\x0c guards=\x0e", bytes)
-            }),
-            _ => return,
-        }
-        self.push(b"\r\n");
+        info.with_bytes(|bytes| self.parts(bytes,
+            b"ram=\x1f/\x12 flash=\x10/\x14\0static=\x02 kernel=\x04 task=\x06\0stack0=\x08 stack1=\x0a kernel=\x0c guards=\x0e\0", part));
     }
     #[inline(never)]
     pub fn uptime(&mut self, ticks: u64) {
         self.clear();
-        self.field(b"ticks=", ticks);
+        self.push(b"ticks=");
+        self.number(ticks);
         self.push(b" tick_ms=10\r\n");
     }
     #[inline(never)]
     pub fn network(&mut self, info: &NetInfo, part: u8) {
-        self.clear();
-        match part {
-            0 => {
-                self.push(b"net state=");
-                self.push(match info.state {
-                    TcpState::Closed => b"CLOSED",
-                    TcpState::Listen => b"LISTEN",
-                    TcpState::SynReceived => b"SYN_RECEIVED",
-                    TcpState::Established => b"ESTABLISHED",
-                    TcpState::FinWait1 => b"FIN_WAIT_1",
-                    TcpState::FinWait2 => b"FIN_WAIT_2",
-                    TcpState::Closing => b"CLOSING",
-                    TcpState::CloseWait => b"CLOSE_WAIT",
-                    TcpState::LastAck => b"LAST_ACK",
-                    TcpState::TimeWait => b"TIME_WAIT",
-                });
-                self.field(b" flags=", info.flags as u64);
-            }
-            1 => info.with_bytes(|bytes| {
-                self.view(
-                    b"local=\x84.\x85.\x86.\x87:\x0c peer=\x88.\x89.\x8a.\x8b:\x0e",
-                    bytes,
-                )
-            }),
-            2 => info.with_bytes(|bytes| self.view(b"rx=\x10 tx=\x12 drop=\x14 csum=\x16", bytes)),
-            3 => info
-                .with_bytes(|bytes| self.view(b"frag=\x18 io=\x1a retrans=\x1c reset=\x1e", bytes)),
-            _ => return,
+        info.with_bytes(|bytes| self.parts(bytes,
+            b"net state=\xe2 flags=\x83\0local=\x84.\x85.\x86.\x87:\x0c peer=\x88.\x89.\x8a.\x8b:\x0e\0rx=\x10 tx=\x12 drop=\x14 csum=\x16\0frag=\x18 io=\x1a retrans=\x1c reset=\x1e\0", part));
+    }
+}
+
+#[inline(never)]
+fn entry(mut table: &[u8], mut index: u8) -> Option<&[u8]> {
+    loop {
+        let end = table.iter().position(|b| *b == 0)?;
+        if index == 0 {
+            return Some(&table[..end]);
         }
-        self.push(b"\r\n");
+        table = &table[end + 1..];
+        index -= 1;
     }
 }
 
@@ -180,7 +158,7 @@ fn append(buffer: &mut [u8; CAPACITY], used: &mut u8, bytes: &[u8]) {
 mod tests {
     extern crate std;
     use super::*;
-    use rv2k_api::TaskId;
+    use rv2k_api::{net::TcpState, TaskId, TaskState};
     use std::{format, string::ToString};
     #[test]
     fn decimal_boundaries_and_wide_uptime_match_standard_formatter() {
