@@ -54,10 +54,12 @@ bash scripts/snapshot.sh
 
 callback の yield 後コピー不変（task / mem / net）も追加検査します。
 
-Probe ELF は Flash 14,388 byte、予約 RAM 1,932 byte（観測領域を含む）です。T0 / T1 / kernel 使用量は 176 / 216 / 120 byte、全 16 byte 番兵が正常です。シェル統合も別 profile で全番兵と高水位を検査します。
+Probe ELF は Flash 14,328 byte、予約 RAM 1,932 byte（観測領域を含む）です。T0 / T1 / kernel 使用量は 176 / 216 / 120 byte、全 16 byte 番兵が正常です。シェル統合も別 profile で全番兵と高水位を検査します。
 
-Probe を含まない `tcp,preempt,drivers` の元 ELF は Flash 14,456 / 16,384 byte、予約 RAM 1,844 / 2,048 byte でリンクしました。UART / SPI の実測高水位はこのリンク検査で証明していません。CH32V003J4M6＋ENC28J60 は未保有で、実機と Mac native TCP は UNVERIFIED です。
+Probe を含まない `tcp,preempt,drivers` の元 ELF は Flash 14,380 / 16,384 byte、予約 RAM 1,836 / 2,048 byte でリンクしました。UART / SPI の実測高水位はこのリンク検査で証明していません。CH32V003J4M6＋ENC28J60 は未保有で、実機と Mac native TCP は UNVERIFIED です。
 
 [raw log / summary / 容量検査](logs/snapshot) と [共通部分の回帰結果](logs/snapshot/regression.json) を保存しています。既存の CPU register / PC 復元、SPI 途中 IRQ、guard、復元欠陥の負例は変更後も PASS です。
 
 最適化構成は `-Z inline-mir=yes -C llvm-args=-inline-threshold=25` を含みます。[容量削減後の共通回帰](flash-fit.md) も参照してください。期限付き待機の追加後の共通回帰は [deadlines](logs/deadlines) を参照してください。
+
+入力・表示・RX 状態の削減後の最新共通回帰は [shell-compact](logs/shell-compact) に保存しています。

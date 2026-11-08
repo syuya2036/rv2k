@@ -1,5 +1,7 @@
 # HTTP＋ENC28J60 の Flash 収容
 
+以下は PR #17 時点の測定記録です。[その後の削減と最新結果](shell-compact.md) を参照してください。
+
 HTTP 構成が元の `memory.x` で Flash 16,382 / 16,384 byte、全スタック込み RAM 2,012 / 2,048 byte に収まりました。HTTP の通常・IRQ 注入試験と最後の ENC strict link を含む `bash scripts/http.sh` 全体が PASS です。CI もこの引数なしの完全な検査を使います。実機と Mac native HTTP は未検証です。
 
 固定 nightly-2026-03-12 の MIR inlining を維持し、LLVM のインライン展開しきい値を 25 としました。TCP の終了処理、ソケットのハンドル検証・readiness・terminal、ENC の PHY 読出しに `inline(never)` を付け、呼出し箇所ごとのコード複製を抑えます。TCP の状態遷移、MSS / buffer サイズ、再送・quiet / TIME_WAIT、公開 API、診断機能、リンカ上限は維持しています。

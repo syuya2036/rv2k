@@ -1,0 +1,62 @@
+[
+  {
+    "file": "ch32v003-rust-os-test/src/diagnostics.rs",
+    "needle": "pub fn info(",
+    "exit": 101,
+    "overflow": 1060
+  },
+  {
+    "file": "ch32v003-rust-os-test/src/drivers.rs",
+    "needle": "pub unsafe fn init(",
+    "exit": 101,
+    "overflow": 988
+  },
+  {
+    "file": "ch32v003-rust-os-test/src/drivers.rs",
+    "needle": "pub unsafe fn poll(",
+    "exit": 101,
+    "overflow": 988
+  },
+  {
+    "file": "crates/rv2k-drivers/src/board.rs",
+    "needle": "pub fn configure(",
+    "exit": 101,
+    "overflow": 988
+  },
+  {
+    "file": "crates/rv2k-net/src/lib.rs",
+    "needle": "    pub fn info(",
+    "exit": 101,
+    "overflow": 1120
+  },
+  {
+    "file": "crates/rv2k-kernel/src/syscall.rs",
+    "needle": "pub(crate) fn task_info(",
+    "exit": 101,
+    "overflow": 1068
+  },
+  {
+    "file": "crates/rv2k-kernel/src/lib.rs",
+    "needle": "    pub fn sleep(",
+    "exit": 101,
+    "overflow": 1100
+  },
+  {
+    "file": "crates/rv2k-kernel/src/lib.rs",
+    "needle": "    pub fn advance_ticks(",
+    "exit": 101,
+    "overflow": 984
+  },
+  {
+    "file": "crates/rv2k-arch/src/clock.rs",
+    "needle": "    pub fn sample(",
+    "exit": 101,
+    "overflow": 984
+  },
+  {
+    "file": "crates/rv2k-kernel/src/services.rs",
+    "needle": "    fn copy(",
+    "exit": 101,
+    "overflow": 1100
+  }
+]

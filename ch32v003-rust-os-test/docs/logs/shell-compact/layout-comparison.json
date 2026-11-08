@@ -1,0 +1,50 @@
+[
+  {
+    "file": "crates/rv2k-net/src/tcp/mod.rs",
+    "needle": "pub struct Endpoint {\n    pub mac: [u8; 6],\n    pub ip: [u8; 4],",
+    "exit": 101,
+    "overflow": 992
+  },
+  {
+    "file": "crates/rv2k-net/src/tcp/mod.rs",
+    "needle": "pub struct Segment {",
+    "exit": 101,
+    "overflow": 972
+  },
+  {
+    "file": "crates/rv2k-net/src/tcp/mod.rs",
+    "needle": "pub struct Outbound {",
+    "exit": 101,
+    "overflow": 1004
+  },
+  {
+    "file": "crates/rv2k-drivers/src/enc28j60.rs",
+    "needle": "pub struct Enc28j60<S> {",
+    "exit": 101,
+    "overflow": 1012
+  },
+  {
+    "file": "crates/rv2k-drivers/src/network.rs",
+    "needle": "pub struct RxFrame {",
+    "exit": 101,
+    "overflow": 976
+  },
+  {
+    "file": "crates/rv2k-drivers/src/network.rs",
+    "needle": "pub struct DeviceStatus {",
+    "exit": 101,
+    "overflow": 976
+  },
+  {
+    "file": "crates/rv2k-kernel/src/lib.rs",
+    "needle": "pub struct Scheduler {",
+    "exit": 101,
+    "overflow": 988
+  },
+  {
+    "file": "crates/rv2k-kernel/src/ipc.rs",
+    "needle": "pub struct Mailbox {",
+    "exit": 101,
+    "overflow": 976
+  }
+]

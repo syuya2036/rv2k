@@ -65,3 +65,5 @@ ENC Flashの余裕は4byte。後続のHTTP/shellを収容できる保証はな�
 Phase 10 の共通最適化後の測定は [shell の回帰記録](logs/shell/regression) を参照。既存の表・raw log は Phase 8 時点の記録として残す。専用 safe-point probe は、4 回の保護中 IRQ を観測した後、MIE 復元前に次の周期 IRQ を 1 tick 先へ再設定する。未処理の延期要求が GetPid 境界に届くことを、コンパイラによる命令時間差から独立させて検査する。
 
 現在の最適化 script は固定 nightly の `-Z inline-mir=yes` を含みます。絶対期限 API の追加後に CPU / SPI / TCP / 復元欠陥・診断負例を再検査した結果は [deadlines](logs/deadlines) を参照してください。
+
+シェルの入力・表示・RX 状態を削減した後も、CPU 強制切替 47 回、SPI bit 3 の IRQ と復元欠陥 3 例を再検証して PASS です。最新の raw 結果は [shell-compact](logs/shell-compact) を参照してください。
