@@ -1,0 +1,57 @@
+{
+  "drivers": {
+    "spi_packets": [
+      [
+        255
+      ],
+      [
+        191,
+        3
+      ],
+      [
+        159,
+        3
+      ],
+      [
+        18,
+        0
+      ]
+    ],
+    "spi_rising_edges": 56,
+    "nic_attached": false,
+    "instructions": 1871502,
+    "syscalls": 31,
+    "timer_irqs": 6,
+    "idle_polls": 2523,
+    "uptime_ticks": 7,
+    "wait_results": 127,
+    "stack_used_bytes_tasks_kernel": [
+      184,
+      184,
+      220
+    ],
+    "static_ram_bytes": 848,
+    "kernel_stack_reserved_bytes": 256
+  },
+  "services": {
+    "instructions": 1689544,
+    "syscalls": 29,
+    "timer_irqs": 6,
+    "idle_polls": 3901,
+    "uptime_ticks": 7,
+    "wait_results": 127,
+    "stack_used_bytes_tasks_kernel": [
+      112,
+      112,
+      148
+    ],
+    "static_ram_bytes": 736,
+    "kernel_stack_reserved_bytes": 256
+  },
+  "checks": {
+    "drivers": "PASS",
+    "services": "PASS",
+    "workspace_tests": 37,
+    "virtual_driver_contract_tests": 1
+  }
+}

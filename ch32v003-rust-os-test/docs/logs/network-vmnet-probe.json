@@ -1,0 +1,8 @@
+{
+  "command": "host/vmnet/target/bridge 1",
+  "privileged": false,
+  "exit_code": 3,
+  "stdout": "{\"vmnet_status\":1001,\"success\":false}\n",
+  "stderr": "",
+  "mac_live_ping": "UNVERIFIED"
+}

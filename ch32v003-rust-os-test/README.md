@@ -77,3 +77,8 @@ PASS: RAM/Flash overflow rejected; GDB RSP registers, memory, step, detach
 別端末のRISC-V対応GDBで `target remote :3333` を利用する構成です。今回実行したのは付属PythonによるGDB RSP検証であり、GDBクライアント自体は未検証です。
 
 実機では `ebreak` はプロセス終了を意味しません。UARTのピン、クロック、PFIC/HPE設定、書き込み・デバッグ経路は実機購入後に確認してください。タイマー版はRenvoの直接トラップ経路を検証するもので、WCH公式のHPE有効・mode 3ベクタ起動と同一ではありません。
+
+## Phase 6: virtual Ethernet / ARP / IPv4 / ICMP
+
+`bash scripts/network.sh` でフレーム注入・guest番兵・仮想NIC/ENC構成の容量を検査します。
+Mac実pingは未検証のためPARTIALです。[試験範囲と再現手順](docs/network.md) を参照してください。

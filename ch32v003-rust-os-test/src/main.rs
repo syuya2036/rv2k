@@ -2,6 +2,8 @@
 #![no_main]
 #[cfg(feature = "drivers")]
 mod drivers;
+#[cfg(feature = "net")]
+mod network;
 #[cfg(feature = "diagnostics")]
 mod diagnostics;
 #[cfg(feature = "services")]
