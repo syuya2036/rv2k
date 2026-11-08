@@ -9,7 +9,7 @@ from pathlib import Path
 LOG=Path('docs/logs/preemption')
 OUT=Path('target/preempt-negative')
 OUT.mkdir(parents=True,exist_ok=True)
-env=dict(os.environ,RUSTFLAGS='-Z inline-mir=yes -C opt-level=z -C target-feature=+relax -C llvm-args=-riscv-enable-global-merge=false -C link-arg=--defsym=_kernel_stack_size=256 -C link-arg=-Tmemory.x -C link-arg=--icf=all -C link-arg=--relax -C link-arg=--relax-gp')
+env=dict(os.environ,RUSTFLAGS='-Z inline-mir=yes -C opt-level=z -C llvm-args=-inline-threshold=25 -C target-feature=+relax -C llvm-args=-riscv-enable-global-merge=false -C link-arg=--defsym=_kernel_stack_size=256 -C link-arg=-Tmemory.x -C link-arg=--icf=all -C link-arg=--relax -C link-arg=--relax-gp')
 symbols={f[-1]:int(f[0],16) for line in (LOG/'probe-symbols.txt').read_text().splitlines() if len(f:=line.split()) in (3,4)}
 elf=Path('target/preempt/riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test')
 binary=bytearray(elf.read_bytes())

@@ -1,0 +1,74 @@
+[
+  {
+    "file": "net/src/tcp/socket.rs",
+    "fn": "    fn validate(",
+    "code": 101,
+    "overflow": 248
+  },
+  {
+    "file": "net/src/tcp/socket.rs",
+    "fn": "    pub fn readiness(",
+    "code": 101,
+    "overflow": 288
+  },
+  {
+    "file": "net/src/tcp/mod.rs",
+    "fn": "    fn requests(",
+    "code": 101,
+    "overflow": 304
+  },
+  {
+    "file": "net/src/tcp/mod.rs",
+    "fn": "    fn matching(",
+    "code": 101,
+    "overflow": 392
+  },
+  {
+    "file": "net/src/tcp/mod.rs",
+    "fn": "    fn finish(",
+    "code": 101,
+    "overflow": 104
+  },
+  {
+    "file": "net/src/tcp/mod.rs",
+    "fn": "    fn time_wait(",
+    "code": 101,
+    "overflow": 300
+  },
+  {
+    "file": "net/src/tcp/rto.rs",
+    "fn": "    pub fn sample(",
+    "code": 101,
+    "overflow": 300
+  },
+  {
+    "file": "kernel/src/services.rs",
+    "fn": "pub fn dispatch_runtime(",
+    "code": 101,
+    "overflow": 512
+  },
+  {
+    "file": "kernel/src/socket.rs",
+    "fn": "pub(crate) fn operation(",
+    "code": 101,
+    "overflow": 472
+  },
+  {
+    "file": "drivers/src/enc28j60.rs",
+    "fn": "    fn read(",
+    "code": 101,
+    "overflow": 292
+  },
+  {
+    "file": "drivers/src/enc28j60.rs",
+    "fn": "    fn write(",
+    "code": 101,
+    "overflow": 292
+  },
+  {
+    "file": "drivers/src/enc28j60.rs",
+    "fn": "    pub fn reset(",
+    "code": 101,
+    "overflow": 356
+  }
+]

@@ -60,6 +60,7 @@ impl Socket {
         // Low bit is the only slot; the remaining bits identify its incarnation.
         (self.generation as usize + 1) << 1
     }
+    #[inline(never)]
     fn validate(&self, handle: usize) -> Result<(), Error> {
         if self.phase == Phase::Terminal && handle == (self.retired as usize + 1) << 1 {
             return Err(self.error.unwrap_or(Error::Closed));
@@ -148,6 +149,7 @@ impl Socket {
         self.close = true;
         Ok(())
     }
+    #[inline(never)]
     pub fn readiness(&self) -> u32 {
         let mut bits = 0;
         if self.phase == Phase::Connected {
@@ -232,6 +234,7 @@ impl Socket {
             self.events |= event::NET_TX_READY;
         }
     }
+    #[inline(never)]
     pub(super) fn terminal(&mut self, error: Error) {
         self.phase = Phase::Terminal;
         self.error = Some(error);

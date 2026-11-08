@@ -1,6 +1,6 @@
 # Phase 9: HTTP Echo 統合（実装中）
 
-仮想 NIC での HTTP / socket / preemption 試験は PASS です。ENC28J60 構成は Flash 制約に未達で、Mac native HTTP と実機は UNVERIFIED です。Phase 9 全体は完了していません。
+仮想 NIC での HTTP / socket / preemption 試験は PASS です。ENC28J60 構成も元の 16KB / 2KB 制約でリンクしました。Mac native HTTP と実機は UNVERIFIED です。Phase 9 全体は完了していません。
 
 ## 構成とプロファイル
 
@@ -18,11 +18,11 @@ Content-Length と Connection: close を出力し、1 接続につき 1 リク�
 
 ```sh
 cd ch32v003-rust-os-test
-bash scripts/http.sh --virtual-only # 仮想 NIC の CI と同じ検査
+bash scripts/http.sh --virtual-only # 仮想 NIC のみの検査
 bash scripts/http.sh                # ENC の strict link まで含む完了ゲート
 ```
 
-スクリプトは通常試験、RX ごとの IRQ 注入試験、元の ELF の容量検査を実行し、最後に ENC28J60 構成をビルドします。**現時点では最後の ENC リンクが Flash 超過で失敗し、スクリプト全体は非ゼロ終了します。** リンカの 16,384 byte 制約を緩めていません。CI は明示的な `--virtual-only` で仮想 NIC の試験を実行します。引数なしの完了ゲートは引き続き ENC の strict link を必須とし、未達の現在は失敗します。
+スクリプトは通常試験、RX ごとの IRQ 注入試験、元の ELF の容量検査を実行し、最後に ENC28J60 構成をビルドします。通常・IRQ 注入と ENC の strict link がすべて PASS です。リンカの 16,384 byte 制約を維持し、CI も引数なしで ENC 容量検査まで実行します。`--virtual-only` は仮想 NIC のみを調べる補助引数です。
 
 HTTP の対向 harness はホスト監視時間を 180 秒とします。17 接続・全 230 RX の保護区間 IRQ 注入を低速な CI ホストでも実行するための上限で、ゲストの 200M 命令上限、500 tick の HTTP 絶対期限とその独立検査は維持します。停止時は命令数上限とホスト時間超過を区別し、実行命令数・経過秒を報告します。
 
@@ -40,15 +40,15 @@ HTTP の対向 harness はホスト監視時間を 180 秒とします。17 接�
 
 |項目|通常|IRQ ストレス|
 |---|---:|---:|
-|実行命令数|88,090,979|88,342,400|
-|RX / TX フレーム|230 / 232|230 / 231|
-|強制切替 / 延期 IRQ|15 / 6|4 / 246|
-|T0 / T1 / kernel スタック使用 byte|176 / 184 / 120|176 / 184 / 120|
+|実行命令数|88,331,108|88,342,638|
+|RX / TX フレーム|230 / 233|230 / 231|
+|強制切替 / 延期 IRQ|12 / 8|4 / 245|
+|T0 / T1 / kernel スタック使用 byte|176 / 176 / 120|176 / 176 / 120|
 |番兵破損 / fault|0 / 0|0 / 0|
 
-仮想 NIC ELF は Flash 15,478 / 16,384 byte、静的 RAM 1,764 byte + kernel/IRQ/boot 予約 256 byte = 2,020 / 2,048 byte です。タスクの各 256 byte スタックと番兵は静的 RAM に含みます。
+仮想 NIC ELF は Flash 14,984 / 16,384 byte、静的 RAM 1,764 byte + kernel/IRQ/boot 予約 256 byte = 2,020 / 2,048 byte です。タスクの各 256 byte スタックと番兵は静的 RAM に含みます。
 
-ENC28J60 構成は最終リンクで Flash を 460 byte 超過しました。実機用の合格 ELF は生成できていません。`enc-link-failure.txt` が失敗証跡です。
+ENC28J60 構成の元 ELF は Flash 16,382 / 16,384 byte、予約 RAM 2,012 / 2,048 byte です。Flash の残りは 2 byte なので、CI の strict link と load span 検査で増加を検出します。このリンク成功は実機の SPI タイミングやスタック高水位の証明ではありません。以前の 460 byte 超過は [当時のログ](logs/deadlines/http-enc-link-failure.txt) に残しています。
 
 ## 共通部分の回帰と未完了ゲート
 
@@ -56,10 +56,12 @@ HTTP と shell は選択式 feature とし、併用や HTTP と snapshot 専用 
 
 TCB を RV32 で 32 byte stride とし、初期化の一時コピー、固定 MMIO base の保持、syscall wrapper の中間 Result コピーを減らしました。UART/NIC は IRQ マスク中に一度初期化してから使い、デバイスの通常 RAM 状態に volatile な構造体コピーを使いません。OS サービスや TCP 機能は削除していません。
 
-[regression.json](logs/http/regression.json) は初期統合時の共通部分・ホスト NIC 所有権試験の履歴です。現在の統合後は workspace 86 tests / clippy / fmt と、shell / snapshot / TCP の通常・IRQ 注入を再検査して PASS です。[最新回帰](logs/http/integration-regression) と [source / ELF hash](logs/http/verification.json) を保存しています。preemption の除外時間計測は別の `preempt-timing` profile の機能であり、HTTP の `max_disabled_clocks` は未計測（null）です。従来フェーズのログは履歴として保持しています。
+[regression.json](logs/http/regression.json) は初期統合時の共通部分・ホスト NIC 所有権試験の履歴です。現在の統合後は workspace 86 tests / clippy / fmt と、shell / snapshot / TCP の通常・IRQ 注入を再検査して PASS です。[容量削減後の共通回帰](logs/flash-fit) と [source / ELF hash](logs/http/verification.json) を保存しています。preemption の除外時間計測は別の `preempt-timing` profile の機能であり、HTTP の `max_disabled_clocks` は未計測（null）です。従来フェーズのログは履歴として保持しています。
 
-未完了は ENC 構成の Flash 収容、Mac native HTTP、Phase 9 統合変更の PR レビュー / マージです。Mac vmnet は実行許可済みですが、前回の `sudo -n` が OS 認証を要求して起動前に失敗しており、ネットワークは作成されていません。[実接続試行](logs/network-live-attempt.json) を参照してください。CH32V003J4M6＋ENC28J60 は未保有で、実機検証は行っていません。
+未完了は Mac native HTTP と実機検証です。容量削減変更も PR でレビュー / CI を確認して統合します。Mac vmnet は実行許可済みですが、前回の `sudo -n` が OS 認証を要求して起動前に失敗しており、ネットワークは作成されていません。[実接続試行](logs/network-live-attempt.json) を参照してください。CH32V003J4M6＋ENC28J60 は未保有で、実機検証は行っていません。
 
-最適化構成は固定 nightly-2026-03-12 の `-Z inline-mir=yes` を使います。全 TCP / snapshot / preemption の最適化試験も同じ設定で再検査します。MIR 設定比較で見つかった相対待機登録の競合は、絶対期限を渡す API で修正します。
+[Flash 収容の変更と検証](flash-fit.md) に、共有処理の展開抑制と再現ログを記録しています。
+
+最適化構成は固定 nightly-2026-03-12 の `-Z inline-mir=yes -C llvm-args=-inline-threshold=25` を使います。全 TCP / snapshot / preemption の最適化試験も同じ設定で再検査します。MIR 設定比較で見つかった相対待機登録の競合は、絶対期限を渡す API で修正します。
 
 [絶対期限の回帰](logs/deadlines) に、残り時間取得後の preemption の反例、両 dispatcher・u32 wrap・期限切れ時のイベント非消費、MIR 構成の preemption / SPI / 診断負例を保存しています。実行予算を超えた harness も PCAP / RAM / 停止理由を保存し、成功としては扱いません。

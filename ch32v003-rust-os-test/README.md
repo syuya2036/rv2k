@@ -85,4 +85,4 @@ Mac実pingは未検証のためPARTIALです。[試験範囲と再現手順](doc
 
 ## Phase 10 TCP シェル
 
-`bash scripts/shell.sh` は Renvo 上の実 RV32EC 命令で port 23 の ps / mem / uptime / netstat、入力エラー復帰、未完了 EOF / RST、再接続を通常・RX 中 IRQ 注入の両方で検査します。元 ELF は Flash 16,288 byte、予約 RAM 1,964 byte、全番兵が正常です。ENC 版は専有 SPI デバイスへの変更後も Flash 1,484 byte 超過、Mac native TCP と実機は未検証です。[仕様・結果・残作業](docs/shell.md) を参照してください。
+`bash scripts/shell.sh` は Renvo 上の実 RV32EC 命令で port 23 の ps / mem / uptime / netstat、入力エラー復帰、未完了 EOF / RST、再接続を通常・RX 中 IRQ 注入の両方で検査します。元 ELF は Flash 15,776 byte、予約 RAM 1,964 byte、全番兵が正常です。ENC 版は専有 SPI デバイスへの変更後も Flash 1,000 byte 超過、Mac native TCP と実機は未検証です。[仕様・結果・残作業](docs/shell.md) を参照してください。

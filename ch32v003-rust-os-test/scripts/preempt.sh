@@ -5,7 +5,7 @@ ROOT="$PWD"
 LOG=docs/logs/preemption
 mkdir -p "$LOG"
 (cd ..; cargo +stable build --locked --release --manifest-path host/net-harness/Cargo.toml --target-dir "$ROOT/vendor/renvo_emu/target")
-export RUSTFLAGS='-Z inline-mir=yes -C opt-level=z -C target-feature=+relax -C llvm-args=-riscv-enable-global-merge=false -C link-arg=--defsym=_kernel_stack_size=256 -C link-arg=-Tmemory.x -C link-arg=--icf=all -C link-arg=--relax -C link-arg=--relax-gp'
+export RUSTFLAGS='-Z inline-mir=yes -C opt-level=z -C llvm-args=-inline-threshold=25 -C target-feature=+relax -C llvm-args=-riscv-enable-global-merge=false -C link-arg=--defsym=_kernel_stack_size=256 -C link-arg=-Tmemory.x -C link-arg=--icf=all -C link-arg=--relax -C link-arg=--relax-gp'
 BIN="$(rustc --print sysroot)/lib/rustlib/$(rustc -vV | sed -n 's/^host: //p')/bin"
 cargo build --locked --release --features preempt-probe,emulator-stop --target-dir target/preempt
 ELF=target/preempt/riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test

@@ -21,7 +21,7 @@ Ethernet NICはMAC/PHYとフレーム入出力を担い、TCP処理を外部プ�
 - ヘッダを逐次解析し、TCP受信がヘッダ・本文の途中で分割されても処理を継続する。リクエスト全体をRAMへ保存しない。
 - 受信・送信の待機とタイムアウトをOSサービスで扱い、応答完了後も次の接続を受け付ける。
 
-完成後の利用イメージ（IPアドレスは例。現時点では未実装）:
+利用イメージ（IPアドレスは例。仮想NICで実装検証済み、Macからの接続は未検証）:
 
 ```bash
 curl --data-binary 'hello rv2k' http://192.168.1.50/echo
@@ -64,7 +64,7 @@ Phase 7では単一接続TCPをEthernet/guestへ接続し、公開Socket APIに�
 仮想NIC版とENC28J60版はRAM 2KB・Flash 16KB以内です。Mac native TCPは未検証のためPhase 7全体はPARTIALです。[TCP実装状況](ch32v003-rust-os-test/docs/tcp.md) を参照してください。
 Phase 8ではSysTickによる強制切替、共有状態更新中の延期、SPI bit途中のIRQ、レジスタ・PC復元の負例を検証しました。
 Phase 8時点のENC構成は予約RAM 1,844byte / Flash 16,380byteでした。[プリエンプション検証](ch32v003-rust-os-test/docs/preemption.md) を参照してください。
-HTTP Echoサーバー、公開network snapshot APIとTCPシェルを追加しました。HTTPは仮想NICで分割受信・期限・再接続を検証しています。[HTTP実装状況](ch32v003-rust-os-test/docs/http.md) を参照してください。シェルは仮想NICで全コマンド・入力復帰・再接続が検証済みです。ENC構成の容量収容とMac接続検証は継続中です。[シェル検証](ch32v003-rust-os-test/docs/shell.md) を参照してください。[公開snapshot検証](ch32v003-rust-os-test/docs/snapshot.md) を参照してください。
+HTTP Echoサーバー、公開network snapshot APIとTCPシェルを追加しました。HTTPは仮想NICで分割受信・期限・再接続を検証しています。[HTTP実装状況](ch32v003-rust-os-test/docs/http.md) を参照してください。シェルは仮想NICで全コマンド・入力復帰・再接続が検証済みです。HTTPのENC構成は元のFlash 16KB・RAM 2KB以内でリンク済みです。シェルのENC構成は1,000byte超過しており、容量削減とMac接続検証を継続しています。[シェル検証](ch32v003-rust-os-test/docs/shell.md) を参照してください。[公開snapshot検証](ch32v003-rust-os-test/docs/snapshot.md) を参照してください。
 CH32V003実機での動作はこれからです。
 実測ログ・再現手順は [検証用プロジェクト](ch32v003-rust-os-test/README.md) と [協調マルチタスク検証](ch32v003-rust-os-test/docs/cooperative.md) を参照してください。
 
