@@ -1,0 +1,2 @@
+{'schema': 'remu.gdb-ready.v1', 'address': '127.0.0.1:55944'}
+PASS: RAM/Flash overflow rejected; GDB RSP registers, memory, step, detach

@@ -1,0 +1,103 @@
+Client:
+ Version:    28.4.0
+ Context:    desktop-linux
+ Debug Mode: false
+ Plugins:
+  ai: Docker AI Agent - Ask Gordon (Docker Inc.)
+    Version:  v1.9.11
+    Path:     /Users/shuya/.docker/cli-plugins/docker-ai
+  buildx: Docker Buildx (Docker Inc.)
+    Version:  v0.28.0-desktop.1
+    Path:     /Users/shuya/.docker/cli-plugins/docker-buildx
+  cloud: Docker Cloud (Docker Inc.)
+    Version:  v0.4.27
+    Path:     /Users/shuya/.docker/cli-plugins/docker-cloud
+  compose: Docker Compose (Docker Inc.)
+    Version:  v2.39.2-desktop.1
+    Path:     /Users/shuya/.docker/cli-plugins/docker-compose
+  debug: Get a shell into any image or container (Docker Inc.)
+    Version:  0.0.42
+    Path:     /Users/shuya/.docker/cli-plugins/docker-debug
+  desktop: Docker Desktop commands (Docker Inc.)
+    Version:  v0.2.0
+    Path:     /Users/shuya/.docker/cli-plugins/docker-desktop
+  extension: Manages Docker extensions (Docker Inc.)
+    Version:  v0.2.31
+    Path:     /Users/shuya/.docker/cli-plugins/docker-extension
+  init: Creates Docker-related starter files for your project (Docker Inc.)
+    Version:  v1.4.0
+    Path:     /Users/shuya/.docker/cli-plugins/docker-init
+  mcp: Docker MCP Plugin (Docker Inc.)
+    Version:  v0.18.0
+    Path:     /Users/shuya/.docker/cli-plugins/docker-mcp
+  model: Docker Model Runner (Docker Inc.)
+    Version:  v0.1.40
+    Path:     /Users/shuya/.docker/cli-plugins/docker-model
+  sbom: View the packaged-based Software Bill Of Materials (SBOM) for an image (Anchore Inc.)
+    Version:  0.6.0
+    Path:     /Users/shuya/.docker/cli-plugins/docker-sbom
+  scout: Docker Scout (Docker Inc.)
+    Version:  v1.18.3
+    Path:     /Users/shuya/.docker/cli-plugins/docker-scout
+WARNING: Plugin "/Users/shuya/.docker/cli-plugins/docker-dev" is not valid: failed to fetch metadata: fork/exec /Users/shuya/.docker/cli-plugins/docker-dev: no such file or directory
+WARNING: Plugin "/Users/shuya/.docker/cli-plugins/docker-feedback" is not valid: failed to fetch metadata: fork/exec /Users/shuya/.docker/cli-plugins/docker-feedback: no such file or directory
+WARNING: Plugin "/Users/shuya/.docker/cli-plugins/docker-scan" is not valid: failed to fetch metadata: fork/exec /Users/shuya/.docker/cli-plugins/docker-scan: no such file or directory
+
+Server:
+ Containers: 32
+  Running: 10
+  Paused: 0
+  Stopped: 22
+ Images: 17
+ Server Version: 28.4.0
+ Storage Driver: overlay2
+  Backing Filesystem: extfs
+  Supports d_type: true
+  Using metacopy: false
+  Native Overlay Diff: true
+  userxattr: false
+ Logging Driver: json-file
+ Cgroup Driver: cgroupfs
+ Cgroup Version: 2
+ Plugins:
+  Volume: local
+  Network: bridge host ipvlan macvlan null overlay
+  Log: awslogs fluentd gcplogs gelf journald json-file local splunk syslog
+ CDI spec directories:
+  /etc/cdi
+  /var/run/cdi
+ Discovered Devices:
+  cdi: docker.com/gpu=webgpu
+ Swarm: inactive
+ Runtimes: io.containerd.runc.v2 runc
+ Default Runtime: runc
+ Init Binary: docker-init
+ containerd version: 05044ec0a9a75232cad458027ca83437aae3f4da
+ runc version: v1.2.5-0-g59923ef
+ init version: de40ad0
+ Security Options:
+  seccomp
+   Profile: builtin
+  cgroupns
+ Kernel Version: 6.10.14-linuxkit
+ Operating System: Docker Desktop
+ OSType: linux
+ Architecture: aarch64
+ CPUs: 8
+ Total Memory: 7.654GiB
+ Name: docker-desktop
+ ID: 8cdb3b80-2d94-4559-a93c-d5437e9bae8f
+ Docker Root Dir: /var/lib/docker
+ Debug Mode: false
+ HTTP Proxy: http.docker.internal:3128
+ HTTPS Proxy: http.docker.internal:3128
+ No Proxy: hubproxy.docker.internal
+ Labels:
+  com.docker.desktop.address=unix:///Users/shuya/Library/Containers/com.docker.docker/Data/docker-cli.sock
+ Experimental: false
+ Insecure Registries:
+  hubproxy.docker.internal:5555
+  ::1/128
+  127.0.0.0/8
+ Live Restore Enabled: false
+

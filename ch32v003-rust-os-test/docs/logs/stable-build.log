@@ -1,0 +1,8 @@
+   Compiling ch32v003-rust-os-test v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test)
+error[E0463]: can't find crate for `core`
+  |
+  = note: the `riscv32e-unknown-none-elf` target may not be installed
+  = help: consider downloading the target with `rustup target add riscv32e-unknown-none-elf`
+
+For more information about this error, try `rustc --explain E0463`.
+error: could not compile `ch32v003-rust-os-test` (bin "ch32v003-rust-os-test") due to 1 previous error

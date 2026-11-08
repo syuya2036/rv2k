@@ -1,0 +1,547 @@
+[
+  {
+    "at": 10,
+    "pc": 38,
+    "kind": "Write",
+    "address": 536870912,
+    "width": "Word",
+    "value": 305419896,
+    "pre_value": 305419896,
+    "post_value": 305419896,
+    "region": "sram"
+  },
+  {
+    "at": 20,
+    "pc": 66,
+    "kind": "Write",
+    "address": 536870916,
+    "width": "Word",
+    "value": 0,
+    "pre_value": 0,
+    "post_value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 24,
+    "pc": 66,
+    "kind": "Write",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "pre_value": 0,
+    "post_value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 31,
+    "pc": 130,
+    "kind": "Read",
+    "address": 536870912,
+    "width": "Word",
+    "value": 305419896,
+    "region": "sram"
+  },
+  {
+    "at": 34,
+    "pc": 142,
+    "kind": "Write",
+    "address": 536870916,
+    "width": "Word",
+    "value": 305419938,
+    "pre_value": 0,
+    "post_value": 305419938,
+    "region": "sram"
+  },
+  {
+    "at": 47,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 49,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 51,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 53,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 55,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 57,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 59,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 61,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 63,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 65,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 67,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 69,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 71,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 73,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 75,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 77,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 79,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 81,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 83,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 85,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 87,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 89,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 91,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 93,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 95,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 97,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 99,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 101,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 103,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 105,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 107,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 109,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 111,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 113,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 115,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 117,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 119,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 121,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 123,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 125,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 127,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 129,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 131,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 133,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 135,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 137,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 139,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 141,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 145,
+    "pc": 86,
+    "kind": "Write",
+    "address": 536872944,
+    "width": "Word",
+    "value": 0,
+    "pre_value": 0,
+    "post_value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 146,
+    "pc": 88,
+    "kind": "Write",
+    "address": 536872948,
+    "width": "Word",
+    "value": 0,
+    "pre_value": 0,
+    "post_value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 150,
+    "pc": 100,
+    "kind": "Write",
+    "address": 536870920,
+    "width": "Word",
+    "value": 1,
+    "pre_value": 0,
+    "post_value": 1,
+    "region": "sram"
+  },
+  {
+    "at": 154,
+    "pc": 116,
+    "kind": "Read",
+    "address": 536872944,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 155,
+    "pc": 118,
+    "kind": "Read",
+    "address": 536872948,
+    "width": "Word",
+    "value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 158,
+    "pc": 188,
+    "kind": "Read",
+    "address": 536870920,
+    "width": "Word",
+    "value": 1,
+    "region": "sram"
+  }
+]

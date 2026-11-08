@@ -1,0 +1,2 @@
+PASS: 174 instructions; RESULT=0x123456a2; UART=Rust RV32EC OK
+PASS: 174 instructions; RESULT=0x123456a2; UART=Rust RV32EC OK

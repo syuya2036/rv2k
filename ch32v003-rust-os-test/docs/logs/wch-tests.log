@@ -1,0 +1,73 @@
+   Compiling libc v0.2.189
+   Compiling typenum v1.20.1
+   Compiling getrandom v0.4.3
+   Compiling cfg-if v1.0.4
+   Compiling num-traits v0.2.19
+   Compiling rustix v1.1.4
+   Compiling bitflags v2.13.1
+   Compiling const-oid v0.10.2
+   Compiling cpubits v0.1.1
+   Compiling once_cell v1.21.4
+   Compiling fastrand v2.5.0
+   Compiling remu-signals v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-signals)
+   Compiling hybrid-array v0.4.14
+   Compiling num-integer v0.1.46
+   Compiling num-bigint v0.5.1
+   Compiling crypto-common v0.2.2
+   Compiling block-buffer v0.12.1
+   Compiling inout v0.2.2
+   Compiling cpufeatures v0.3.0
+   Compiling errno v0.3.14
+   Compiling cipher v0.5.2
+   Compiling digest v0.11.3
+   Compiling sha2 v0.11.0
+   Compiling aes v0.9.2
+   Compiling tempfile v3.27.0
+   Compiling remu-devices v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-devices)
+    Finished `release` profile [optimized] target(s) in 27.42s
+     Running unittests src/lib.rs (target/aarch64-apple-darwin/release/deps/remu_devices-d15a14e51f2b2b78)
+
+running 40 tests
+test tests::esp_and_io::wch_timer_raises_and_vendor_clear_sequence_lowers_update_interrupt ... ok
+test tests::wch::pfic_models_stk_counter_compare_clock_and_irq12 ... ok
+test tests::wch::advanced_timer_honors_update_disable_and_native_capture_width ... ok
+test tests::wch::exti_reserved_port_selection_does_not_alias_pa ... ok
+test tests::wch::afio_uses_named_registers_and_masks_reserved_bits ... ok
+test tests::wch::exti_routes_afio_selected_edges_and_clears_flags ... ok
+test tests::esp_and_io::wch_pfic_gates_pending_source_with_vendor_enable_register ... ok
+test tests::esp_and_io::wch_usart_requires_enable_and_preserves_configuration ... ok
+test tests::wch::wch_i2c_masks_registers_and_only_clears_rw0_errors ... ok
+test tests::wch::wch_i2c_models_master_write_read_and_interrupts ... ok
+test tests::wch::wch_i2c_nack_raises_error_interrupt_and_can_be_configured ... ok
+test tests::wch::wch_power_uses_target_specific_control_masks_and_resets ... ok
+test tests::wch::wch_power_models_pvd_awu_and_standby_controls ... ok
+test tests::wch::wch_sltm_counts_and_reports_compare_events ... ok
+test tests::wch::wch_sltm_dma_compare_events_follow_documented_enable_bits ... ok
+test tests::wch::wch_sltm_masks_reserved_fields_and_honors_center_mode_lock ... ok
+test tests::wch::wch_sltm_register_ids_round_trip_native_offsets ... ok
+test tests::wch::wch_sltm_update_event_uses_the_programmed_counter_phase ... ok
+test tests::wch::wch_touch_key_does_not_start_without_adc_and_tkey_enable ... ok
+test tests::wch::wch_touch_key_honors_single_mode_and_data_alignment ... ok
+test tests::wch::wch_touch_key_masks_adc_register_fields_and_preserves_aliases ... ok
+test tests::wch::wch_touch_key_runs_the_documented_adc_sequence ... ok
+test tests::wch::wch_usart_masks_documented_fields_and_clears_rw0_status_flags ... ok
+test wch_adc::tests::adc_calibration_requests_complete_immediately ... ok
+test wch_adc::tests::adc_eoc_interrupt_requires_control_enable_and_power ... ok
+test wch_adc::tests::adc_scan_uses_sequence_length_and_left_alignment ... ok
+test wch::spi_tests::spi1_master_transfer_returns_injected_miso_and_raises_pending ... ok
+test wch_adc::tests::adc_sequence_selects_host_sample_and_clears_eoc_on_data_read ... ok
+test wch_adc::tests::adc_status_flags_use_documented_write_zero_clear ... ok
+test wch_flash::tests::ch32v006_uses_fast_word_programming_and_256_byte_erase ... ok
+test wch_flash::tests::ch32v003_standard_programming_rejects_word_accesses ... ok
+test wch_flash::tests::page_erase_uses_the_one_kilobyte_boundary_and_clears_status ... ok
+test wch_dma::tests::channel_copies_a_word_and_reports_completion ... ok
+test wch_dma::tests::different_transfer_widths_zero_extend_and_use_independent_steps ... ok
+test wch_dma::tests::transfer_flags_are_raised_without_interrupt_enables_and_clear_as_documented ... ok
+test wch_flash::tests::programming_requires_unlock_and_preserves_nor_one_to_zero_rules ... ok
+test wch_watchdog::tests::reset_returns_both_blocks_to_documented_reset_values ... ok
+test wch_watchdog::tests::independent_key_sequence_unlocks_configures_and_feeds ... ok
+test wch_watchdog::tests::window_counter_runs_when_disabled_and_ewi_stays_masked ... ok
+test wch_watchdog::tests::window_watchdog_reports_early_warning_and_rejects_early_feed ... ok
+
+test result: ok. 40 passed; 0 failed; 0 ignored; 0 measured; 590 filtered out; finished in 0.00s
+

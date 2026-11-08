@@ -1,0 +1,18 @@
+{
+  "schema": "remu.gdb-session.v1",
+  "target": "ch32v003",
+  "elf": "target/riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test.remu",
+  "elf_sha256": "66c70db59b5e3d712f079206defca0f23d6eb114909aab9e0c000ce9525c2b05",
+  "report": {
+    "architecture": "RiscV32",
+    "packets": 5,
+    "register_reads": 1,
+    "memory_reads": 1,
+    "memory_writes": 0,
+    "breakpoint_operations": 0,
+    "steps": 1,
+    "continues": 0,
+    "detached": true
+  },
+  "result": "pass"
+}

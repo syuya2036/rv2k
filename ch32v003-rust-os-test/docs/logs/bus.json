@@ -1,0 +1,44 @@
+[
+  {
+    "at": 10,
+    "pc": 38,
+    "kind": "Write",
+    "address": 536870912,
+    "width": "Word",
+    "value": 305419896,
+    "pre_value": 305419896,
+    "post_value": 305419896,
+    "region": "sram"
+  },
+  {
+    "at": 20,
+    "pc": 66,
+    "kind": "Write",
+    "address": 536870916,
+    "width": "Word",
+    "value": 0,
+    "pre_value": 0,
+    "post_value": 0,
+    "region": "sram"
+  },
+  {
+    "at": 28,
+    "pc": 90,
+    "kind": "Read",
+    "address": 536870912,
+    "width": "Word",
+    "value": 305419896,
+    "region": "sram"
+  },
+  {
+    "at": 32,
+    "pc": 104,
+    "kind": "Write",
+    "address": 536870916,
+    "width": "Word",
+    "value": 305419938,
+    "pre_value": 0,
+    "post_value": 305419938,
+    "region": "sram"
+  }
+]

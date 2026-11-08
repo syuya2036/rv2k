@@ -1,0 +1,3 @@
+error: toolchain 'stable-aarch64-apple-darwin' does not support target 'riscv32e-unknown-none-elf'; did you mean 'riscv32i-unknown-none-elf'?
+note: you can see a list of supported targets with `rustc --print=target-list`
+note: if you are adding support for a new target to rustc itself, see https://rustc-dev-guide.rust-lang.org/building/new-target.html

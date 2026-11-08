@@ -1,0 +1,5 @@
+   Compiling ch32v003-rust-os-test v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test)
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.62s
+   text	   data	    bss	    dec	    hex	filename
+   1553	      0	    592	   2145	    861	target/coop/riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test
+PASS: counters=8/8, switches=32, register probes passed; stack watermark A/B=[172, 172] bytes; 6112 instructions

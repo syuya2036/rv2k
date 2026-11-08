@@ -1,0 +1,167 @@
+{
+  "target": "ch32v003",
+  "reason": "Halted",
+  "stats": {
+    "instructions": 6112,
+    "time": 6112,
+    "events": 0
+  },
+  "cpu": {
+    "architecture": "RiscV32",
+    "pc": 1150,
+    "registers": [
+      {
+        "name": "x0",
+        "value": 0,
+        "bits": 32
+      },
+      {
+        "name": "x1",
+        "value": 536870928,
+        "bits": 32
+      },
+      {
+        "name": "x2",
+        "value": 536871172,
+        "bits": 32
+      },
+      {
+        "name": "x3",
+        "value": 0,
+        "bits": 32
+      },
+      {
+        "name": "x4",
+        "value": 0,
+        "bits": 32
+      },
+      {
+        "name": "x5",
+        "value": 4,
+        "bits": 32
+      },
+      {
+        "name": "x6",
+        "value": 256,
+        "bits": 32
+      },
+      {
+        "name": "x7",
+        "value": 2564,
+        "bits": 32
+      },
+      {
+        "name": "x8",
+        "value": 536871332,
+        "bits": 32
+      },
+      {
+        "name": "x9",
+        "value": 1073823744,
+        "bits": 32
+      },
+      {
+        "name": "x10",
+        "value": 536870912,
+        "bits": 32
+      },
+      {
+        "name": "x11",
+        "value": 24589,
+        "bits": 32
+      },
+      {
+        "name": "x12",
+        "value": 9,
+        "bits": 32
+      },
+      {
+        "name": "x13",
+        "value": 10,
+        "bits": 32
+      },
+      {
+        "name": "x14",
+        "value": 128,
+        "bits": 32
+      },
+      {
+        "name": "x15",
+        "value": 0,
+        "bits": 32
+      },
+      {
+        "name": "privilege",
+        "value": 3,
+        "bits": 2
+      },
+      {
+        "name": "mstatus",
+        "value": 0,
+        "bits": 32
+      },
+      {
+        "name": "mtvec",
+        "value": 0,
+        "bits": 32
+      },
+      {
+        "name": "mscratch",
+        "value": 0,
+        "bits": 32
+      },
+      {
+        "name": "mie",
+        "value": 0,
+        "bits": 32
+      },
+      {
+        "name": "mip",
+        "value": 0,
+        "bits": 32
+      },
+      {
+        "name": "mepc",
+        "value": 0,
+        "bits": 32
+      },
+      {
+        "name": "mcause",
+        "value": 0,
+        "bits": 32
+      }
+    ],
+    "waiting": false,
+    "halted": true
+  },
+  "exit_code": null,
+  "uart": [
+    65,
+    66,
+    65,
+    66,
+    65,
+    66,
+    65,
+    66,
+    65,
+    66,
+    65,
+    66,
+    65,
+    66,
+    65,
+    66,
+    10,
+    67,
+    79,
+    79,
+    80,
+    32,
+    79,
+    75,
+    10
+  ],
+  "usb": [],
+  "trace_digest": "376a27a48ba01e6bb8b5c4c65e7cb55e8d3cb5904a19ded7e6f30d0f37226602"
+}
