@@ -1,16 +1,16 @@
 {
-  "instructions": 1731873,
+  "instructions": 1731246,
   "syscalls": 30,
   "timer_irqs": 6,
-  "idle_polls": 2281,
+  "idle_polls": 2742,
   "uptime_ticks": 7,
   "wait_results": 127,
   "stack_used_bytes_tasks_kernel": [
     216,
     200,
-    160
+    156
   ],
-  "static_ram_bytes": 832,
+  "static_ram_bytes": 816,
   "kernel_stack_reserved_bytes": 256,
   "compact_memory_status": 192
 }

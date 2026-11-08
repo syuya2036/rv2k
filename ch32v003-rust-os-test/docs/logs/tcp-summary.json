@@ -1,6 +1,8 @@
 {
   "host_packet_peer": "PASS (synthetic peer, not native Mac TCP)",
-  "instructions": 5374991,
+  "public_mem_snapshot_checked": true,
+  "gp_preserved_across_timer_irqs_and_syscall": true,
+  "instructions": 6491124,
   "frames_in": 25,
   "frames_out": 31,
   "connections": 2,
@@ -10,13 +12,13 @@
   "sequence_wrap": true,
   "negotiated_peer_mss": 24,
   "stack_used_bytes_tasks_kernel": [
-    232,
-    120,
-    168
+    236,
+    156,
+    164
   ],
-  "syscalls": 167,
-  "timer_irqs": 25,
-  "uptime_ticks": 6522,
+  "syscalls": 177,
+  "timer_irqs": 29,
+  "uptime_ticks": 6527,
   "simulated_clock_advance_ticks": 6500,
   "mac_native_tcp": "UNVERIFIED",
   "physical_enc": "UNVERIFIED"

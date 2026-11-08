@@ -1,8 +1,0 @@
-{
-  "status": "FAIL",
-  "gate": "strict 16384-byte Flash linker assertion",
-  "overflow_bytes": 1808,
-  "final_hardware_elf": "NOT_CREATED",
-  "ram_and_runtime_stack": "UNVERIFIED",
-  "command": "bash scripts/tcp.sh (final tcp,drivers link)"
-}

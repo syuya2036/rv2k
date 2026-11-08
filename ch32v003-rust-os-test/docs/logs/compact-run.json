@@ -2,13 +2,13 @@
   "target": "ch32v003",
   "reason": "Halted",
   "stats": {
-    "instructions": 1731873,
-    "time": 1731873,
+    "instructions": 1731246,
+    "time": 1731246,
     "events": 0
   },
   "cpu": {
     "architecture": "RiscV32",
-    "pc": 2072,
+    "pc": 2038,
     "registers": [
       {
         "name": "x0",
@@ -17,17 +17,17 @@
       },
       {
         "name": "x1",
-        "value": 3122,
+        "value": 3010,
         "bits": 32
       },
       {
         "name": "x2",
-        "value": 536872816,
+        "value": 536872928,
         "bits": 32
       },
       {
         "name": "x3",
-        "value": 0,
+        "value": 536872960,
         "bits": 32
       },
       {
@@ -37,12 +37,12 @@
       },
       {
         "name": "x5",
-        "value": 2779096485,
+        "value": 0,
         "bits": 32
       },
       {
         "name": "x6",
-        "value": 0,
+        "value": 2779096485,
         "bits": 32
       },
       {
@@ -57,7 +57,7 @@
       },
       {
         "name": "x9",
-        "value": 536871744,
+        "value": 536871728,
         "bits": 32
       },
       {
@@ -67,7 +67,7 @@
       },
       {
         "name": "x11",
-        "value": 536870912,
+        "value": 12,
         "bits": 32
       },
       {
@@ -87,7 +87,7 @@
       },
       {
         "name": "x15",
-        "value": 536872900,
+        "value": 2,
         "bits": 32
       },
       {
@@ -102,7 +102,7 @@
       },
       {
         "name": "mtvec",
-        "value": 228,
+        "value": 244,
         "bits": 32
       },
       {
@@ -122,7 +122,7 @@
       },
       {
         "name": "mepc",
-        "value": 5318,
+        "value": 5040,
         "bits": 32
       },
       {
@@ -150,5 +150,5 @@
     10
   ],
   "usb": [],
-  "trace_digest": "9fc140d941328dff70e9b76c2cbb4ca531ff97b5c0d3f0e77fe8d376ed15c6ca"
+  "trace_digest": "95d09f62b071aedafd00e2b11789b4bf90f70770c605605270b159dd63d28553"
 }
