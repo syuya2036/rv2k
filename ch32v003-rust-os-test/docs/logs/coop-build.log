@@ -1,0 +1,11 @@
+   Compiling ch32v003-rust-os-test v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test)
+warning: unused imports: `asm`, `read_volatile`, and `write_volatile`
+ --> src/main.rs:7:19
+  |
+7 | use core::{arch::{asm, global_asm}, ptr::{read_volatile, write_volatile}};
+  |                   ^^^                     ^^^^^^^^^^^^^  ^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `ch32v003-rust-os-test` (bin "ch32v003-rust-os-test") generated 1 warning (run `cargo fix --bin "ch32v003-rust-os-test" -p ch32v003-rust-os-test` to apply 1 suggestion)
+    Finished `release` profile [optimized + debuginfo] target(s) in 0.63s

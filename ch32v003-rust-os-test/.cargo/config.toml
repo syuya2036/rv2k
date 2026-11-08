@@ -1,0 +1,7 @@
+[build]
+target = "riscv32ec-unknown-none-elf.json"
+[target.riscv32ec-unknown-none-elf]
+rustflags = ["-C", "link-arg=-Tmemory.x"]
+[unstable]
+json-target-spec = true
+build-std = ["core"]

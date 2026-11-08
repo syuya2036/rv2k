@@ -1,0 +1,721 @@
+   Compiling cfg-if v1.0.4
+   Compiling typenum v1.20.1
+   Compiling rand_core v0.10.1
+   Compiling serde_core v1.0.229
+   Compiling libc v0.2.189
+   Compiling memchr v2.8.3
+   Compiling thiserror v2.0.20
+   Compiling zmij v1.0.23
+   Compiling num-traits v0.2.19
+   Compiling itoa v1.0.18
+   Compiling const-oid v0.10.2
+   Compiling hex v0.4.3
+   Compiling winnow v1.0.4
+   Compiling cobs v0.3.0
+   Compiling cpubits v0.1.1
+   Compiling toml_writer v1.1.2+spec-1.1.0
+   Compiling cmov v0.5.4
+   Compiling aho-corasick v1.1.4
+   Compiling object v0.40.0
+   Compiling toml_parser v1.1.3+spec-1.1.0
+   Compiling ctutils v0.4.2
+   Compiling remu-casegen v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-casegen)
+   Compiling num-integer v0.1.46
+   Compiling num-bigint v0.5.1
+   Compiling hybrid-array v0.4.14
+   Compiling generic-array v0.14.7
+   Compiling getrandom v0.4.3
+   Compiling cpufeatures v0.3.0
+   Compiling parking_lot_core v0.9.12
+   Compiling rand v0.10.2
+   Compiling parking_lot v0.12.5
+   Compiling regex-automata v0.4.16
+   Compiling crypto-common v0.2.2
+   Compiling block-buffer v0.12.1
+   Compiling inout v0.2.2
+   Compiling crypto-common v0.1.7
+   Compiling block-buffer v0.10.4
+   Compiling errno v0.3.14
+   Compiling rustix v1.1.4
+   Compiling digest v0.10.7
+   Compiling lock_free_hashtable v0.1.4
+   Compiling blake3 v1.8.2
+   Compiling static_interner v0.1.3
+   Compiling dashmap v6.2.1
+   Compiling serde v1.0.229
+   Compiling serde_json v1.0.151
+   Compiling toml_datetime v1.1.1+spec-1.1.0
+   Compiling remu-core v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-core)
+   Compiling digest v0.11.3
+   Compiling cipher v0.5.2
+   Compiling sha2 v0.11.0
+   Compiling num-bigint v0.4.8
+   Compiling remu-bus v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-bus)
+   Compiling heapless v0.7.17
+   Compiling serde_spanned v1.1.1
+   Compiling postcard v1.1.3
+   Compiling toml v1.1.4+spec-1.1.0
+   Compiling remu-signals v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-signals)
+   Compiling ctr v0.10.1
+   Compiling aes v0.9.2
+   Compiling triomphe v0.1.16
+   Compiling aead v0.6.1
+   Compiling erased-serde v0.4.10
+   Compiling allocative v0.3.6
+   Compiling indexmap v2.14.0
+   Compiling ccm v0.6.1
+   Compiling remu-radio v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-radio)
+   Compiling remu-devices v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-devices)
+   Compiling regex v1.13.1
+   Compiling fancy-regex v0.16.2
+   Compiling env_filter v2.0.0
+   Compiling remu-trace v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-trace)
+   Compiling env_logger v0.11.11
+   Compiling lsp-types v0.97.0
+   Compiling quickcheck v1.1.0
+   Compiling remu-cpu-pic16 v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-cpu-pic16)
+   Compiling sorted_vector_map v0.2.1
+   Compiling pagable v0.4.1
+   Compiling remu-image v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-image)
+   Compiling remu-cpu-mcs51 v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-cpu-mcs51)
+   Compiling remu-cpu-riscv v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-cpu-riscv)
+   Compiling remu-cpu-arm v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-cpu-arm)
+   Compiling starlark_map v0.14.2
+   Compiling remu-cpu-msp430 v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-cpu-msp430)
+warning: missing documentation for a variant
+   --> crates/remu-image/src/esp.rs:330:5
+    |
+330 |     Truncated {
+    |     ^^^^^^^^^
+    |
+    = note: requested on the command line with `-W missing-docs`
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/esp.rs:331:9
+    |
+331 |         offset: usize,
+    |         ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/esp.rs:332:9
+    |
+332 |         needed: usize,
+    |         ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/esp.rs:333:9
+    |
+333 |         available: usize,
+    |         ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/esp.rs:336:5
+    |
+336 |     Magic { offset: usize, actual: u8 },
+    |     ^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/esp.rs:336:13
+    |
+336 |     Magic { offset: usize, actual: u8 },
+    |             ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/esp.rs:336:28
+    |
+336 |     Magic { offset: usize, actual: u8 },
+    |                            ^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/esp.rs:338:5
+    |
+338 |     SegmentCount(u8),
+    |     ^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/esp.rs:340:5
+    |
+340 |     SegmentBounds { index: u8, limit: usize },
+    |     ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/esp.rs:340:21
+    |
+340 |     SegmentBounds { index: u8, limit: usize },
+    |                     ^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/esp.rs:340:32
+    |
+340 |     SegmentBounds { index: u8, limit: usize },
+    |                                ^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/esp.rs:342:5
+    |
+342 |     OffsetTooLarge(usize),
+    |     ^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/esp.rs:344:5
+    |
+344 |     Padding { offset: usize },
+    |     ^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/esp.rs:344:15
+    |
+344 |     Padding { offset: usize },
+    |               ^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/esp.rs:346:5
+    |
+346 |     Checksum { expected: u8, actual: u8 },
+    |     ^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/esp.rs:346:16
+    |
+346 |     Checksum { expected: u8, actual: u8 },
+    |                ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/esp.rs:346:30
+    |
+346 |     Checksum { expected: u8, actual: u8 },
+    |                              ^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/esp.rs:348:5
+    |
+348 |     Sha256 { expected: String, actual: String },
+    |     ^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/esp.rs:348:14
+    |
+348 |     Sha256 { expected: String, actual: String },
+    |              ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/esp.rs:348:32
+    |
+348 |     Sha256 { expected: String, actual: String },
+    |                                ^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/esp.rs:350:5
+    |
+350 |     PartitionMagic { index: usize, magic: u16 },
+    |     ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/esp.rs:350:22
+    |
+350 |     PartitionMagic { index: usize, magic: u16 },
+    |                      ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/esp.rs:350:36
+    |
+350 |     PartitionMagic { index: usize, magic: u16 },
+    |                                    ^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/esp.rs:352:5
+    |
+352 |     PartitionLabel(usize),
+    |     ^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/esp.rs:354:5
+    |
+354 |     NoPartitions,
+    |     ^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/esp.rs:356:5
+    |
+356 |     PartitionOverflow(String),
+    |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/esp.rs:358:5
+    |
+358 |     PartitionOverlap { first: String, second: String },
+    |     ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/esp.rs:358:24
+    |
+358 |     PartitionOverlap { first: String, second: String },
+    |                        ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/esp.rs:358:39
+    |
+358 |     PartitionOverlap { first: String, second: String },
+    |                                       ^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/esp.rs:360:5
+    |
+360 |     NoApplication,
+    |     ^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/esp.rs:362:5
+    |
+362 |     ApplicationTooLarge { end: u32, partition_end: u32 },
+    |     ^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/esp.rs:362:27
+    |
+362 |     ApplicationTooLarge { end: u32, partition_end: u32 },
+    |                           ^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/esp.rs:362:37
+    |
+362 |     ApplicationTooLarge { end: u32, partition_end: u32 },
+    |                                     ^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/flash.rs:169:5
+    |
+169 |     Empty,
+    |     ^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/flash.rs:171:5
+    |
+171 |     EraseSize(usize),
+    |     ^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/flash.rs:173:5
+    |
+173 |     SizeAlignment { size: usize, erase_size: usize },
+    |     ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/flash.rs:173:21
+    |
+173 |     SizeAlignment { size: usize, erase_size: usize },
+    |                     ^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/flash.rs:173:34
+    |
+173 |     SizeAlignment { size: usize, erase_size: usize },
+    |                                  ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/flash.rs:175:5
+    |
+175 |     OutOfRange {
+    |     ^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/flash.rs:176:9
+    |
+176 |         offset: usize,
+    |         ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/flash.rs:177:9
+    |
+177 |         length: usize,
+    |         ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/flash.rs:178:9
+    |
+178 |         size: usize,
+    |         ^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/flash.rs:183:5
+    |
+183 |     NeedsErase {
+    |     ^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/flash.rs:184:9
+    |
+184 |         offset: usize,
+    |         ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/flash.rs:185:9
+    |
+185 |         current: u8,
+    |         ^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/flash.rs:186:9
+    |
+186 |         requested: u8,
+    |         ^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/flash.rs:189:5
+    |
+189 |     EraseAlignment {
+    |     ^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/flash.rs:190:9
+    |
+190 |         offset: usize,
+    |         ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/flash.rs:191:9
+    |
+191 |         length: usize,
+    |         ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/flash.rs:192:9
+    |
+192 |         erase_size: usize,
+    |         ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/ihex.rs:335:18
+    |
+335 |     RecordType { line: usize, other: u8 },
+    |                  ^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/ihex.rs:335:31
+    |
+335 |     RecordType { line: usize, other: u8 },
+    |                               ^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/ihex.rs:350:15
+    |
+350 |     Overlap { line: usize, address: u32 },
+    |               ^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/ihex.rs:350:28
+    |
+350 |     Overlap { line: usize, address: u32 },
+    |                            ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/ihex.rs:362:9
+    |
+362 |         address: u32,
+    |         ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/ihex.rs:363:9
+    |
+363 |         length: usize,
+    |         ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/ihex.rs:364:9
+    |
+364 |         word_bytes: usize,
+    |         ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/ihex.rs:369:9
+    |
+369 |         address: u32,
+    |         ^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/ihex.rs:370:9
+    |
+370 |         value: u32,
+    |         ^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/ihex.rs:371:9
+    |
+371 |         word_bits: u8,
+    |         ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/ihex.rs:375:22
+    |
+375 |     EntryAlignment { entry: u32, word_bytes: usize },
+    |                      ^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/ihex.rs:375:34
+    |
+375 |     EntryAlignment { entry: u32, word_bytes: usize },
+    |                                  ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/manifest.rs:196:5
+    |
+196 |     Schema(String),
+    |     ^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/manifest.rs:198:5
+    |
+198 |     Invalid(String),
+    |     ^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/manifest.rs:200:5
+    |
+200 |     DuplicateId(String),
+    |     ^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/manifest.rs:202:5
+    |
+202 |     DuplicateFilename(String),
+    |     ^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/manifest.rs:204:5
+    |
+204 |     Hash {
+    |     ^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/manifest.rs:205:9
+    |
+205 |         id: String,
+    |         ^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/manifest.rs:206:9
+    |
+206 |         expected: String,
+    |         ^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/manifest.rs:207:9
+    |
+207 |         actual: String,
+    |         ^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/manifest.rs:210:5
+    |
+210 |     Io {
+    |     ^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/manifest.rs:211:9
+    |
+211 |         path: PathBuf,
+    |         ^^^^^^^^^^^^^
+
+warning: missing documentation for a struct field
+   --> crates/remu-image/src/manifest.rs:213:9
+    |
+213 |         source: std::io::Error,
+    |         ^^^^^^^^^^^^^^^^^^^^^^
+
+warning: missing documentation for a variant
+   --> crates/remu-image/src/manifest.rs:216:5
+    |
+216 |     Toml(#[from] toml::de::Error),
+    |     ^^^^
+
+   Compiling remu-cpu-xtensa v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-cpu-xtensa)
+   Compiling remu-cpu-avr v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-cpu-avr)
+   Compiling md-5 v0.11.0
+   Compiling fd-lock v4.0.4
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:39:5
+   |
+39 |     R1,
+   |     ^^
+   |
+   = note: requested on the command line with `-W missing-docs`
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:40:5
+   |
+40 |     R2,
+   |     ^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:41:5
+   |
+41 |     R3,
+   |     ^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:42:5
+   |
+42 |     R4,
+   |     ^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:43:5
+   |
+43 |     R5,
+   |     ^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:44:5
+   |
+44 |     R6,
+   |     ^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:45:5
+   |
+45 |     R7,
+   |     ^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:48:5
+   |
+48 |     R9,
+   |     ^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:49:5
+   |
+49 |     R10,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:50:5
+   |
+50 |     R11,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:51:5
+   |
+51 |     R12,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:52:5
+   |
+52 |     R13,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:53:5
+   |
+53 |     R14,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:54:5
+   |
+54 |     R15,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:57:5
+   |
+57 |     R17,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:58:5
+   |
+58 |     R18,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:59:5
+   |
+59 |     R19,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:60:5
+   |
+60 |     R20,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:61:5
+   |
+61 |     R21,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:62:5
+   |
+62 |     R22,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:63:5
+   |
+63 |     R23,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:66:5
+   |
+66 |     R25,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:67:5
+   |
+67 |     R26,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:68:5
+   |
+68 |     R27,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:69:5
+   |
+69 |     R28,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:70:5
+   |
+70 |     R29,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:71:5
+   |
+71 |     R30,
+   |     ^^^
+
+warning: missing documentation for a variant
+  --> crates/remu-cpu-avr/src/lib.rs:72:5
+   |
+72 |     R31,
+   |     ^^^
+
+   Compiling nix v0.28.0
+   Compiling debugserver-types v0.5.0
+warning: `remu-cpu-avr` (lib) generated 28 warnings
+   Compiling erased-serde v0.3.31
+   Compiling tempfile v3.27.0
+   Compiling remu-gdb v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-gdb)
+   Compiling remu-corpus v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-corpus)
+   Compiling rustyline v14.0.0
+warning: `remu-image` (lib) generated 74 warnings
+   Compiling remu-machines v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-machines)
+   Compiling starlark_syntax v0.14.2
+   Compiling starlark v0.14.2
+   Compiling remu-starlark v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-starlark)
+   Compiling remu-web v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-web)
+   Compiling remu-cli v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test/vendor/renvo_emu/crates/remu-cli)
+    Finished `release` profile [optimized] target(s) in 1m 17s
+vendor/renvo_emu/target/release/remu: Mach-O 64-bit executable arm64

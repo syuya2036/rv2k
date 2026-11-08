@@ -1,0 +1,10 @@
+ Downloading crates ...
+  Downloaded rustc-literal-escaper v0.0.7
+  Downloaded addr2line v0.25.1
+  Downloaded memchr v2.7.6
+  Downloaded gimli v0.32.3
+  Downloaded libc v0.2.178
+   Compiling compiler_builtins v0.1.160 (/Users/shuya/.rustup/toolchains/nightly-aarch64-apple-darwin/lib/rustlib/src/rust/library/compiler-builtins/compiler-builtins)
+   Compiling core v0.0.0 (/Users/shuya/.rustup/toolchains/nightly-aarch64-apple-darwin/lib/rustlib/src/rust/library/core)
+   Compiling ch32v003-rust-os-test v0.1.0 (/Users/shuya/.t3/worktrees/tiny-rv-os/t3-f0a0e5b0/ch32v003-rust-os-test)
+    Finished `release` profile [optimized + debuginfo] target(s) in 8.92s

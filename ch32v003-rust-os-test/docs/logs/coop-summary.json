@@ -1,0 +1,21 @@
+{
+  "instructions": 6112,
+  "counters": [
+    8,
+    8
+  ],
+  "switches": 32,
+  "stack_bytes_each": 256,
+  "stack_watermark_used_bytes": [
+    172,
+    172
+  ],
+  "local_addresses": [
+    "0x20000120",
+    "0x20000220"
+  ],
+  "static_ram_bytes": 592,
+  "boot_stack_reserved_bytes": 512,
+  "status": "0x600d",
+  "uart": "ABABABABABABABAB\nCOOP OK\n"
+}

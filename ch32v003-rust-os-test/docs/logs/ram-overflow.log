@@ -1,0 +1,2 @@
+exit=1
+remu: cannot load firmware segment at 0x20000000: Unmapped bus fault during Write at 0x20000800 (Byte): firmware load address is not mapped

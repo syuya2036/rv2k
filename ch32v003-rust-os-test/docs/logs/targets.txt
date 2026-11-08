@@ -1,0 +1,20 @@
+TARGET     CPU MODE(S)                         FIDELITY
+ch32v003 qingke-v2-rv32ec                    Functional
+ch32v006 qingke-v2-rv32ec                    Functional
+rp2040 cortex-m0plus-armv6m                Functional
+rp2350 cortex-m33-armv8m, hazard3-rv32imac Functional
+esp32s3 xtensa-lx7                          Functional
+esp32c6 esp-rv32imac-hp                     Functional
+esp32p4 esp-rv32imac-hp-functional-subset   Functional
+atsamd21e18 cortex-m0plus-armv6m                Functional
+atsamd51j19a cortex-m4f-armv7em                  Functional
+stm32l432kc cortex-m4f-armv7em                  Functional
+stm32f103c8 cortex-m3-armv7m                    Functional
+stm32f411re cortex-m4f-armv7em                  Functional
+stm32h743zi cortex-m7-armv7em                   Functional
+nrf52840 cortex-m4f-armv7em                  Functional
+r7fa4m1ab3cfm cortex-m4f-armv7em                  Functional
+atmega328pb avr8-enhanced                       Functional
+msp430fr2433 msp430-cpuxv2                       Functional
+pic16f15376 pic16-enhanced-midrange             Functional
+efm8bb52f32g mcs51-efm8                          Functional

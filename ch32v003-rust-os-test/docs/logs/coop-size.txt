@@ -1,0 +1,2 @@
+   text	   data	    bss	    dec	    hex	filename
+   1553	      0	    592	   2145	    861	target/coop/riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test
