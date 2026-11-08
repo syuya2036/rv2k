@@ -1,0 +1,54 @@
+# Phase 9: HTTP Echo 統合（実装中）
+
+仮想 NIC での HTTP / socket / preemption 試験は PASS です。ENC28J60 構成は Flash 制約に未達で、Mac native HTTP と実機は UNVERIFIED です。Phase 9 全体は完了していません。
+
+## 構成とプロファイル
+
+`--features http,emulator-stop` は T0=network、T1=HTTP の固定 2 タスク、単一 TCP 接続です。HTTP は公開 socket / event / uptime API を使い、MCU 内でリクエスト解析と応答を行います。ホストは対向クライアントとしてパケットを注入・観測し、ゲスト側の TCP / HTTP 処理を肩代わりしません。
+
+`POST /echo HTTP/1.1`、本文 0〜64 byte、Content-Length / Host 必須の制限付きプロファイルです。[パーサ契約](../../crates/rv2k-apps/README.md) に、ヘッダ・Host・エラー応答・非対応機能を記載しています。行と本文で 64 byte 配列を再利用し、socket I/O 用の 128 byte 領域を別に持ちます。ヒープはありません。
+
+受信期限は接続後 500 tick（5 秒）の絶対期限で、途中でデータが届いても延長しません。応答送信も別の 500 tick で打ち切ります。送信 API の部分成功 / Again を扱い、NET_RX / NET_TX_READY / NET_CLOSED を待って再試行します。
+
+Content-Length と Connection: close を出力し、1 接続につき 1 リクエストで終了します。応答を読んだクライアントの FIN と未読要求データの排出を最大 100 tick（1 秒）待ってから close します。クライアントが閉じなければ active close となり、既存 TCP の 120 秒 TIME_WAIT が単一スロットを占有します。この制約を短縮して再接続試験を通してはいません。通常の close-first クライアントは LAST_ACK 完了後に再接続できます。Mac クライアントでの確認は残っています。
+
+## 再現
+
+```sh
+cd ch32v003-rust-os-test
+bash scripts/http.sh
+```
+
+スクリプトは通常試験、RX ごとの IRQ 注入試験、元の ELF の容量検査を実行し、最後に ENC28J60 構成をビルドします。**現時点では最後の ENC リンクが Flash 超過で失敗し、スクリプト全体は非ゼロ終了します。** リンカの 16,384 byte 制約を緩めていません。未達のため HTTP は CI の成功ゲートへまだ追加していません。
+
+結果は [logs/http](logs/http) にあります。`check-http.py` は PCAP の IP/TCP checksum、ストリームの再構築、Python 標準ライブラリの HTTPResponse による応答解析、独立した期待本文、ゲスト SRAM の状態・スタック番兵を照合します。ホスト peer と rv2k パーサの実装を共有しません。PCAP / SRAM の raw log を保存しています。
+
+## 仮想 NIC で確認した内容
+
+通常と IRQ ストレスのそれぞれで 17 接続を実行しました。
+
+- 分割されたヘッダ / 本文、空本文、NUL / 非 ASCII を含む最大 64 byte のバイナリ本文。
+- 本文長超過 413、長さ不足 411、重複 Content-Length / Transfer-Encoding / obs-fold / Host 不足 400、Expect 417、ヘッダ行超過 431。
+- 途中 EOF 400、部分要求 / 空要求 / 遅い追加データの絶対期限 408、要求途中の RST、その後の再接続。
+- SYN-ACK / data ACK / FIN ACK を各 1 回失わせた回復、peer MSS=24、zero-window persist、シーケンス番号 wrap。
+- 230 受信フレームを全て解放。応答は 16 回、合計 echo 本文は 88 byte。IRQ ストレスでは NIC RX 中の共有状態の借用を観測して 230 回の tick を注入し、借用解除後に強制切替できることを検査。
+
+|項目|通常|IRQ ストレス|
+|---|---:|---:|
+|実行命令数|86,196,717|85,724,958|
+|RX / TX フレーム|230 / 230|230 / 231|
+|強制切替 / 延期 IRQ|20 / 10|6 / 240|
+|T0 / T1 / kernel スタック使用 byte|204 / 216 / 112|204 / 216 / 112|
+|番兵破損 / fault|0 / 0|0 / 0|
+
+仮想 NIC ELF は Flash 15,918 / 16,384 byte、静的 RAM 1,772 byte + kernel/IRQ/boot 予約 256 byte = 2,028 / 2,048 byte です。タスクの各 256 byte スタックと番兵は静的 RAM に含みます。
+
+ENC28J60 構成は最終リンクで Flash を 1,600 byte 超過しました。実機用の合格 ELF は生成できていません。`enc-link-failure.txt` が失敗証跡です。
+
+## 共通部分の回帰と未完了ゲート
+
+TCB を RV32 で 32 byte stride とし、初期化の一時コピー、固定 MMIO base の保持、syscall wrapper の中間 Result コピーを減らしました。UART/NIC は IRQ マスク中に一度初期化してから使い、デバイスの通常 RAM 状態に volatile な構造体コピーを使いません。OS サービスや TCP 機能は削除していません。
+
+[regression.json](logs/http/regression.json) に、共通部分変更後の services、TCP、preemption、SPI/UART と負例の再検証を保存しています。workspace 67 tests とホスト NIC の所有権試験も PASS です。従来フェーズのログは履歴として保持しています。
+
+未完了は ENC 構成の Flash 収容、Mac native HTTP、Phase 9 統合変更の PR レビュー / マージです。Mac vmnet は実行許可済みですが、前回の `sudo -n` が OS 認証を要求して起動前に失敗しており、ネットワークは作成されていません。[実接続試行](logs/network-live-attempt.json) を参照してください。CH32V003J4M6＋ENC28J60 は未保有で、実機検証は行っていません。

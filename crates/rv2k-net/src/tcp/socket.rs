@@ -246,6 +246,10 @@ mod tests {
         let mut s = Socket::new();
         let h = s.listen(80).unwrap();
         assert_eq!(s.listen(80), Ok(h));
+        assert_eq!(
+            s.recv_with(h, 0, |_| panic!("empty probe must not copy")),
+            Ok(0)
+        );
         assert_eq!(s.listen(23), Err(Error::Busy));
         assert_eq!(s.send_with(h, 1, |_| Ok(())), Err(Error::Again));
         assert!(s.take_listen());
@@ -286,6 +290,11 @@ mod tests {
         .unwrap();
         assert_eq!(s.recv_with(h, 64, |_| Err(Error::Fault)), Err(Error::Fault));
         assert_eq!(s.rx_len(), 128);
+        assert_eq!(
+            s.recv_with(h, 0, |_| panic!("empty probe must not consume")),
+            Ok(0)
+        );
+        assert_eq!(s.rx_len(), 128);
         s.eof();
         assert_eq!(
             s.recv_with(h, 65, |b| {
@@ -304,6 +313,7 @@ mod tests {
         assert_eq!(s.recv_with(h, 1, |_| panic!()), Ok(0));
         assert!(s.take_window_update());
         s.terminal(Error::Timeout);
+        assert_eq!(s.recv_with(h, 0, |_| panic!()), Err(Error::Timeout));
         assert_eq!(s.recv_with(h, 1, |_| panic!()), Err(Error::Timeout));
         let next = s.listen(80).unwrap();
         assert_ne!(h, next);

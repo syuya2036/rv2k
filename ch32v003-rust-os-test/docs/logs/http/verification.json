@@ -1,0 +1,42 @@
+{
+  "source_parent_commit": "21c6342ef04abea60efc8b77556de589b53438bb",
+  "source_sha256": {
+    "ch32v003-rust-os-test/src/http.rs": "24369b6784919d7ea9090187f6e111637f0baba4addcb9496f4fdab2613a2202",
+    "ch32v003-rust-os-test/src/network.rs": "1c1d5d5df098db099bd4d7ecf5f9e8cfa9ce4dd7fc494c4d046e4ea4abe537ce",
+    "ch32v003-rust-os-test/src/main.rs": "121201d976c8ef1aeff34092d2abd29bfd1f7d1d39b0263b8de2e9bb54eeea89",
+    "ch32v003-rust-os-test/Cargo.toml": "226bf7695fe6243872689bd19c9ea5c83187dd92f618d5b34c24d01616d802bb",
+    "ch32v003-rust-os-test/Cargo.lock": "bab7b6579c5e84297567f2ea993c16e67cb48c942ceaeb4719d0e3cb2a20e72f",
+    "ch32v003-rust-os-test/memory.x": "6b2c6a92b31ce3d3fbd80dc3226241b6ab13cdbd4ac206ed4f1ecb6f2b5dd27d",
+    "ch32v003-rust-os-test/riscv32ec-unknown-none-elf.json": "e9415326e2bbef02a6bd5bf326949d79b46a20047483fac7121bc4da524b3576",
+    "ch32v003-rust-os-test/scripts/http.sh": "01b61b7a9109a2be504bd3b38b377e9568a5bd1a12a2a8a2c2481bd854415bfe",
+    "ch32v003-rust-os-test/scripts/check-http.py": "61f0db1040b0667790ca8d2bd664c13335ac916965203771936828cd2ba44d72",
+    "crates/rv2k-apps/src/http.rs": "dd5805fbea82687fc290eaaa208948042212214de305a2bd66585958e93b0b14",
+    "crates/rv2k-kernel/src/lib.rs": "bb804dcb13e80783dd15dd73fb40cb20d644ff0330cb1b79792dea02a68aada5",
+    "crates/rv2k-api/src/event.rs": "4aef7e2908727138a7ff9b7b4bebc9e4a380f3224296938ae5376bf07984fee1",
+    "crates/rv2k-api/src/socket.rs": "7e976c93f078b03e137d6a6a5fe35070c9794c2b72188198b95e1d6de8852b5d",
+    "crates/rv2k-drivers/src/virtual_nic.rs": "68e98bd4e975e962f4c64a6cd2fd1cf81391fd255f4a8099bedb44b8d4cd0fad",
+    "ch32v003-rust-os-test/src/drivers.rs": "061d947b3b66dfc9b044b729e3d7c11337f6955e266eef7c9dbffb436a5dcc76",
+    "host/net-harness/src/main.rs": "afb0e27eb20a8c3bab1b8ec36b743e36183f8f59cebc2a546801415c85ad5903",
+    "host/net-harness/src/tcp_probe.rs": "325c604a874eb7adcdce1154692f4a8a38a20ad3f18a7297d59ae08c8a8641c0",
+    "host/net-harness/src/http_probe.rs": "cf6f964002863225e9ac8ae3f804a029e72825670ea28c8c82d440441649cb04",
+    "host/net-harness/src/peer.rs": "43028347e0657e815f7262ce1958599ca1455d54f4f84b542002e45816d39293"
+  },
+  "original_elf_sha256": "66fc6aa1333ad06dcce74bf862df10f0f8bb7c90697967c08853b80b86c2bcfa",
+  "remu_elf_sha256": "283030bd532a9e7594f41a5367c49c488b820080927f16e017d3c9e4282d212f",
+  "host_tests": 67,
+  "host_clippy": "PASS",
+  "host_nic_contract_test": "PASS",
+  "http_normal": "PASS",
+  "http_irq_stress": "PASS",
+  "virtual_nic_budget": {
+    "flash_bytes": 15918,
+    "flash_limit": 16384,
+    "static_ram_bytes": 1772,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 2028,
+    "ram_limit": 2048
+  },
+  "enc_link": "FAIL: 1600 bytes over Flash limit",
+  "mac_native_http": "UNVERIFIED",
+  "physical_enc": "UNVERIFIED"
+}

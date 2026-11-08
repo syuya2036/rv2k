@@ -39,7 +39,7 @@ pub unsafe fn init() {
 // The public 64-bit uptime copy needs an aligned temporary. End that frame
 // before entering the deeper protocol/driver chain.
 #[inline(never)]
-fn sample_time() -> u32 {
+pub(crate) fn sample_time() -> u32 {
     time::uptime().unwrap_or(0) as u32
 }
 #[inline(never)]
@@ -102,22 +102,26 @@ pub fn task() {
 #[cfg(feature = "tcp")]
 mod sockets {
     use super::*;
+    #[cfg(any(not(feature = "http"), feature = "emulator-stop"))]
     use core::ptr::addr_of;
     #[cfg(feature = "emulator-stop")]
     use core::ptr::{read_volatile, write_volatile};
-    use rv2k_api::{socket, TaskId};
+    #[cfg(not(feature = "http"))]
+    use rv2k_api::socket;
+    use rv2k_api::TaskId;
     use rv2k_kernel::{
         memory::{Region, UserMemory},
         socket::SocketService,
         Scheduler,
     };
     use rv2k_net::tcp::socket::Socket;
+    #[cfg(not(feature = "http"))]
     #[no_mangle]
     static mut APP_BUFFER: [u8; 32] = [0; 32];
-    #[cfg(feature = "emulator-stop")]
+    #[cfg(all(feature = "emulator-stop", not(feature = "http")))]
     #[no_mangle]
     static mut APP_BYTES: u32 = 0;
-    #[cfg(feature = "emulator-stop")]
+    #[cfg(all(feature = "emulator-stop", not(feature = "http")))]
     #[no_mangle]
     static mut APP_LISTENS: u32 = 0;
     #[cfg(feature = "emulator-stop")]
@@ -197,12 +201,18 @@ ret
             self.0.readiness()
         }
     }
+    #[cfg(not(feature = "http"))]
     pub fn application_region() -> Region {
         let start = addr_of!(APP_BUFFER) as usize;
         Region {
             start,
             end: start + 32,
         }
+    }
+    #[cfg(feature = "http")]
+    pub fn application_region() -> Region {
+        let (start, end) = crate::http::region();
+        Region { start, end }
     }
     pub unsafe fn socket_service() -> impl SocketService {
         Service(&mut (*addr_of_mut!(NETWORK)).socket)
@@ -217,8 +227,9 @@ ret
             let _ = s.signal(TaskId::Network, event::DRIVER_POLL);
         }
     }
+    #[cfg(feature = "emulator-stop")]
     #[inline(never)]
-    pub fn application() {
+    fn initialize_application() {
         #[cfg(feature = "emulator-stop")]
         unsafe {
             extern "C" {
@@ -240,6 +251,14 @@ ret
                 write_volatile(addr_of_mut!(APP_MEM_CHECK), 1);
             }
         }
+    }
+    #[inline(never)]
+    pub fn application() {
+        #[cfg(feature = "emulator-stop")]
+        initialize_application();
+        #[cfg(feature = "http")]
+        crate::http::run();
+        #[cfg(not(feature = "http"))]
         loop {
             let handle = match socket::listen(1234) {
                 Ok(h) => h,
