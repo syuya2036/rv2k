@@ -63,3 +63,5 @@ CPU probeはgp/tp/ra、temporary、saved、argument registersをsaltで識別す
 ENC Flashの余裕は4byte。後続のHTTP/shellを収容できる保証はなく、機能追加後に同じ上限で再検証する。実機のPFIC/HPE設定、SPI電気特性・実機stack、長時間運転は未確認。実機がないため、仮想HWの成功から実機PASSを推定しない。
 
 Phase 10 の共通最適化後の測定は [shell の回帰記録](logs/shell/regression) を参照。既存の表・raw log は Phase 8 時点の記録として残す。専用 safe-point probe は、4 回の保護中 IRQ を観測した後、MIE 復元前に次の周期 IRQ を 1 tick 先へ再設定する。未処理の延期要求が GetPid 境界に届くことを、コンパイラによる命令時間差から独立させて検査する。
+
+現在の最適化 script は固定 nightly の `-Z inline-mir=yes` を含みます。絶対期限 API の追加後に CPU / SPI / TCP / 復元欠陥・診断負例を再検査した結果は [deadlines](logs/deadlines) を参照してください。

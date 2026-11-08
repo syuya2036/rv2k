@@ -102,13 +102,16 @@ pub fn task() {
 #[cfg(feature = "tcp")]
 mod sockets {
     use super::*;
-    #[cfg(not(feature = "shell"))]
+    #[cfg(not(any(feature = "http", feature = "shell")))]
     use core::ptr::addr_of;
-    #[cfg(all(feature = "emulator-stop", not(feature = "shell")))]
+    #[cfg(all(
+        feature = "emulator-stop",
+        not(any(feature = "http", feature = "shell"))
+    ))]
     use core::ptr::read_volatile;
     #[cfg(all(feature = "emulator-stop", not(feature = "shell")))]
     use core::ptr::write_volatile;
-    #[cfg(not(feature = "shell"))]
+    #[cfg(not(any(feature = "http", feature = "shell")))]
     use rv2k_api::socket;
     use rv2k_api::TaskId;
     use rv2k_kernel::{
@@ -116,13 +119,19 @@ mod sockets {
         socket::SocketService,
         Scheduler,
     };
-    #[cfg(not(feature = "shell"))]
+    #[cfg(not(any(feature = "http", feature = "shell")))]
     #[no_mangle]
     static mut APP_BUFFER: [u8; 32] = [0; 32];
-    #[cfg(all(feature = "emulator-stop", not(feature = "shell")))]
+    #[cfg(all(
+        feature = "emulator-stop",
+        not(any(feature = "http", feature = "shell"))
+    ))]
     #[no_mangle]
     static mut APP_BYTES: u32 = 0;
-    #[cfg(all(feature = "emulator-stop", not(feature = "shell")))]
+    #[cfg(all(
+        feature = "emulator-stop",
+        not(any(feature = "http", feature = "shell"))
+    ))]
     #[no_mangle]
     static mut APP_LISTENS: u32 = 0;
     #[cfg(all(feature = "emulator-stop", not(feature = "shell")))]
@@ -207,7 +216,7 @@ ret
             self.0.socket.readiness()
         }
     }
-    #[cfg(not(feature = "shell"))]
+    #[cfg(not(any(feature = "http", feature = "shell")))]
     pub fn application_region() -> Region {
         let start = addr_of!(APP_BUFFER) as usize;
         Region {
@@ -218,6 +227,11 @@ ret
     #[cfg(feature = "shell")]
     pub fn application_region() -> Region {
         let (start, end) = crate::shell::region();
+        Region { start, end }
+    }
+    #[cfg(feature = "http")]
+    pub fn application_region() -> Region {
+        let (start, end) = crate::http::region();
         Region { start, end }
     }
     pub unsafe fn socket_service() -> impl SocketService {
@@ -268,7 +282,9 @@ ret
         crate::netinfo_probe::callbacks();
         #[cfg(feature = "shell")]
         crate::shell::run();
-        #[cfg(not(feature = "shell"))]
+        #[cfg(feature = "http")]
+        crate::http::run();
+        #[cfg(not(any(feature = "http", feature = "shell")))]
         loop {
             let handle = match socket::listen(1234) {
                 Ok(h) => h,

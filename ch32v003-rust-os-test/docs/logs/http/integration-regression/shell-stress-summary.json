@@ -1,0 +1,31 @@
+{
+  "host_packet_peer": "PASS (synthetic peer, not native Mac TCP)",
+  "connections": 5,
+  "all_four_commands_via_public_api": true,
+  "split_and_coalesced_input": true,
+  "oversized_invalid_unknown_recovery": true,
+  "partial_eof_and_reset_discard": true,
+  "clean_reconnect": true,
+  "syn_loss_and_zero_window_persist": true,
+  "input_bytes": 138,
+  "commands": 12,
+  "frames_in": 103,
+  "frames_out": 110,
+  "instructions": 38182208,
+  "stack_used_bytes_tasks_kernel": [
+    176,
+    224,
+    120
+  ],
+  "all_guards_intact": true,
+  "uptime_command_ticks": [
+    6331,
+    6442
+  ],
+  "nic_irq_injections": 103,
+  "forced_switches": 0,
+  "deferred_irqs": 117,
+  "max_disabled_clocks": null,
+  "mac_native_tcp": "UNVERIFIED",
+  "physical_enc": "UNVERIFIED"
+}

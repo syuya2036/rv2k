@@ -44,15 +44,12 @@ pub fn response_header(status: Status, length: u8, out: &mut [u8; IO_CAPACITY]) 
         *b"200", *b"400", *b"408", *b"411", *b"413", *b"414", *b"417", *b"431",
     ];
     out[9..12].copy_from_slice(&CODES[status as usize]);
-    // At most six subtractions; RV32EC has no integer division instruction.
-    let mut units = length;
-    let mut tens = b'0';
-    while units >= 10 {
-        units -= 10;
-        tens += 1;
-    }
-    out[39] = tens;
-    out[40] = b'0' + units;
+    // Reuse the core's RV32EC word helper. LLVM can turn a subtraction
+    // loop back into division and pull in a second compiler runtime helper.
+    let (tens, units) =
+        rv2k_api::integer::div_rem(length as u32, core::num::NonZeroU32::new(10).unwrap());
+    out[39] = b'0' + tens as u8;
+    out[40] = b'0' + units as u8;
     TEMPLATE.len()
 }
 #[derive(Clone, Copy, PartialEq)]

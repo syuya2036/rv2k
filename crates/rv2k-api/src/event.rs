@@ -33,3 +33,19 @@ pub fn signal(id: crate::TaskId, mask: u32) -> Result<(), crate::syscall::Error>
         .map(|_| ())
     }
 }
+
+/// Wait until a wrapping uptime deadline in the next i32::MAX ticks. An
+/// expired deadline returns Timeout without consuming pending events, even if
+/// ready. Unlike wait(), u32::MAX is a literal deadline, not FOREVER.
+#[cfg(target_arch = "riscv32")]
+#[inline(always)]
+pub fn wait_until(mask: u32, deadline: u32) -> Result<u32, crate::syscall::Error> {
+    use crate::syscall::{raw, Error, Number};
+    unsafe {
+        Error::decode(raw(
+            Number::EventWait as usize,
+            [mask as usize, deadline as usize, 1],
+        ))
+        .map(|bits| bits as u32)
+    }
+}

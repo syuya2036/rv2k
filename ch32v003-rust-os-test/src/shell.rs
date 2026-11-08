@@ -68,7 +68,9 @@ impl Sender {
                 Ok(0) => return false,
                 Ok(n) => bytes = &bytes[n..],
                 Err(Error::Again) => {
-                    if event::wait(event::NET_TX_READY | event::NET_CLOSED, left).is_err() {
+                    if event::wait_until(event::NET_TX_READY | event::NET_CLOSED, self.deadline)
+                        .is_err()
+                    {
                         return false;
                     }
                 }
@@ -160,7 +162,7 @@ fn finish(handle: Handle) {
             Ok(0) => break,
             Ok(_) => {}
             Err(Error::Again) => {
-                if event::wait(event::NET_RX | event::NET_CLOSED, left).is_err() {
+                if event::wait_until(event::NET_RX | event::NET_CLOSED, deadline).is_err() {
                     break;
                 }
             }

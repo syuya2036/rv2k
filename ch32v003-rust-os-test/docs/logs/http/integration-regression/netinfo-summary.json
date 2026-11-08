@@ -1,0 +1,36 @@
+{
+  "syscall": 14,
+  "wire_bytes": 32,
+  "version": 1,
+  "task_mem_net_callback_copies_survive_yield": true,
+  "boot_and_two_connections": true,
+  "invalid_arguments_and_destinations": 7,
+  "states": [
+    0,
+    3,
+    3
+  ],
+  "peer_ports": [
+    0,
+    50000,
+    50001
+  ],
+  "rx_counts": [
+    0,
+    2,
+    14
+  ],
+  "tx_counts": [
+    0,
+    2,
+    16
+  ],
+  "retransmission_counts": [
+    0,
+    1,
+    3
+  ],
+  "pcap_prefix_handshakes_checked": true,
+  "mac_native_tcp": "UNVERIFIED",
+  "physical_enc": "UNVERIFIED"
+}

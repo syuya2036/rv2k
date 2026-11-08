@@ -55,7 +55,7 @@ pub fn dispatch(
         return Some(Outcome::Complete(Error::Invalid.code()));
     };
     let result = if matches!(call, Number::EventWait) {
-        if args[0] > u32::MAX as usize || args[1] > u32::MAX as usize {
+        if args[0] > u32::MAX as usize || args[1] > u32::MAX as usize || args[2] > 1 {
             Err(Error::Invalid)
         } else {
             let level = mailbox.readiness(caller)
@@ -64,7 +64,7 @@ pub fn dispatch(
                 } else {
                     0
                 };
-            match scheduler.wait_event(args[0] as u32, args[1] as u32, level) {
+            match scheduler.wait_event_call(args, level) {
                 Ok(Some(bits)) => Ok(bits as usize),
                 Ok(None) => return Some(Outcome::Switch(Action::Block)),
                 Err(e) => Err(e),
@@ -211,6 +211,55 @@ mod snapshot_tests {
         }
         fn readiness(&self) -> u32 {
             panic!("snapshot must not consume socket readiness")
+        }
+    }
+    #[test]
+    fn both_dispatchers_keep_absolute_expiry_and_relative_readiness_semantics() {
+        for full in [false, true] {
+            let mut scheduler = Scheduler::new();
+            scheduler.initialize([0x100, 0x200]);
+            scheduler.select_next();
+            scheduler.advance_ticks(501);
+            let mut mailbox = Mailbox::new();
+            let mut output = Output([0xcc; BYTES]);
+            let mut source = Source {
+                reads: Cell::new(0),
+                available: false,
+            };
+            let mut call = |args| {
+                if full {
+                    dispatch_runtime(
+                        &mut scheduler,
+                        &mut mailbox,
+                        &mut output,
+                        4,
+                        args,
+                        RuntimeServices::<NoConsole, _> {
+                            console: None,
+                            socket: Some(&mut source),
+                            info: InfoSource::None,
+                        },
+                    )
+                } else {
+                    dispatch(&mut scheduler, &mailbox, &mut output, 4, args, &mut source).unwrap()
+                }
+            };
+            for args in [
+                [event::NET_RX as usize, 500, 1],
+                [event::NET_RX as usize, 501, 1],
+            ] {
+                assert!(matches!(call(args), Outcome::Complete(n) if n == Error::Timeout.code()));
+            }
+            assert!(matches!(call([1, 1, 2]), Outcome::Complete(n) if n == Error::Invalid.code()));
+            assert!(
+                matches!(call([event::MSG_SPACE as usize, 0, 0]), Outcome::Complete(n) if n == event::MSG_SPACE as isize)
+            );
+            assert!(matches!(
+                call([event::NET_RX as usize, 502, 1]),
+                Outcome::Switch(Action::Block)
+            ));
+            assert_eq!(output.0, [0xcc; BYTES]);
+            assert_eq!(source.reads.get(), 0);
         }
     }
     fn invoke(

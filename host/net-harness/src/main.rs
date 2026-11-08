@@ -1,4 +1,5 @@
 mod device;
+mod http_probe;
 mod pcap;
 mod peer;
 mod shell_probe;
@@ -23,9 +24,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
     if !matches!(
         args[5].as_str(),
-        "replay" | "udp" | "tcp" | "tcp-preempt" | "shell" | "shell-preempt"
+        "replay"
+            | "udp"
+            | "tcp"
+            | "tcp-preempt"
+            | "shell"
+            | "shell-preempt"
+            | "http"
+            | "http-preempt"
     ) {
-        return Err("mode must be replay, udp, tcp[-preempt] shell[-preempt]".into());
+        return Err(
+            "mode must be replay, udp, tcp[-preempt] shell[-preempt] or http[-preempt]".into(),
+        );
     }
     let image = FirmwareImage::parse(&fs::read(&args[1])?)?;
     let mut machine = RiscVMachine::new(TargetId::Ch32v003)?;
@@ -37,11 +47,16 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Box::new(Nic(state.clone())),
     )?;
     machine.load_firmware(&image)?;
-    let preemption_stress = matches!(args[5].as_str(), "tcp-preempt" | "shell-preempt");
+    let preemption_stress = matches!(
+        args[5].as_str(),
+        "tcp-preempt" | "shell-preempt" | "http-preempt"
+    );
     let mut probe = if matches!(args[5].as_str(), "tcp" | "tcp-preempt") {
         Some(peer::Peer::Tcp(tcp_probe::Probe::new()))
     } else if matches!(args[5].as_str(), "shell" | "shell-preempt") {
         Some(peer::Peer::Shell(shell_probe::Probe::new()))
+    } else if matches!(args[5].as_str(), "http" | "http-preempt") {
+        Some(peer::Peer::Http(http_probe::Probe::new()))
     } else {
         None
     };
@@ -63,6 +78,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         60
     };
+    // HTTP runs 17 connections, including 230 protected RX IRQ injections.
+    // Slow CI hosts need more wall time; guest clocks, protocol deadlines and
+    // the deterministic instruction ceiling remain independent of this watchdog.
+    let watchdog_seconds = if probe.as_ref().is_some_and(peer::Peer::is_http) {
+        180
+    } else {
+        timeout + 10
+    };
     let began = Instant::now();
     let mut outputs = Vec::new();
     let mut capture = Vec::new();
@@ -73,6 +96,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut nic_irq_armed = false;
     let mut rx_reads_before = 0;
     let mut nic_irq_injections = 0u32;
+    let mut budget_error = None;
     let final_result = loop {
         if let Some(frame) = state.borrow_mut().take_tx() {
             if let Some(probe) = &mut probe {
@@ -98,16 +122,27 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
                 let listens = word("APP_LISTENS")?;
                 let irqs = word("TIMER_IRQS")?;
-                let (accepts, request_bytes) = if probe.is_shell() {
-                    (word("APP_SHELL_ACCEPTS")?, word("APP_SHELL_INPUT_BYTES")?)
+                let (accepts, request_bytes, last_read_ticks) = if probe.is_http() {
+                    (
+                        word("HTTP_ACCEPTS")?,
+                        word("HTTP_REQUEST_BYTES")?,
+                        word("HTTP_LAST_READ_TICKS")?,
+                    )
+                } else if probe.is_shell() {
+                    (
+                        word("APP_SHELL_ACCEPTS")?,
+                        word("APP_SHELL_INPUT_BYTES")?,
+                        0,
+                    )
                 } else {
-                    (0, 0)
+                    (0, 0, 0)
                 };
                 probe.observe(peer::Observation {
                     listens,
                     irqs,
                     accepts,
                     request_bytes,
+                    last_read_ticks,
                     released: state.borrow().released,
                 });
             }
@@ -189,10 +224,18 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if result.reason != StopReason::InstructionLimit {
             break result;
         }
-        if (socket.is_none() && instructions > 200_000_000)
-            || began.elapsed() > Duration::from_secs(timeout + 10)
-        {
-            return Err("guest did not terminate within run budget".into());
+        if socket.is_none() && instructions > 200_000_000 {
+            budget_error = Some(format!(
+                "guest exceeded 200M instruction ceiling: {instructions}"
+            ));
+            break result;
+        }
+        if began.elapsed() > Duration::from_secs(watchdog_seconds) {
+            budget_error = Some(format!(
+                "host watchdog exceeded {watchdog_seconds}s in {} mode: {instructions} guest instructions, {:.1}s elapsed",
+                args[5], began.elapsed().as_secs_f64()
+            ));
+            break result;
         }
     };
     if let Some(frame) = state.borrow_mut().take_tx() {
@@ -216,7 +259,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ram = machine.debug_read_memory(0x20000000, 2048)?;
     let report = serde_json::json!({"reason":final_result.reason,"instructions":instructions,"uart":String::from_utf8_lossy(&final_result.uart),
         "injected":state.borrow().received,"released":state.borrow().released,"transmitted":state.borrow().transmitted,
-        "symbols":symbols,"ram_hex":ram.iter().map(|b|format!("{b:02x}")).collect::<String>(),"mode":args[5],"rx_overflow":overflow,"nic_irq_injections":nic_irq_injections,"tcp_probe":probe.as_ref().map(|p|p.summary())});
+        "symbols":symbols,"ram_hex":ram.iter().map(|b|format!("{b:02x}")).collect::<String>(),"mode":args[5],"rx_overflow":overflow,"nic_irq_injections":nic_irq_injections,"tcp_probe":probe.as_ref().map(|p|p.summary()),"budget_error":budget_error});
     fs::write(&args[4], serde_json::to_vec_pretty(&report)?)?;
     println!(
         "guest {:?}: {} instructions, {} RX, {} TX",
@@ -225,6 +268,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         state.borrow().received,
         state.borrow().transmitted
     );
+    if let Some(error) = budget_error {
+        return Err(error.into());
+    }
     if final_result.reason != StopReason::Halted {
         return Err("guest fault".into());
     }
