@@ -14,3 +14,6 @@ vendor/renvo_emu/target/release/rv2k-net-harness "$ELF.remu" probe "$LOG/tcp-out
 python3 scripts/check-shell.py "$LOG" "$LOG/budget.json"
 vendor/renvo_emu/target/release/rv2k-net-harness "$ELF.remu" probe "$LOG/stress/tcp-output.pcap" "$LOG/stress/tcp-run.json" shell-preempt
 python3 scripts/check-shell.py "$LOG/stress" "$LOG/budget.json"
+# Keep the complete hardware application behind the original 16KB/2KB gate.
+cargo build --locked --release --features shell,drivers --target-dir target/shell-enc
+python3 scripts/check-budget.py target/shell-enc/riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test "$LOG/enc-budget.json"

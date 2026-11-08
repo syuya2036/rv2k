@@ -260,6 +260,7 @@ impl Tcp {
                     Error::Timeout
                 },
             );
+            return;
         }
         if self.flight != 0
             && (self.peer_window != 0 || self.flight_flags & SYN != 0)
@@ -443,15 +444,9 @@ impl Tcp {
                 self.deadline = now.wrapping_add(self.rto.ticks());
             }
         }
-        if self.state == State::TimeWait {
-            if size != 0 {
-                self.ack_pending = true;
-            }
-            return Ok(());
-        }
         if matches!(
             self.state,
-            State::Closing | State::LastAck | State::CloseWait
+            State::TimeWait | State::Closing | State::LastAck | State::CloseWait
         ) {
             if size != 0 {
                 self.ack_pending = true;
