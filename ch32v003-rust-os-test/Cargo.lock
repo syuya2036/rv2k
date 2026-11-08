@@ -28,6 +28,9 @@ dependencies = [
 [[package]]
 name = "rv2k-arch"
 version = "0.1.0"
+dependencies = [
+ "rv2k-api",
+]
 
 [[package]]
 name = "rv2k-drivers"

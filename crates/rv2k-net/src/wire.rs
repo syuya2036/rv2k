@@ -151,12 +151,8 @@ impl Network {
             .tx_write(&h[..34 + size])
             .and_then(|_| d.tx_write(payload))
             .and_then(|_| d.tx_commit(now));
-        if result.is_err() {
-            let _ = d.tx_abort();
-        } else {
-            self.tcp.sent(&self.socket, out, now);
-            self.stats.transmitted = self.stats.transmitted.saturating_add(1);
-        }
-        result
+        self.complete_tx(d, result)?;
+        self.tcp.sent(&self.socket, out, now);
+        Ok(())
     }
 }

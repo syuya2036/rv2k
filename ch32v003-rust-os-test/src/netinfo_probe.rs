@@ -73,13 +73,44 @@ pub fn boot() {
 }
 #[inline(never)]
 pub fn connected() {
-    let info = net::info().expect("connected network snapshot");
-    assert_eq!(info.version, net::VERSION);
-    assert_eq!(info.state, TcpState::Established);
-    assert_eq!(info.flags, net::LINK_UP | net::PEER_PRESENT);
-    assert_eq!(info.local_ip, [192, 168, 123, 50]);
-    assert_eq!(info.peer_ip, [192, 168, 123, 1]);
-    assert_eq!(info.local_port, 1234);
-    assert!(matches!(info.peer_port, 50000 | 50001));
-    record(&info, 4);
+    net::with_info(|info| {
+        let before = *info;
+        rv2k_api::task::yield_now();
+        assert_eq!(*info, before);
+        assert_eq!(info.version, net::VERSION);
+        assert_eq!(info.state, TcpState::Established);
+        assert_eq!(info.flags, net::LINK_UP | net::PEER_PRESENT);
+        assert_eq!(info.local_ip, [192, 168, 123, 50]);
+        assert_eq!(info.peer_ip, [192, 168, 123, 1]);
+        assert_eq!(info.local_port, 1234);
+        assert!(matches!(info.peer_port, 50000 | 50001));
+        record(info, 4 | 32);
+    })
+    .expect("connected network snapshot");
+}
+
+#[inline(never)]
+pub fn callbacks() {
+    rv2k_api::mem::with_info(|info| {
+        let before = *info;
+        rv2k_api::task::yield_now();
+        assert_eq!(*info, before);
+        assert_eq!(info.version, 1);
+        assert_eq!(info.guard_failures, 0);
+    })
+    .expect("memory callback snapshot");
+    rv2k_api::task::with_info(rv2k_api::TaskId::Application, |info| {
+        let before = *info;
+        rv2k_api::task::yield_now();
+        assert_eq!(*info, before);
+        assert_eq!(info.id, rv2k_api::TaskId::Application);
+        assert_eq!(info.state, rv2k_api::TaskState::Running);
+    })
+    .expect("task callback snapshot");
+    unsafe {
+        write_volatile(
+            addr_of_mut!(APP_NET_CHECK),
+            read_volatile(addr_of!(APP_NET_CHECK)) | 8 | 16,
+        );
+    }
 }

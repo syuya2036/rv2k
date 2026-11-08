@@ -25,21 +25,17 @@ impl StackRegion {
         self.words >= GUARD_WORDS
             && (0..GUARD_WORDS).all(|i| unsafe { self.base.add(i).read_volatile() == WATERMARK })
     }
+    #[inline(never)]
     pub fn inspect(&self) -> Usage {
-        let mut guard_ok = self.words >= GUARD_WORDS;
         let mut untouched = 0;
-        for index in 0..self.words {
-            let word = unsafe { self.base.add(index).read_volatile() };
-            if index < GUARD_WORDS && word != WATERMARK {
-                guard_ok = false;
-            }
-            if index == untouched && word == WATERMARK {
-                untouched += 1;
-            }
+        while untouched < self.words
+            && unsafe { self.base.add(untouched).read_volatile() } == WATERMARK
+        {
+            untouched += 1;
         }
         Usage {
             used: ((self.words - untouched) * 4) as u16,
-            guard_ok,
+            guard_ok: self.words >= GUARD_WORDS && untouched >= GUARD_WORDS,
         }
     }
 }

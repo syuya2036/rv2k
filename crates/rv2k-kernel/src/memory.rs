@@ -8,10 +8,7 @@ pub struct Region {
 
 impl Region {
     pub fn contains(self, address: usize, len: usize) -> bool {
-        self.start <= address
-            && address
-                .checked_add(len)
-                .is_some_and(|end| address <= end && end <= self.end)
+        self.start <= address && address.checked_add(len).is_some_and(|end| end <= self.end)
     }
 }
 
@@ -32,10 +29,9 @@ impl MemoryMap {
         if !alignment.is_power_of_two() || address & (alignment - 1) != 0 {
             return Err(Error::Fault);
         }
-        if self.stack.contains(address, len)
-            || self.application.contains(address, len)
-            || (!write && self.flash.contains(address, len))
-        {
+        let end = address.checked_add(len).ok_or(Error::Fault)?;
+        let contains = |region: Region| region.start <= address && end <= region.end;
+        if contains(self.stack) || contains(self.application) || (!write && contains(self.flash)) {
             Ok(())
         } else {
             Err(Error::Fault)

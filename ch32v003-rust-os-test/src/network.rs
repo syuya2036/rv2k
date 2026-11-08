@@ -106,7 +106,7 @@ mod sockets {
     use core::ptr::addr_of;
     #[cfg(all(feature = "emulator-stop", not(feature = "shell")))]
     use core::ptr::read_volatile;
-    #[cfg(feature = "emulator-stop")]
+    #[cfg(all(feature = "emulator-stop", not(feature = "shell")))]
     use core::ptr::write_volatile;
     #[cfg(not(feature = "shell"))]
     use rv2k_api::socket;
@@ -125,16 +125,16 @@ mod sockets {
     #[cfg(all(feature = "emulator-stop", not(feature = "shell")))]
     #[no_mangle]
     static mut APP_LISTENS: u32 = 0;
-    #[cfg(feature = "emulator-stop")]
+    #[cfg(all(feature = "emulator-stop", not(feature = "shell")))]
     #[no_mangle]
     static mut APP_MEM_CHECK: u32 = 0;
-    #[cfg(feature = "emulator-stop")]
+    #[cfg(all(feature = "emulator-stop", not(feature = "shell")))]
     #[no_mangle]
     static mut APP_GP_CHECK: u32 = 0;
     // Rust requires the configured gp. Poison it only inside this assembly
     // probe: two real timer IRQs and GetPid must preserve the task value while
     // kernel code uses its own linker-defined gp. Restore it before Rust resumes.
-    #[cfg(feature = "emulator-stop")]
+    #[cfg(all(feature = "emulator-stop", not(feature = "shell")))]
     core::arch::global_asm!(
         r#"
 .section .text
@@ -233,7 +233,7 @@ ret
             let _ = s.signal(TaskId::Network, event::DRIVER_POLL);
         }
     }
-    #[cfg(feature = "emulator-stop")]
+    #[cfg(all(feature = "emulator-stop", not(feature = "shell")))]
     #[inline(never)]
     fn initialize_application() {
         #[cfg(feature = "emulator-stop")]
@@ -260,10 +260,12 @@ ret
     }
     #[inline(never)]
     pub fn application() {
-        #[cfg(feature = "emulator-stop")]
+        #[cfg(all(feature = "emulator-stop", not(feature = "shell")))]
         initialize_application();
         #[cfg(feature = "netinfo-probe")]
         crate::netinfo_probe::boot();
+        #[cfg(feature = "netinfo-probe")]
+        crate::netinfo_probe::callbacks();
         #[cfg(feature = "shell")]
         crate::shell::run();
         #[cfg(not(feature = "shell"))]

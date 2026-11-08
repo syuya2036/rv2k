@@ -40,11 +40,14 @@ mod target {
     };
     #[no_mangle]
     static mut PREEMPT_STATE: State = State::new();
+    #[cfg(feature = "preempt-timing")]
     static mut START: u32 = 0;
+    #[cfg(feature = "preempt-timing")]
     #[no_mangle]
     static mut PREEMPT_MAX_CLOCKS: u32 = 0;
     #[no_mangle]
     static mut PREEMPT_DEFERRED: u32 = 0;
+    #[cfg(feature = "preempt-timing")]
     fn count() -> u32 {
         unsafe { read_volatile(0xe000f008 as *const u32) }
     }
@@ -55,6 +58,7 @@ mod target {
     pub fn disable() -> Guard {
         crate::critical(|| unsafe {
             let state = &mut *addr_of_mut!(PREEMPT_STATE);
+            #[cfg(feature = "preempt-timing")]
             if state.depth == 0 {
                 write_volatile(addr_of_mut!(START), count());
             }
@@ -67,6 +71,7 @@ mod target {
             crate::critical(|| unsafe {
                 let state = &mut *addr_of_mut!(PREEMPT_STATE);
                 state.leave();
+                #[cfg(feature = "preempt-timing")]
                 if state.depth == 0 {
                     let elapsed = count().wrapping_sub(read_volatile(addr_of!(START)));
                     if elapsed > read_volatile(addr_of!(PREEMPT_MAX_CLOCKS)) {

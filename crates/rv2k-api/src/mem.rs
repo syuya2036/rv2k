@@ -53,6 +53,13 @@ impl MemInfo {
 
 #[cfg(target_arch = "riscv32")]
 pub fn info() -> Result<MemInfo, crate::syscall::Error> {
+    with_info(|info| *info)
+}
+
+/// Visit one copied report without a second aggregate return buffer. The view
+/// is task-local and remains valid if the callback waits or is preempted.
+#[cfg(target_arch = "riscv32")]
+pub fn with_info<T>(read: impl FnOnce(&MemInfo) -> T) -> Result<T, crate::syscall::Error> {
     use crate::syscall::{raw, Error, Number};
     let mut info = core::mem::MaybeUninit::<MemInfo>::uninit();
     unsafe {
@@ -60,6 +67,6 @@ pub fn info() -> Result<MemInfo, crate::syscall::Error> {
             Number::MemInfo as usize,
             [info.as_mut_ptr() as usize, 24, 0],
         ))?;
-        Ok(info.assume_init())
+        Ok(read(info.assume_init_ref()))
     }
 }

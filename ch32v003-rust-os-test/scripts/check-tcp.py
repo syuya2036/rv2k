@@ -104,7 +104,7 @@ if 'PREEMPT_STATE' in symbols:
     summary['preemption']={'nic_irq_injections':r['nic_irq_injections'],
         'deferred_irqs':integer('PREEMPT_DEFERRED'),
         'forced_switches':integer('PREEMPT_SWITCHES'),
-        'max_disabled_clocks':integer('PREEMPT_MAX_CLOCKS'),
+        'max_disabled_clocks':integer('PREEMPT_MAX_CLOCKS') if 'PREEMPT_MAX_CLOCKS' in symbols else None,
         'injected_clocks_per_frame':240000 if r['mode']=='tcp-preempt' else 0,
         'shared_borrow_released_before_completion':True}
 (LOG/'tcp-summary.json').write_text(json.dumps(summary,indent=2)+'\n')

@@ -4,13 +4,15 @@ pub fn sleep(ticks: u32) -> Result<(), Error> {
     unsafe { Error::decode(raw(Number::Sleep as usize, [ticks as usize, 0, 0])).map(|_| ()) }
 }
 
+#[inline(always)]
 pub fn uptime() -> Result<u64, Error> {
-    let mut value = 0u64;
+    let mut value = core::mem::MaybeUninit::<u64>::uninit();
     unsafe {
         Error::decode(raw(
             Number::Uptime as usize,
-            [&mut value as *mut u64 as usize, 8, 0],
+            [value.as_mut_ptr() as usize, 8, 0],
         ))?;
     }
-    Ok(value)
+    // A successful uptime syscall initializes all eight output bytes.
+    Ok(unsafe { value.assume_init() })
 }

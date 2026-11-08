@@ -81,30 +81,31 @@ impl Sender {
 #[inline(never)]
 fn ps(sender: &Sender, out: &mut monitor::Line) -> bool {
     for id in [TaskId::Network, TaskId::Application] {
-        let info = match task::info(id) {
-            Ok(info) => info,
+        match task::with_info(id, |info| {
+            out.task(info);
+            sender.send(out.bytes())
+        }) {
+            Ok(true) => {}
+            Ok(false) => return false,
             Err(_) => return sender.send(b"error: snapshot\r\n"),
-        };
-        out.task(&info);
-        if !sender.send(out.bytes()) {
-            return false;
         }
     }
     true
 }
 #[inline(never)]
 fn memory(sender: &Sender, out: &mut monitor::Line) -> bool {
-    let info = match mem::info() {
-        Ok(info) => info,
-        Err(_) => return sender.send(b"error: snapshot\r\n"),
-    };
-    for part in 0..3 {
-        out.memory(&info, part);
-        if !sender.send(out.bytes()) {
-            return false;
+    match mem::with_info(|info| {
+        for part in 0..3 {
+            out.memory(info, part);
+            if !sender.send(out.bytes()) {
+                return false;
+            }
         }
+        true
+    }) {
+        Ok(result) => result,
+        Err(_) => sender.send(b"error: snapshot\r\n"),
     }
-    true
 }
 #[inline(never)]
 fn uptime(sender: &Sender, out: &mut monitor::Line) -> bool {
@@ -117,17 +118,18 @@ fn uptime(sender: &Sender, out: &mut monitor::Line) -> bool {
 }
 #[inline(never)]
 fn netstat(sender: &Sender, out: &mut monitor::Line) -> bool {
-    let info = match net::info() {
-        Ok(info) => info,
-        Err(_) => return sender.send(b"error: snapshot\r\n"),
-    };
-    for part in 0..4 {
-        out.network(&info, part);
-        if !sender.send(out.bytes()) {
-            return false;
+    match net::with_info(|info| {
+        for part in 0..4 {
+            out.network(info, part);
+            if !sender.send(out.bytes()) {
+                return false;
+            }
         }
+        true
+    }) {
+        Ok(result) => result,
+        Err(_) => sender.send(b"error: snapshot\r\n"),
     }
-    true
 }
 #[inline(never)]
 fn command(sender: &Sender, out: &mut monitor::Line, command: Command) -> bool {

@@ -353,6 +353,19 @@ impl Network {
     fn drop_frame(&mut self) {
         self.stats.dropped = self.stats.dropped.saturating_add(1);
     }
+    #[inline(never)]
+    fn complete_tx(
+        &mut self,
+        device: &mut impl NetworkDevice,
+        result: Result<(), Error>,
+    ) -> Result<(), Error> {
+        if result.is_err() {
+            let _ = device.tx_abort();
+        } else {
+            self.stats.transmitted = self.stats.transmitted.saturating_add(1);
+        }
+        result
+    }
     fn receive(
         &mut self,
         d: &mut impl NetworkDevice,
@@ -451,12 +464,7 @@ impl Network {
         h[32..38].copy_from_slice(&peer.mac);
         h[38..42].copy_from_slice(&peer.ip);
         let result = d.tx_write(&h[..42]).and_then(|_| d.tx_commit(now));
-        if result.is_err() {
-            let _ = d.tx_abort();
-        } else {
-            self.stats.transmitted = self.stats.transmitted.saturating_add(1);
-        }
-        result
+        self.complete_tx(d, result)
     }
     #[cfg_attr(not(feature = "tcp"), inline(always))]
     #[cfg_attr(feature = "tcp", inline(never))]
@@ -582,12 +590,7 @@ impl Network {
             }
             d.tx_commit(now)
         })();
-        if result.is_err() {
-            let _ = d.tx_abort();
-        } else {
-            self.stats.transmitted = self.stats.transmitted.saturating_add(1);
-        }
-        result
+        self.complete_tx(d, result)
     }
 }
 

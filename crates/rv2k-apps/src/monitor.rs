@@ -8,6 +8,10 @@ pub const CAPACITY: usize = 64;
 pub struct Line {
     bytes: [u8; CAPACITY],
     used: u8,
+    // Reused decimal scratch belongs to the bounded output object, avoiding
+    // an extra 28 bytes in each interrupted task call chain.
+    words: [u16; 4],
+    digits: [u8; 20],
 }
 impl Default for Line {
     fn default() -> Self {
@@ -19,6 +23,8 @@ impl Line {
         Self {
             bytes: [0; CAPACITY],
             used: 0,
+            words: [0; 4],
+            digits: [0; 20],
         }
     }
     pub fn bytes(&self) -> &[u8] {
@@ -28,56 +34,70 @@ impl Line {
         self.used = 0;
     }
     fn push(&mut self, bytes: &[u8]) {
-        let start = self.used as usize;
-        // All layouts below are bounded, including maximal numeric field widths.
-        assert!(start + bytes.len() <= CAPACITY);
-        self.bytes[start..start + bytes.len()].copy_from_slice(bytes);
-        self.used += bytes.len() as u8;
+        append(&mut self.bytes, &mut self.used, bytes);
     }
     fn number(&mut self, value: u64) {
-        // Divide four base-65536 limbs using only the core's u32 division helper.
-        let mut words = [
+        // Divide four base-65536 limbs using the shared word arithmetic helper.
+        self.words = [
             value as u16,
             (value >> 16) as u16,
             (value >> 32) as u16,
             (value >> 48) as u16,
         ];
-        let mut digits = [0u8; 20];
-        let mut first = digits.len();
+        let mut first = self.digits.len();
         loop {
             let mut carry = 0u32;
             let mut nonzero = 0;
-            for word in words.iter_mut().rev() {
+            for word in self.words.iter_mut().rev() {
                 let combined = (carry << 16) | *word as u32;
-                *word = (combined / 10) as u16;
-                carry = combined % 10;
+                let (quotient, remainder) =
+                    rv2k_api::integer::div_rem(combined, core::num::NonZeroU32::new(10).unwrap());
+                *word = quotient as u16;
+                carry = remainder;
                 nonzero |= *word;
             }
             first -= 1;
-            digits[first] = b'0' + carry as u8;
+            self.digits[first] = b'0' + carry as u8;
             if nonzero == 0 {
                 break;
             }
         }
-        self.push(&digits[first..]);
+        append(&mut self.bytes, &mut self.used, &self.digits[first..]);
     }
     #[inline(never)]
     fn field(&mut self, name: &[u8], value: u64) {
         self.push(name);
         self.number(value);
     }
-    fn ipv4(&mut self, ip: [u8; 4]) {
-        for (index, byte) in ip.into_iter().enumerate() {
-            if index != 0 {
-                self.push(b".");
+    /// Bytes below SP encode a little-endian u16 offset; 0x80|offset is u8,
+    /// 0xa0|offset is i16. Patterns are private, fixed ASCII snapshot layouts.
+    #[inline(never)]
+    fn view(&mut self, pattern: &[u8], source: &[u8]) {
+        let mut start = 0;
+        for (index, &tag) in pattern.iter().enumerate() {
+            if !(32..128).contains(&tag) {
+                self.push(&pattern[start..index]);
+                let offset = (tag & 31) as usize;
+                let mut value = source[offset] as u16;
+                if tag & 0xe0 != 0x80 {
+                    value |= (source[offset + 1] as u16) << 8;
+                    if tag & 0xe0 == 0xa0 {
+                        if (value as i16) < 0 {
+                            self.push(b"-");
+                        }
+                        value = (value as i16).unsigned_abs();
+                    }
+                }
+                self.number(value as u64);
+                start = index + 1;
             }
-            self.number(byte as u64);
         }
+        self.push(&pattern[start..]);
     }
     #[inline(never)]
     pub fn task(&mut self, info: &TaskInfo) {
         self.clear();
-        self.field(b"pid=", info.id as u64);
+        info.with_bytes(|bytes| self.view(b"pid=\x81", bytes));
         self.push(b" state=");
         self.push(match info.state {
             TaskState::Ready => b"READY",
@@ -85,11 +105,7 @@ impl Line {
             TaskState::Blocked => b"BLOCKED",
             TaskState::Exited => b"EXITED",
         });
-        self.push(b" exit=");
-        if info.exit_code < 0 {
-            self.push(b"-");
-        }
-        self.number(info.exit_code.unsigned_abs() as u64);
+        info.with_bytes(|bytes| self.view(b" exit=\xa4", bytes));
         self.push(b"\r\n");
     }
     #[inline(never)]
@@ -101,21 +117,12 @@ impl Line {
                     b"ram=",
                     info.static_bytes as u64 + info.kernel_reserved as u64,
                 );
-                self.field(b"/", info.ram_limit as u64);
-                self.field(b" flash=", info.flash_bytes as u64);
-                self.field(b"/", info.flash_limit as u64);
+                info.with_bytes(|bytes| self.view(b"/\x12 flash=\x10/\x14", bytes));
             }
-            1 => {
-                self.field(b"static=", info.static_bytes as u64);
-                self.field(b" kernel=", info.kernel_reserved as u64);
-                self.field(b" task=", info.task_reserved as u64);
-            }
-            2 => {
-                self.field(b"stack0=", info.used[0] as u64);
-                self.field(b" stack1=", info.used[1] as u64);
-                self.field(b" kernel=", info.used[2] as u64);
-                self.field(b" guards=", info.guard_failures as u64);
-            }
+            1 => info.with_bytes(|bytes| self.view(b"static=\x02 kernel=\x04 task=\x06", bytes)),
+            2 => info.with_bytes(|bytes| {
+                self.view(b"stack0=\x08 stack1=\x0a kernel=\x0c guards=\x0e", bytes)
+            }),
             _ => return,
         }
         self.push(b"\r\n");
@@ -146,30 +153,27 @@ impl Line {
                 });
                 self.field(b" flags=", info.flags as u64);
             }
-            1 => {
-                self.push(b"local=");
-                self.ipv4(info.local_ip);
-                self.field(b":", info.local_port as u64);
-                self.push(b" peer=");
-                self.ipv4(info.peer_ip);
-                self.field(b":", info.peer_port as u64);
-            }
-            2 => {
-                self.field(b"rx=", info.received as u64);
-                self.field(b" tx=", info.transmitted as u64);
-                self.field(b" drop=", info.dropped as u64);
-                self.field(b" csum=", info.bad_checksum as u64);
-            }
-            3 => {
-                self.field(b"frag=", info.fragments as u64);
-                self.field(b" io=", info.io_errors as u64);
-                self.field(b" retrans=", info.retransmissions as u64);
-                self.field(b" reset=", info.resets as u64);
-            }
+            1 => info.with_bytes(|bytes| {
+                self.view(
+                    b"local=\x84.\x85.\x86.\x87:\x0c peer=\x88.\x89.\x8a.\x8b:\x0e",
+                    bytes,
+                )
+            }),
+            2 => info.with_bytes(|bytes| self.view(b"rx=\x10 tx=\x12 drop=\x14 csum=\x16", bytes)),
+            3 => info
+                .with_bytes(|bytes| self.view(b"frag=\x18 io=\x1a retrans=\x1c reset=\x1e", bytes)),
             _ => return,
         }
         self.push(b"\r\n");
     }
+}
+
+#[inline(never)]
+fn append(buffer: &mut [u8; CAPACITY], used: &mut u8, bytes: &[u8]) {
+    let start = *used as usize;
+    assert!(start + bytes.len() <= CAPACITY);
+    buffer[start..start + bytes.len()].copy_from_slice(bytes);
+    *used += bytes.len() as u8;
 }
 
 #[cfg(test)]
