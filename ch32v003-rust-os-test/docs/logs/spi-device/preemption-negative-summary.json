@@ -1,0 +1,17 @@
+[
+  {
+    "case": "missing-t1",
+    "detected_panic": true,
+    "instructions": 4460159
+  },
+  {
+    "case": "fault-preempt-pc",
+    "detected_panic": true,
+    "instructions": 2171073
+  },
+  {
+    "case": "fault-preempt-lock",
+    "detected_panic": true,
+    "instructions": 728836
+  }
+]

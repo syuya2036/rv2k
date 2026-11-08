@@ -1,7 +1,7 @@
 //! Streaming, polling ENC28J60 backend. No MCU-sized Ethernet frame arrays.
 use crate::{
     network::{DeviceStatus, NetworkDevice, RxFrame, TxStatus, MAX_FRAME},
-    spi::SpiBus,
+    spi::SpiDevice,
 };
 use rv2k_api::syscall::Error;
 const RX_END: u16 = 0x17ff;
@@ -36,7 +36,7 @@ pub struct Enc28j60<S> {
     tx_written: u16,
     deadline: u32,
 }
-impl<S: SpiBus> Enc28j60<S> {
+impl<S: SpiDevice> Enc28j60<S> {
     pub const fn new(spi: S) -> Self {
         Self {
             spi,
@@ -55,15 +55,9 @@ impl<S: SpiBus> Enc28j60<S> {
     pub fn into_bus(self) -> S {
         self.spi
     }
-    fn transaction<R>(&mut self, f: impl FnOnce(&mut S) -> Result<R, Error>) -> Result<R, Error> {
-        // Even a failed select is followed by deassertion. A transport failure
-        // invalidates cached state: callers must reset before reusing the NIC.
-        let result = match self.spi.select(true) {
-            Ok(()) => f(&mut self.spi),
-            Err(e) => Err(e),
-        };
-        let end = self.spi.select(false);
-        let result = result.and_then(|value| end.map(|_| value));
+    fn transfer_result<R>(&mut self, result: Result<R, Error>) -> Result<R, Error> {
+        // All bus transactions attempt to deassert CS on errors. A transport
+        // failure invalidates cached state until the next successful reset.
         if result.is_err() {
             self.ready = false;
             self.bank = 0xff;
@@ -72,14 +66,10 @@ impl<S: SpiBus> Enc28j60<S> {
     }
     #[cfg_attr(feature = "compact", inline(never))]
     fn command(&mut self, opcode: u8, value: u8, dummy: bool) -> Result<u8, Error> {
-        self.transaction(|s| {
-            s.transfer(opcode)?;
-            if dummy {
-                s.transfer(0)?;
-            }
-            s.transfer(value)
-        })
+        let result = self.spi.command(opcode, value, dummy);
+        self.transfer_result(result)
     }
+
     fn bit(&mut self, address: u8, mask: u8, set: bool) -> Result<(), Error> {
         self.command(
             (if set { 0x80 } else { 0xa0 }) | (address & 31),
@@ -144,10 +134,8 @@ impl<S: SpiBus> Enc28j60<S> {
         self.active = None;
         self.tx = Tx::Idle;
         self.generation = self.generation.wrapping_add(1);
-        self.transaction(|s| {
-            s.transfer(0xff)?;
-            Ok(())
-        })?;
+        let result = self.spi.write_buffer(0xff, &[]);
+        self.transfer_result(result)?;
         self.spi.delay_us(2000); // Errata: CLKRDY is stale after soft reset.
         self.bank = 0;
         let revision = self.read(EREVID)?;
@@ -209,13 +197,8 @@ impl<S: SpiBus> Enc28j60<S> {
         while offset < out.len() {
             let count = (RX_END as usize + 1 - position).min(out.len() - offset);
             self.word(0, position as u16)?;
-            self.transaction(|s| {
-                s.transfer(0x3a)?;
-                for byte in &mut out[offset..offset + count] {
-                    *byte = s.transfer(0)?;
-                }
-                Ok(())
-            })?;
+            let result = self.spi.read_buffer(0x3a, &mut out[offset..offset + count]);
+            self.transfer_result(result)?;
             position = 0;
             offset += count;
         }
@@ -228,7 +211,7 @@ impl<S: SpiBus> Enc28j60<S> {
         self.bit(EIR, 0x0a, false)
     }
 }
-impl<S: SpiBus> NetworkDevice for Enc28j60<S> {
+impl<S: SpiDevice> NetworkDevice for Enc28j60<S> {
     fn poll(&mut self, now: u32) -> Result<DeviceStatus, Error> {
         self.ensure()?;
         let mut tx = if self.tx == Tx::Idle {
@@ -328,11 +311,7 @@ impl<S: SpiBus> NetworkDevice for Enc28j60<S> {
             return Err(Error::Again);
         }
         self.word(0x02, TX_START)?;
-        self.transaction(|s| {
-            s.transfer(0x7a)?;
-            s.transfer(0)?;
-            Ok(())
-        })?;
+        self.command(0x7a, 0, false)?;
         self.tx = Tx::Building;
         self.tx_len = len as u16;
         self.tx_written = 0;
@@ -346,13 +325,8 @@ impl<S: SpiBus> NetworkDevice for Enc28j60<S> {
         if bytes.len() > self.tx_len as usize - self.tx_written as usize {
             return Err(Error::MessageSize);
         }
-        self.transaction(|s| {
-            s.transfer(0x7a)?;
-            for byte in bytes {
-                s.transfer(*byte)?;
-            }
-            Ok(())
-        })?;
+        let result = self.spi.write_buffer(0x7a, bytes);
+        self.transfer_result(result)?;
         self.tx_written += bytes.len() as u16;
         Ok(())
     }
@@ -382,6 +356,7 @@ impl<S: SpiBus> NetworkDevice for Enc28j60<S> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::spi::SpiBus;
     use std::{boxed::Box, vec::Vec};
     struct Model {
         regs: [[u8; 32]; 4],

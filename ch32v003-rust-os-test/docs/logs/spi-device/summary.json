@@ -1,0 +1,15 @@
+{
+  "workspace_tests": 83,
+  "clippy_all_targets_all_features": "PASS",
+  "software_spi_wire_default_and_exclusive": "PASS",
+  "default_select_transfer_cleanup_error_precedence": "PASS",
+  "selected_bus_conversion_preserves_bus": "PASS",
+  "cpu_driver_gpio_uart": "PASS (no attached NIC)",
+  "cpu_spi_mid_byte_irq": "PASS",
+  "tcp_baseline_and_irq_stress": "PASS",
+  "production_tcp_enc_flash_bytes": 15072,
+  "production_tcp_enc_reserved_ram_bytes": 1844,
+  "shell_enc_flash_overflow_bytes": 1616,
+  "physical_spi_timing_and_streaming": "UNVERIFIED",
+  "shell_normal_and_irq_stress": "PASS: same ELF budgets and packet/stack observations as PR #14"
+}
