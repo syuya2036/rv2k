@@ -1,5 +1,7 @@
 #![no_std]
 #![no_main]
+#[cfg(any(feature = "tcp", feature = "compact-probe"))]
+mod compact;
 #[cfg(feature = "drivers")]
 mod drivers;
 #[cfg(feature = "net")]

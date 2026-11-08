@@ -3,9 +3,11 @@ use core::{
     arch::asm,
     ptr::{addr_of, addr_of_mut, read_volatile, write_volatile},
 };
-use rv2k_api::{event, syscall::Error, task, TaskId};
+#[cfg(not(feature = "tcp"))]
+use rv2k_api::event;
 #[cfg(not(feature = "net"))]
 use rv2k_api::{ipc, time};
+use rv2k_api::{syscall::Error, task, TaskId};
 #[cfg(not(feature = "net"))]
 use rv2k_arch::critical;
 use rv2k_arch::{clock::Clock, frame_address, TrapFrame, FRAME_BYTES};
@@ -78,6 +80,8 @@ fn stack_bounds(id: TaskId) -> (usize, usize) {
 pub fn start() -> ! {
     unsafe {
         asm!("csrci mstatus, 8", "csrw mscratch, zero");
+        #[cfg(feature = "compact-probe")]
+        crate::compact::check();
         let mut frames = [0; 2];
         for id in 0..2 {
             let base = addr_of_mut!(TASK_STACKS).cast::<u32>().add(id * 64);
@@ -93,6 +97,8 @@ pub fn start() -> ! {
         }
         #[cfg(feature = "drivers")]
         crate::drivers::init();
+        #[cfg(feature = "tcp")]
+        crate::network::init();
         #[cfg(not(feature = "drivers"))]
         {
             // Baseline development board UART; J4M6 remapping belongs to Phase 5.
@@ -137,6 +143,7 @@ unsafe extern "C" fn rv2k_prepare_frame(temporary: *const TrapFrame) -> usize {
 
 struct GuestMemory(MemoryMap);
 impl UserMemory for GuestMemory {
+    #[cfg_attr(feature = "tcp", inline(never))]
     fn copy_out(&mut self, address: usize, bytes: &[u8], alignment: usize) -> Result<(), Error> {
         self.0.validate(address, bytes.len(), alignment, true)?;
         // The map admits only the caller's live stack above the saved frame.
@@ -145,6 +152,7 @@ impl UserMemory for GuestMemory {
         }
         Ok(())
     }
+    #[cfg_attr(feature = "tcp", inline(never))]
     fn copy_in(&mut self, address: usize, bytes: &mut [u8]) -> Result<(), Error> {
         self.0.validate(address, bytes.len(), 1, false)?;
         unsafe {
@@ -179,7 +187,20 @@ unsafe extern "C" fn rv2k_trap_dispatch(frame: *mut TrapFrame) -> usize {
             start: saved.registers[14] as usize,
             end: top,
         },
-        application: Region { start: 0, end: 0 },
+        application: {
+            #[cfg(feature = "tcp")]
+            {
+                if id == TaskId::Application {
+                    crate::network::application_region()
+                } else {
+                    Region { start: 0, end: 0 }
+                }
+            }
+            #[cfg(not(feature = "tcp"))]
+            {
+                Region { start: 0, end: 0 }
+            }
+        },
         flash: Region {
             start: 0,
             end: 16384,
@@ -192,35 +213,52 @@ unsafe extern "C" fn rv2k_trap_dispatch(frame: *mut TrapFrame) -> usize {
     ];
     #[cfg(feature = "diagnostics")]
     let snapshot = crate::diagnostics::info();
-    #[cfg(all(feature = "diagnostics", not(feature = "drivers")))]
-    let outcome = rv2k_kernel::services::dispatch_with_info(
+    #[cfg(feature = "tcp")]
+    let socket_outcome = crate::network::socket_dispatch(
         scheduler,
-        &mut *addr_of_mut!(MAILBOX),
-        &mut memory,
-        saved.registers[13] as usize,
-        args,
-        Some(&snapshot),
-    );
-    #[cfg(not(feature = "diagnostics"))]
-    let outcome = dispatch(
-        scheduler,
-        &mut *addr_of_mut!(MAILBOX),
+        &*addr_of!(MAILBOX),
         &mut memory,
         saved.registers[13] as usize,
         args,
     );
-    #[cfg(feature = "drivers")]
-    let outcome = rv2k_kernel::services::dispatch_with_devices(
-        scheduler,
-        &mut *addr_of_mut!(MAILBOX),
-        &mut memory,
-        saved.registers[13] as usize,
-        args,
-        rv2k_kernel::services::DeviceServices {
-            console: crate::drivers::console(),
-            info: Some(&snapshot),
-        },
-    );
+    macro_rules! standard_dispatch {
+        () => {{
+            #[cfg(all(feature = "diagnostics", not(feature = "drivers")))]
+            let outcome = rv2k_kernel::services::dispatch_with_info(
+                scheduler,
+                &mut *addr_of_mut!(MAILBOX),
+                &mut memory,
+                saved.registers[13] as usize,
+                args,
+                Some(&snapshot),
+            );
+            #[cfg(not(feature = "diagnostics"))]
+            let outcome = dispatch(
+                scheduler,
+                &mut *addr_of_mut!(MAILBOX),
+                &mut memory,
+                saved.registers[13] as usize,
+                args,
+            );
+            #[cfg(feature = "drivers")]
+            let outcome = rv2k_kernel::services::dispatch_with_devices(
+                scheduler,
+                &mut *addr_of_mut!(MAILBOX),
+                &mut memory,
+                saved.registers[13] as usize,
+                args,
+                rv2k_kernel::services::DeviceServices {
+                    console: crate::drivers::console(),
+                    info: Some(&snapshot),
+                },
+            );
+            outcome
+        }};
+    }
+    #[cfg(feature = "tcp")]
+    let outcome = socket_outcome.unwrap_or_else(|| standard_dispatch!());
+    #[cfg(not(feature = "tcp"))]
+    let outcome = standard_dispatch!();
     match outcome {
         Outcome::Complete(result) => {
             saved.registers[8] = result as u32;
@@ -231,6 +269,8 @@ unsafe extern "C" fn rv2k_trap_dispatch(frame: *mut TrapFrame) -> usize {
             scheduler.suspend(frame as usize, action);
             if matches!(action, Action::Exit(_)) {
                 (&mut *addr_of_mut!(MAILBOX)).task_exited(scheduler, id);
+                #[cfg(feature = "tcp")]
+                crate::network::exited(scheduler, id);
             }
             select_next()
         }
@@ -252,7 +292,9 @@ extern "C" fn task_trampoline() -> ! {
         #[cfg(not(feature = "net"))]
         task_a();
     } else {
-        #[cfg(feature = "net")]
+        #[cfg(feature = "tcp")]
+        crate::network::application();
+        #[cfg(all(feature = "net", not(feature = "tcp")))]
         {
             let _ = event::wait(event::NET_CLOSED, event::FOREVER);
         }

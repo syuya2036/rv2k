@@ -1,0 +1,95 @@
+{
+  "host_tests": 55,
+  "fmt": "PASS",
+  "clippy_all_features": "PASS",
+  "virtual_nic_contract": "PASS",
+  "phase6": {
+    "instructions": 5058523,
+    "frames_in": 21,
+    "frames_out": 12,
+    "stats_rx_tx_drop_bad_checksum_fragment_io": [
+      21,
+      12,
+      9,
+      2,
+      1,
+      0
+    ],
+    "stack_used_bytes_tasks_kernel": [
+      200,
+      84,
+      148
+    ],
+    "static_ram_bytes": 1024,
+    "kernel_stack_reserved_bytes": 256,
+    "syscalls": 49,
+    "timer_irqs": 20,
+    "mac_live_ping": "UNVERIFIED",
+    "physical_enc28j60": "UNVERIFIED"
+  },
+  "phase6_virtual_budget": {
+    "flash_bytes": 10720,
+    "flash_limit": 16384,
+    "static_ram_bytes": 1024,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 1280,
+    "ram_limit": 2048
+  },
+  "phase6_enc_budget": {
+    "flash_bytes": 14824,
+    "flash_limit": 16384,
+    "static_ram_bytes": 1072,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 1328,
+    "ram_limit": 2048
+  },
+  "drivers": {
+    "spi_packets": [
+      [
+        255
+      ],
+      [
+        191,
+        3
+      ],
+      [
+        159,
+        3
+      ],
+      [
+        18,
+        0
+      ]
+    ],
+    "spi_rising_edges": 56,
+    "nic_attached": false,
+    "instructions": 1870133,
+    "syscalls": 31,
+    "timer_irqs": 6,
+    "idle_polls": 3031,
+    "uptime_ticks": 7,
+    "wait_results": 127,
+    "stack_used_bytes_tasks_kernel": [
+      184,
+      184,
+      204
+    ],
+    "static_ram_bytes": 848,
+    "kernel_stack_reserved_bytes": 256
+  },
+  "diagnostics": {
+    "instructions": 1724000,
+    "syscalls": 30,
+    "timer_irqs": 6,
+    "idle_polls": 3076,
+    "uptime_ticks": 7,
+    "wait_results": 127,
+    "stack_used_bytes_tasks_kernel": [
+      184,
+      184,
+      200
+    ],
+    "static_ram_bytes": 768,
+    "kernel_stack_reserved_bytes": 256
+  }
+}

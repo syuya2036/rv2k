@@ -60,8 +60,8 @@ Phase 6では仮想Ethernet、ARP・IPv4・ICMPのRV32ECフレーム注入試験
 21フレームの正常応答・不正破棄とスタック番兵を確認し、実機NIC構成も容量内でリンクしました。
 Macからの実pingはhost adapter経路が未検証のためPARTIALです。
 試験範囲は [ネットワーク検証](ch32v003-rust-os-test/docs/network.md) を参照してください。
-Phase 7では単一接続TCPの状態機械・固定Socket領域・syscall境界の基礎をホスト上で検証中です。
-Ethernet/ゲストへの統合と通信試験は未完了です。[TCP実装状況](ch32v003-rust-os-test/docs/tcp.md) を参照してください。
+Phase 7では単一接続TCPをEthernet/guestへ接続し、公開Socket APIによるecho・再送・2接続をRenvoで検証しました。
+仮想NIC版は容量内ですが、ENC28J60版はFlash超過のためPhase 7は未完了です。[TCP実装状況](ch32v003-rust-os-test/docs/tcp.md) を参照してください。
 プリエンプション、CH32V003実機での動作はこれからです。
 実測ログ・再現手順は [検証用プロジェクト](ch32v003-rust-os-test/README.md) と [協調マルチタスク検証](ch32v003-rust-os-test/docs/cooperative.md) を参照してください。
 
