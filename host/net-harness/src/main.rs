@@ -1,5 +1,7 @@
 mod device;
 mod pcap;
+mod peer;
+mod shell_probe;
 mod tcp_probe;
 use device::{Nic, State};
 use remu_core::{RunLimits, StopReason};
@@ -19,8 +21,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if args.len() < 6 {
         return Err("usage: net-harness ELF INPUT.pcap OUTPUT.pcap REPORT.json replay | ELF BIND_ADDR OUTPUT.pcap REPORT.json udp PEER_ADDR SECONDS".into());
     }
-    if !matches!(args[5].as_str(), "replay" | "udp" | "tcp" | "tcp-preempt") {
-        return Err("mode must be replay, udp, tcp or tcp-preempt".into());
+    if !matches!(
+        args[5].as_str(),
+        "replay" | "udp" | "tcp" | "tcp-preempt" | "shell" | "shell-preempt"
+    ) {
+        return Err("mode must be replay, udp, tcp[-preempt] shell[-preempt]".into());
     }
     let image = FirmwareImage::parse(&fs::read(&args[1])?)?;
     let mut machine = RiscVMachine::new(TargetId::Ch32v003)?;
@@ -32,9 +37,11 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Box::new(Nic(state.clone())),
     )?;
     machine.load_firmware(&image)?;
-    let preemption_stress = args[5] == "tcp-preempt";
+    let preemption_stress = matches!(args[5].as_str(), "tcp-preempt" | "shell-preempt");
     let mut probe = if matches!(args[5].as_str(), "tcp" | "tcp-preempt") {
-        Some(tcp_probe::Probe::new())
+        Some(peer::Peer::Tcp(tcp_probe::Probe::new()))
+    } else if matches!(args[5].as_str(), "shell" | "shell-preempt") {
+        Some(peer::Peer::Shell(shell_probe::Probe::new()))
     } else {
         None
     };
@@ -91,14 +98,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
                 let listens = word("APP_LISTENS")?;
                 let irqs = word("TIMER_IRQS")?;
-                probe.ready(listens, irqs);
+                let (accepts, request_bytes) = if probe.is_shell() {
+                    (word("APP_SHELL_ACCEPTS")?, word("APP_SHELL_INPUT_BYTES")?)
+                } else {
+                    (0, 0)
+                };
+                probe.observe(peer::Observation {
+                    listens,
+                    irqs,
+                    accepts,
+                    request_bytes,
+                    released: state.borrow().released,
+                });
             }
             let ticks = probe.take_advance();
             if ticks != 0 {
                 machine.advance_time(ticks as u64 * 240_000)?;
             }
             if state.borrow().empty() {
-                if let Some(frame) = probe.queue.pop_front() {
+                if let Some(frame) = probe.queue().pop_front() {
                     state.borrow_mut().inject(frame)?;
                     if preemption_stress {
                         nic_irq_armed = true;
@@ -106,7 +124,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
                     }
                 }
             }
-            if probe.done() && probe.queue.is_empty() && state.borrow().empty() {
+            if probe.done() && probe.queue().is_empty() && state.borrow().empty() {
                 stopped = true;
             }
         } else if let Some(socket) = &socket {
@@ -187,7 +205,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(probe) = &probe {
         pcap::write(
             &Path::new(&args[3]).with_extension("rx.pcap"),
-            &probe.inputs,
+            probe.inputs(),
         )?;
     }
     let symbols: BTreeMap<_, _> = image

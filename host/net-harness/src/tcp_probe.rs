@@ -24,6 +24,17 @@ fn checksum(b: &[u8]) -> u16 {
     !(sum as u16)
 }
 fn frame(port: u16, seq: u32, ack: u32, flags: u8, body: &[u8]) -> Vec<u8> {
+    frame_to(port, 1234, seq, ack, flags, 128, body)
+}
+pub(crate) fn frame_to(
+    port: u16,
+    remote: u16,
+    seq: u32,
+    ack: u32,
+    flags: u8,
+    window: u16,
+    body: &[u8],
+) -> Vec<u8> {
     let options = if flags & SYN != 0 {
         &[2, 4, 0, 24, 30, 4, 1, 2, 1, 0, 0, 0][..]
     } else {
@@ -42,12 +53,12 @@ fn frame(port: u16, seq: u32, ack: u32, flags: u8, body: &[u8]) -> Vec<u8> {
     let sum = checksum(&f[14..34]);
     f[24..26].copy_from_slice(&sum.to_be_bytes());
     f[34..36].copy_from_slice(&port.to_be_bytes());
-    f[36..38].copy_from_slice(&1234u16.to_be_bytes());
+    f[36..38].copy_from_slice(&remote.to_be_bytes());
     f[38..42].copy_from_slice(&seq.to_be_bytes());
     f[42..46].copy_from_slice(&ack.to_be_bytes());
     f[46] = ((20 + options.len()) / 4) as u8 * 16;
     f[47] = flags;
-    f[48..50].copy_from_slice(&128u16.to_be_bytes());
+    f[48..50].copy_from_slice(&window.to_be_bytes());
     f[54..54 + options.len()].copy_from_slice(options);
     f[54 + options.len()..34 + tcp_len].copy_from_slice(body);
     let mut pseudo = HOST.to_vec();
@@ -58,6 +69,58 @@ fn frame(port: u16, seq: u32, ack: u32, flags: u8, body: &[u8]) -> Vec<u8> {
     let sum = checksum(&pseudo);
     f[50..52].copy_from_slice(&sum.to_be_bytes());
     f
+}
+pub(crate) struct Packet<'a> {
+    pub seq: u32,
+    pub ack: u32,
+    pub flags: u8,
+    pub window: u16,
+    pub body: &'a [u8],
+}
+pub(crate) fn packet(f: &[u8], local: u16, remote: u16) -> Result<Packet<'_>, String> {
+    if f.len() < 54
+        || f[..6] != HOST_MAC
+        || f[6..12] != GUEST_MAC
+        || f[12..14] != [8, 0]
+        || f[23] != 6
+    {
+        return Err("unexpected guest frame".into());
+    }
+    let ihl = (f[14] & 15) as usize * 4;
+    let total = word(&f[16..18]) as usize;
+    if !(20..=60).contains(&ihl)
+        || total < ihl + 20
+        || 14 + total > f.len()
+        || checksum(&f[14..14 + ihl]) != 0
+        || f[26..30] != GUEST
+        || f[30..34] != HOST
+    {
+        return Err("invalid IPv4".into());
+    }
+    let tcp = &f[14 + ihl..14 + total];
+    let size = (tcp[12] >> 4) as usize * 4;
+    if !(20..=60).contains(&size)
+        || size > tcp.len()
+        || word(tcp) != remote
+        || word(&tcp[2..]) != local
+    {
+        return Err("invalid TCP tuple/header".into());
+    }
+    let mut pseudo = GUEST.to_vec();
+    pseudo.extend_from_slice(&HOST);
+    pseudo.extend_from_slice(&[0, 6]);
+    pseudo.extend_from_slice(&(tcp.len() as u16).to_be_bytes());
+    pseudo.extend_from_slice(tcp);
+    if checksum(&pseudo) != 0 {
+        return Err("invalid TCP checksum".into());
+    }
+    Ok(Packet {
+        seq: long(&tcp[4..]),
+        ack: long(&tcp[8..]),
+        flags: tcp[13],
+        window: word(&tcp[14..]),
+        body: &tcp[size..],
+    })
 }
 pub struct Probe {
     pub queue: VecDeque<Vec<u8>>,

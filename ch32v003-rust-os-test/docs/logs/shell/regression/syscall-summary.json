@@ -1,0 +1,16 @@
+{
+  "instructions": 25889,
+  "traps": 70,
+  "counters": [
+    8,
+    3
+  ],
+  "call_mask": "0x3ffff",
+  "stack_used_bytes_tasks_kernel": [
+    236,
+    236,
+    100
+  ],
+  "static_ram_bytes": 640,
+  "kernel_stack_reserved_bytes": 256
+}
