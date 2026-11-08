@@ -1,0 +1,24 @@
+{
+  "instructions": 5059017,
+  "frames_in": 21,
+  "frames_out": 12,
+  "stats_rx_tx_drop_bad_checksum_fragment_io": [
+    21,
+    12,
+    9,
+    2,
+    1,
+    0
+  ],
+  "stack_used_bytes_tasks_kernel": [
+    204,
+    120,
+    204
+  ],
+  "static_ram_bytes": 1024,
+  "kernel_stack_reserved_bytes": 256,
+  "syscalls": 49,
+  "timer_irqs": 20,
+  "mac_live_ping": "UNVERIFIED",
+  "physical_enc28j60": "UNVERIFIED"
+}

@@ -1,6 +1,6 @@
 # rv2k 2.0 設計書
 
-状態: Phase 4まで検証済み。Phase 5はsoftware driver/model/RV32ECがPASS、J4M6実機未検証のためPARTIAL。Phase 6以降は設計案。Phase 0/1の実測を土台に、後続の契約と検証条件を定める。設計上の予算やAPIを実装済みと解釈しない。リリース名は **rv2k 2.0** に統一する。
+状態: Phase 4まで検証済み。Phase 5はsoftware driver/model/RV32ECがPASS、J4M6実機未検証のためPARTIAL。Phase 6はvirtual NICとARP/IPv4/ICMPのhost/RV32ECフレーム注入がPASS、Mac実ping未検証のためPARTIAL。Phase 7以降は設計案。Phase 0/1の実測を土台に、後続の契約と検証条件を定める。設計上の予算やAPIを実装済みと解釈しない。リリース名は **rv2k 2.0** に統一する。
 
 ## 1. 目的と決定事項
 

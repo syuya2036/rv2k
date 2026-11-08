@@ -37,7 +37,7 @@ HTTPのメッセージ解析は [RFC 9112](https://www.rfc-editor.org/rfc/rfc911
 
 ## 現在地
 
-**Phase 4まで検証済み。Phase 5のソフトウェア基盤を実装し、実機ゲートを残してPhase 6へ進みます。**
+**Phase 4まで検証済み。Phase 5・6のソフトウェア基盤を実装し、実機・Mac接続ゲートを残しています。**
 Apple Silicon macOS上で、RV32EC / ILP32EのRustプログラムをビルドし、Renvoで実命令を実行しました。
 
 - 起動処理、RAM更新、UART出力、SysTick割り込みと復帰。
@@ -56,7 +56,11 @@ Phase 4では公開mem snapshot、番兵監視、panic/illegal trap診断、実�
 Phase 5ではUART syscall、ピン所有権、software SPI、ENC28J60 streaming driverを追加しました。
 ホストモデルとRenvoのMMIO検証はPASS、J4M6＋NIC実機は未保有のためPhase 5全体はPARTIALです。
 試験範囲と未検証条件は [ドライバ検証](ch32v003-rust-os-test/docs/drivers.md) に記録しています。
-ネットワーク、プリエンプション、CH32V003実機での動作はこれからです。
+Phase 6では仮想Ethernet、ARP・IPv4・ICMPのRV32ECフレーム注入試験を追加しました。
+21フレームの正常応答・不正破棄とスタック番兵を確認し、実機NIC構成も容量内でリンクしました。
+Macからの実pingはhost adapter経路が未検証のためPARTIALです。
+試験範囲は [ネットワーク検証](ch32v003-rust-os-test/docs/network.md) を参照してください。
+TCP、プリエンプション、CH32V003実機での動作はこれからです。
 実測ログ・再現手順は [検証用プロジェクト](ch32v003-rust-os-test/README.md) と [協調マルチタスク検証](ch32v003-rust-os-test/docs/cooperative.md) を参照してください。
 
 ## 最終アーキテクチャ
@@ -86,8 +90,8 @@ MMUによる分離がないため、この境界は論理的なAPI境界であ�
 |3 — 検証済み|タイマー・IPC・同期|monotonic tick、sleep、イベント、固定待機情報、取りこぼしのない通知|
 |4 — 検証済み|メモリ管理・障害処理|静的割当、スタック監視、panic・トラップ診断、RAM/Flash予算の自動検査|
 |5 — PARTIAL|デバイスドライバ基盤|UART・GPIO・SPI・NetworkDevice、J4M6の配線とソフトウェアSPIを検証|
-|6 — 次に実装|仮想Ethernet・ARP・IPv4・ICMP|フレーム注入試験とMacからの実ping。ホスト接続経路も検証|
-|7|自作TCP/IP・Socket API|単一接続、listen / recv / send / close、再送・重複・切断・タイムアウト試験|
+|6 — PARTIAL|仮想Ethernet・ARP・IPv4・ICMP|フレーム注入試験とMacからの実ping。ホスト接続経路も検証|
+|7 — 次に実装|自作TCP/IP・Socket API|単一接続、listen / recv / send / close、再送・重複・切断・タイムアウト試験|
 |8|プリエンプティブスケジューラ|SysTick強制切り替え、非再入カーネル、同期と待機の競合試験|
 |9|HTTP Echo APIサーバー|POST /echo、最大64バイトの本文一致、分割受信、タイムアウト、再接続をMacから検証|
 |10|TCPシェル・OSユーティリティ|TCP接続からps / mem / uptime / netstatを実行し、公開APIによるOS状態取得、分割入力、切断・再接続を検証|

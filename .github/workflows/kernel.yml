@@ -9,6 +9,7 @@ jobs:
         with:
           components: rustfmt, clippy
       - run: cargo fmt --all -- --check
+      - run: rustfmt --edition 2021 --check host/net-harness/src/*.rs
       - run: cargo clippy --workspace --all-targets -- -D warnings
       - run: cargo test --workspace --locked
   rv32ec:
@@ -21,6 +22,7 @@ jobs:
       - uses: dtolnay/rust-toolchain@stable
       - run: rustup toolchain install nightly-2026-03-12 --profile minimal --component rust-src --component llvm-tools-preview
       - run: bash scripts/setup-emulator.sh
+      - run: bash scripts/network.sh
       - run: bash scripts/drivers.sh
       - run: bash scripts/diagnostics.sh
       - run: python3 scripts/diagnostics-negative.py

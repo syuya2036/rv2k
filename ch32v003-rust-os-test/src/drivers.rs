@@ -1,10 +1,12 @@
 //! Driver integration probe. Renvo has GPIO/UART but no ENC on these SPI pins.
 use core::ptr::{addr_of_mut, write_volatile};
 use rv2k_api::syscall::Error;
+#[cfg(not(feature = "net"))]
+use rv2k_drivers::network::NetworkDevice;
 use rv2k_drivers::{
     board::{self, Ch32Pins, Ch32Tx, Pad},
     enc28j60::Enc28j60,
-    network::{NetworkDevice, MAX_FRAME},
+    network::MAX_FRAME,
     spi::SoftwareSpi,
     uart::Console,
 };
@@ -25,6 +27,10 @@ impl ConsoleWrite for UartService {
         self.0.write_from(len, |out| memory.copy_in(address, out))
     }
 }
+#[cfg(feature = "net")]
+pub unsafe fn network() -> &'static mut Enc28j60<SoftwareSpi<Ch32Pins>> {
+    (&mut *addr_of_mut!(NIC)).as_mut().unwrap()
+}
 pub unsafe fn console() -> &'static mut UartService {
     (&mut *addr_of_mut!(UART)).as_mut().unwrap()
 }
@@ -39,24 +45,27 @@ pub unsafe fn init() {
     let status = match nic.reset([2, 0, 0, 0, 0, 1]) {
         Err(Error::Io) => 1, // expected on Renvo: no NIC, floating/zero MISO
         Ok(_) => {
-            // Keep all streaming driver methods in the RV32EC link. Actual RX/TX
-            // execution requires an attached NIC and is a separate hardware gate.
-            let _ = nic.poll(0);
-            if let Ok(Some(frame)) = nic.rx_begin() {
-                let mut scratch = [0u8; 16];
-                let count = (frame.len as usize).min(scratch.len());
-                let _ = nic.rx_read_at(frame, 0, &mut scratch[..count]);
-                let _ = nic.rx_release(frame);
-            }
-            let mut header = [0u8; 14];
-            header[..6].fill(0xff);
-            header[6] = 2;
-            header[11] = 1;
-            header[12..].copy_from_slice(&[0x88, 0xb5]);
-            if nic.tx_begin(header.len()).is_ok() {
-                let _ = nic.tx_write(&header);
-                let _ = nic.tx_commit(0);
-                let _ = nic.tx_abort();
+            #[cfg(not(feature = "net"))]
+            {
+                // Keep all streaming driver methods in the RV32EC link. Actual RX/TX
+                // execution requires an attached NIC and is a separate hardware gate.
+                let _ = nic.poll(0);
+                if let Ok(Some(frame)) = nic.rx_begin() {
+                    let mut scratch = [0u8; 16];
+                    let count = (frame.len as usize).min(scratch.len());
+                    let _ = nic.rx_read_at(frame, 0, &mut scratch[..count]);
+                    let _ = nic.rx_release(frame);
+                }
+                let mut header = [0u8; 14];
+                header[..6].fill(0xff);
+                header[6] = 2;
+                header[11] = 1;
+                header[12..].copy_from_slice(&[0x88, 0xb5]);
+                if nic.tx_begin(header.len()).is_ok() {
+                    let _ = nic.tx_write(&header);
+                    let _ = nic.tx_commit(0);
+                    let _ = nic.tx_abort();
+                }
             }
             2
         }

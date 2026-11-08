@@ -7,6 +7,7 @@ rv2k-api = { path = "../crates/rv2k-api" }
 rv2k-kernel = { path = "../crates/rv2k-kernel" }
 rv2k-arch = { path = "../crates/rv2k-arch" }
 rv2k-drivers = { path = "../crates/rv2k-drivers" }
+rv2k-net = { path = "../crates/rv2k-net", optional = true }
 [profile.release]
 opt-level = "s"
 lto = true
@@ -24,6 +25,7 @@ syscall-kernel-fault = ["syscall"]
 services = ["rv2k-arch/timer"]
 diagnostics = ["services"]
 drivers = ["diagnostics"]
+net = ["diagnostics", "dep:rv2k-net"]
 emulator-stop = []
 fault-canary = ["diagnostics"]
 fault-irq-canary = ["diagnostics"]

@@ -3,8 +3,12 @@ use core::{
     arch::asm,
     ptr::{addr_of, addr_of_mut, read_volatile, write_volatile},
 };
-use rv2k_api::{event, ipc, syscall::Error, task, time, TaskId};
-use rv2k_arch::{clock::Clock, critical, frame_address, TrapFrame, FRAME_BYTES};
+use rv2k_api::{event, syscall::Error, task, TaskId};
+#[cfg(not(feature = "net"))]
+use rv2k_api::{ipc, time};
+#[cfg(not(feature = "net"))]
+use rv2k_arch::critical;
+use rv2k_arch::{clock::Clock, frame_address, TrapFrame, FRAME_BYTES};
 use rv2k_kernel::{
     ipc::Mailbox,
     memory::{MemoryMap, Region, UserMemory},
@@ -17,8 +21,10 @@ use rv2k_kernel::services::dispatch;
 
 const WATERMARK: u32 = 0xa5a5a5a5;
 #[cfg(feature = "diagnostics")]
+#[cfg(not(feature = "net"))]
 const FIRST_MESSAGE: &[u8] = &[b'X'; 64];
 #[cfg(not(feature = "diagnostics"))]
+#[cfg(not(feature = "net"))]
 const FIRST_MESSAGE: &[u8] = b"hello";
 #[repr(C, align(16))]
 struct Stack([u32; 64]);
@@ -241,19 +247,29 @@ extern "C" fn rv2k_kernel_fault(_sp: usize) -> ! {
 
 extern "C" fn task_trampoline() -> ! {
     if task::id() == TaskId::Network {
+        #[cfg(feature = "net")]
+        crate::network::task();
+        #[cfg(not(feature = "net"))]
         task_a();
     } else {
+        #[cfg(feature = "net")]
+        {
+            let _ = event::wait(event::NET_CLOSED, event::FOREVER);
+        }
+        #[cfg(not(feature = "net"))]
         task_b();
     }
     task::exit(0)
 }
 
+#[cfg(not(feature = "net"))]
 fn checked<T>(result: Result<T, Error>, code: u32) -> T {
     match result {
         Ok(value) => value,
         Err(_) => stop(code),
     }
 }
+#[cfg(not(feature = "net"))]
 fn mark(bit: u32) {
     unsafe {
         write_volatile(
@@ -271,6 +287,7 @@ fn mark(bit: u32) {
     ),
     allow(unreachable_code)
 )]
+#[cfg(not(feature = "net"))]
 fn task_a() {
     #[cfg(feature = "drivers")]
     if checked(rv2k_api::console::write(b"UART via API\n"), 94) != 13 {
@@ -387,6 +404,7 @@ fn task_a() {
         write_volatile(addr_of_mut!(COUNTERS).cast::<u32>(), 1);
     }
 }
+#[cfg(not(feature = "net"))]
 fn task_b() {
     if checked(event::wait(event::NET_RX, event::FOREVER), 77) != event::NET_RX {
         stop(78);
