@@ -1,0 +1,13 @@
+{
+  "status": "UNVERIFIED",
+  "authorization": "User permitted the exact sudo -n bridge 60 command",
+  "command": "sudo -n /Users/shuya/Documents/personal/rv2k/host/vmnet/target/bridge 60",
+  "exit_code": 1,
+  "stderr": "sudo: a password is required",
+  "vmnet_bridge_started": false,
+  "subnet_route_created": false,
+  "ping_executed": false,
+  "guest_transport": "UDP harness exited normally at its 40-second duration with zero RX and TX; no live-network success is inferred",
+  "physical_board": "Not owned",
+  "guest_log": "guest Halted: 135378468 instructions, 0 RX, 0 TX"
+}
