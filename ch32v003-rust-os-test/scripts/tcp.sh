@@ -4,7 +4,7 @@ cd "$(dirname "$0")/.."
 ROOT="$PWD"
 mkdir -p docs/logs
 (cd ..; cargo +stable build --locked --release --manifest-path host/net-harness/Cargo.toml --target-dir "$ROOT/vendor/renvo_emu/target")
-export RUSTFLAGS='-C opt-level=z -C target-feature=+relax -C link-arg=--defsym=_kernel_stack_size=256 -C link-arg=-Tmemory.x -C link-arg=--icf=all -C link-arg=--relax -C link-arg=--relax-gp'
+export RUSTFLAGS='-Z inline-mir=yes -C opt-level=z -C target-feature=+relax -C link-arg=--defsym=_kernel_stack_size=256 -C link-arg=-Tmemory.x -C link-arg=--icf=all -C link-arg=--relax -C link-arg=--relax-gp'
 BIN="$(rustc --print sysroot)/lib/rustlib/$(rustc -vV | sed -n 's/^host: //p')/bin"
 cargo build --locked --release --features compact-probe,emulator-stop --target-dir target/compact
 COMPACT=target/compact/riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test

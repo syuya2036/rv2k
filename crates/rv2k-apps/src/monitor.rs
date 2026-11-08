@@ -47,18 +47,18 @@ impl Line {
         let mut first = self.digits.len();
         loop {
             let mut carry = 0u32;
-            let mut nonzero = 0;
             for word in self.words.iter_mut().rev() {
                 let combined = (carry << 16) | *word as u32;
                 let (quotient, remainder) =
                     rv2k_api::integer::div_rem(combined, core::num::NonZeroU32::new(10).unwrap());
                 *word = quotient as u16;
                 carry = remainder;
-                nonzero |= *word;
             }
             first -= 1;
             self.digits[first] = b'0' + carry as u8;
-            if nonzero == 0 {
+            // Inspect the stored limbs after division rather than keeping an
+            // OR accumulator live across every helper call on RV32E.
+            if self.words[0] | self.words[1] | self.words[2] | self.words[3] == 0 {
                 break;
             }
         }

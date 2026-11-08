@@ -16,7 +16,7 @@ output = Path('target/diagnostic-faults') / (prefix.rstrip('-') if prefix else '
 output.mkdir(parents=True, exist_ok=True)
 env = dict(os.environ, RUSTFLAGS='-C link-arg=--defsym=_kernel_stack_size=256 -C link-arg=-Tmemory.x')
 if args.tcp_build_profile or args.preempt_build_profile:
-    env['RUSTFLAGS'] += ' -C opt-level=z -C target-feature=+relax -C link-arg=--icf=all -C link-arg=--relax -C link-arg=--relax-gp'
+    env['RUSTFLAGS'] += ' -Z inline-mir=yes -C opt-level=z -C target-feature=+relax -C link-arg=--icf=all -C link-arg=--relax -C link-arg=--relax-gp'
 if args.preempt_build_profile:
     env['RUSTFLAGS'] += ' -C llvm-args=-riscv-enable-global-merge=false'
 sysroot = subprocess.check_output(['rustc','--print','sysroot'],text=True).strip()
