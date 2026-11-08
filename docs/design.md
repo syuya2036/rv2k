@@ -1,6 +1,6 @@
 # rv2k 2.0 設計書
 
-状態: Phase 2のsyscall基盤を実装・検証済み。Phase 3以降は設計案。Phase 0/1の実測を土台に、後続の契約と検証条件を定める。設計上の予算やAPIを実装済みと解釈しない。リリース名は **rv2k 2.0** に統一する。
+状態: Phase 3のタイマー・IPCまで実装・検証済み。Phase 4以降は設計案。Phase 0/1の実測を土台に、後続の契約と検証条件を定める。設計上の予算やAPIを実装済みと解釈しない。リリース名は **rv2k 2.0** に統一する。
 
 ## 1. 目的と決定事項
 
@@ -183,6 +183,8 @@ Phase 8のSysTickはタスク実行中にrescheduleを要求する。カーネ�
 SocketRecv/SendとUART Writeは初期APIでは非ブロッキング。カーネルはユーザーのslice/referenceやポインタをsyscall復帰後まで保持しない。Sendは最大128バイトを固定TX領域へコピーして返す。Recvは保持済みRXデータからcapacityまでコピーして返す。未成立ならAgain、ユーザー側wrapperがイベント待機して再試行する。部分送受信を正常な結果とし、メッセージ境界をTCPへ仮定しない。
 
 ## 8. 時間・イベント・IPC
+
+Phase 3の実装・実測と実機の残ゲートは [サービス検証](../ch32v003-rust-os-test/docs/services.md) を参照。
 
 タイマーベース目標は10ms tick。u64 uptimeと、下位u32のdeadlineを使用する。相対timeoutは2^31 tick未満とし、wrapを考慮した差分比較を行う。0は非待機、0xffffffffは無期限待機を示す予約値。SysTickの実時間精度、マスク中の経過時刻補正、カウンタwrapを別々に検証する。
 

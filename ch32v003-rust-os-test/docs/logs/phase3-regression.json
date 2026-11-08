@@ -1,0 +1,74 @@
+{
+  "coop": {
+    "instructions": 6112,
+    "counters": [
+      8,
+      8
+    ],
+    "switches": 32,
+    "stack_bytes_each": 256,
+    "stack_watermark_used_bytes": [
+      172,
+      172
+    ],
+    "local_addresses": [
+      "0x20000120",
+      "0x20000220"
+    ],
+    "static_ram_bytes": 592,
+    "boot_stack_reserved_bytes": 512,
+    "status": "0x600d",
+    "uart": "ABABABABABABABAB\nCOOP OK\n"
+  },
+  "scheduler": {
+    "instructions": 6836,
+    "counters": [
+      8,
+      3
+    ],
+    "exit_codes": [
+      0,
+      -7
+    ],
+    "selections": 23,
+    "task_stack_used_bytes": [
+      108,
+      108
+    ],
+    "static_ram_bytes": 640,
+    "kernel_stack_reserved_bytes": 512
+  },
+  "syscall": {
+    "instructions": 26401,
+    "traps": 70,
+    "counters": [
+      8,
+      3
+    ],
+    "call_mask": "0x3ffff",
+    "stack_used_bytes_tasks_kernel": [
+      236,
+      236,
+      148
+    ],
+    "static_ram_bytes": 640,
+    "kernel_stack_reserved_bytes": 256
+  },
+  "syscall-negative": [
+    {
+      "case": "syscall-bad-sp",
+      "status": 22,
+      "instructions": 2280
+    },
+    {
+      "case": "syscall-kernel-fault",
+      "status": 26,
+      "instructions": 2171
+    },
+    {
+      "case": "syscall-missing-t1",
+      "status": 55,
+      "instructions": 10418
+    }
+  ]
+}

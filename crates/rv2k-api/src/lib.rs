@@ -1,8 +1,13 @@
 #![no_std]
 
+pub mod event;
+#[cfg(target_arch = "riscv32")]
+pub mod ipc;
 pub mod syscall;
 #[cfg(target_arch = "riscv32")]
 pub mod task;
+#[cfg(target_arch = "riscv32")]
+pub mod time;
 
 #[repr(u8)]
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

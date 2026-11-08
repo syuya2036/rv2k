@@ -47,6 +47,9 @@ impl MemoryMap {
 /// No task pointer is retained after the call.
 pub trait UserMemory {
     fn copy_out(&mut self, address: usize, bytes: &[u8], alignment: usize) -> Result<(), Error>;
+    fn copy_in(&mut self, _address: usize, _bytes: &mut [u8]) -> Result<(), Error> {
+        Err(Error::Fault)
+    }
 }
 
 #[cfg(test)]

@@ -1,0 +1,2 @@
+   text	   data	    bss	    dec	    hex	filename
+   6469	    144	    592	   7205	   1c25	target/services/riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test

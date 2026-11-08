@@ -1,7 +1,35 @@
 #![no_std]
 
 #[cfg(target_arch = "riscv32")]
-core::arch::global_asm!(include_str!("trap.S"));
+core::arch::global_asm!(include_str!("trap.S"), timer = const cfg!(feature = "timer") as usize);
+
+pub mod clock;
+
+/// Preserve the caller's MIE state, including nested critical sections.
+/// The closure must not block, yield, or explicitly change interrupt state.
+#[cfg(target_arch = "riscv32")]
+pub fn critical<R>(body: impl FnOnce() -> R) -> R {
+    struct Restore(usize);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
+            if self.0 & 8 != 0 {
+                unsafe {
+                    core::arch::asm!("csrsi mstatus, 8");
+                }
+            }
+        }
+    }
+    let prior: usize;
+    unsafe {
+        core::arch::asm!("csrrci {0}, mstatus, 8", out(reg) prior);
+    }
+    let restore = Restore(prior);
+    core::sync::atomic::compiler_fence(core::sync::atomic::Ordering::SeqCst);
+    let result = body();
+    drop(restore);
+    result
+}
 
 pub const FRAME_BYTES: usize = 80;
 pub const STACK_GUARD: usize = 16;
