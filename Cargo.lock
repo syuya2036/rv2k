@@ -23,3 +23,11 @@ version = "0.1.0"
 dependencies = [
  "rv2k-api",
 ]
+
+[[package]]
+name = "rv2k-net"
+version = "0.1.0"
+dependencies = [
+ "rv2k-api",
+ "rv2k-drivers",
+]

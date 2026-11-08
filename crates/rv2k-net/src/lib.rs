@@ -1,0 +1,729 @@
+#![no_std]
+pub mod checksum;
+use checksum::{checksum, Checksum};
+use rv2k_api::syscall::Error;
+use rv2k_drivers::network::{NetworkDevice, RxFrame};
+#[cfg(test)]
+extern crate std;
+
+#[derive(Clone, Copy)]
+pub struct Config {
+    pub mac: [u8; 6],
+    pub ip: [u8; 4],
+    pub mask: [u8; 4],
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct Peer {
+    mac: [u8; 6],
+    ip: [u8; 4],
+}
+#[derive(Clone, Copy)]
+struct Neighbor {
+    peer: Peer,
+    deadline: u32,
+}
+#[derive(Clone, Copy)]
+struct Query {
+    ip: [u8; 4],
+    deadline: u32,
+    attempts: u8,
+}
+#[derive(Default)]
+pub struct Stats {
+    pub received: u16,
+    pub transmitted: u16,
+    pub dropped: u16,
+    pub bad_checksum: u16,
+    pub fragments: u16,
+    pub io_errors: u16,
+}
+/// Statically owned by the network task; never allocate full frames on a stack.
+pub struct Scratch {
+    pub header: [u8; 96],
+    pub stream: [u8; 64],
+}
+impl Scratch {
+    pub const fn new() -> Self {
+        Self {
+            header: [0; 96],
+            stream: [0; 64],
+        }
+    }
+}
+impl Default for Scratch {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+pub struct Network {
+    config: Config,
+    neighbor: Option<Neighbor>,
+    reply: Option<Peer>,
+    query: Option<Query>,
+    id: u16,
+    pub stats: Stats,
+}
+fn due(now: u32, deadline: u32) -> bool {
+    now.wrapping_sub(deadline) < 0x80000000
+}
+fn be16(bytes: &[u8]) -> u16 {
+    u16::from_be_bytes([bytes[0], bytes[1]])
+}
+fn unicast_mac(mac: &[u8]) -> bool {
+    mac.len() == 6 && mac[0] & 1 == 0 && mac.iter().any(|b| *b != 0)
+}
+impl Network {
+    pub const fn new(config: Config) -> Self {
+        Self {
+            config,
+            neighbor: None,
+            reply: None,
+            query: None,
+            id: 0,
+            stats: Stats {
+                received: 0,
+                transmitted: 0,
+                dropped: 0,
+                bad_checksum: 0,
+                fragments: 0,
+                io_errors: 0,
+            },
+        }
+    }
+    fn local_peer(&self, ip: [u8; 4]) -> bool {
+        ip != self.config.ip
+            && ip[0] != 0
+            && ip[0] != 127
+            && ip[0] < 224
+            && ip
+                .iter()
+                .zip(self.config.ip)
+                .zip(self.config.mask)
+                .all(|((&a, b), mask)| (a & mask) == (b & mask))
+            && !ip
+                .iter()
+                .zip(self.config.mask)
+                .all(|(&a, mask)| a & !mask == 0)
+            && !ip
+                .iter()
+                .zip(self.config.mask)
+                .all(|(&a, mask)| a & !mask == !mask)
+    }
+    pub fn neighbor(&self, ip: [u8; 4], now: u32) -> Option<[u8; 6]> {
+        self.neighbor
+            .filter(|n| n.peer.ip == ip && !due(now, n.deadline))
+            .map(|n| n.peer.mac)
+    }
+    /// Schedule bounded ARP resolution. No application data is acknowledged here.
+    pub fn resolve(&mut self, ip: [u8; 4], now: u32) -> Result<Option<[u8; 6]>, Error> {
+        if !self.local_peer(ip) {
+            return Err(Error::Invalid);
+        }
+        if let Some(mac) = self.neighbor(ip, now) {
+            return Ok(Some(mac));
+        }
+        if self.query.is_none_or(|q| q.ip != ip) {
+            self.query = Some(Query {
+                ip,
+                deadline: now,
+                attempts: 0,
+            });
+        }
+        Ok(None)
+    }
+    #[inline(never)]
+    pub fn poll(
+        &mut self,
+        device: &mut impl NetworkDevice,
+        scratch: &mut Scratch,
+        now: u32,
+    ) -> Result<(), Error> {
+        let result = self.poll_inner(device, scratch, now);
+        if result.is_err() {
+            self.stats.io_errors = self.stats.io_errors.saturating_add(1);
+        }
+        result
+    }
+    fn poll_inner(
+        &mut self,
+        device: &mut impl NetworkDevice,
+        scratch: &mut Scratch,
+        now: u32,
+    ) -> Result<(), Error> {
+        let status = device.poll(now)?;
+        if !status.link_up {
+            return Ok(());
+        }
+        if self.neighbor.is_some_and(|n| due(now, n.deadline)) {
+            self.neighbor = None;
+        }
+        if let Some(peer) = self.reply {
+            match self.send_arp(device, scratch, peer, true, now) {
+                Ok(()) => self.reply = None,
+                Err(Error::Again) => {}
+                Err(e) => return Err(e),
+            }
+        } else if let Some(query) = self.query.filter(|q| due(now, q.deadline)) {
+            if query.attempts == 3 {
+                self.query = None;
+                return Err(Error::Timeout);
+            }
+            match self.send_arp(
+                device,
+                scratch,
+                Peer {
+                    mac: [0; 6],
+                    ip: query.ip,
+                },
+                false,
+                now,
+            ) {
+                Ok(()) => {
+                    self.query = Some(Query {
+                        deadline: now.wrapping_add(100),
+                        attempts: query.attempts + 1,
+                        ..query
+                    })
+                }
+                Err(Error::Again) => {}
+                Err(e) => return Err(e),
+            }
+        }
+        let Some(frame) = device.rx_begin()? else {
+            return Ok(());
+        };
+        self.stats.received = self.stats.received.saturating_add(1);
+        let result = self.receive(device, scratch, frame, now);
+        let release = device.rx_release(frame);
+        result.and(release)
+    }
+    fn drop_frame(&mut self) {
+        self.stats.dropped = self.stats.dropped.saturating_add(1);
+    }
+    fn receive(
+        &mut self,
+        d: &mut impl NetworkDevice,
+        s: &mut Scratch,
+        f: RxFrame,
+        now: u32,
+    ) -> Result<(), Error> {
+        if f.len < 14 {
+            self.drop_frame();
+            return Ok(());
+        }
+        d.rx_read_at(f, 0, &mut s.header[..14])?;
+        if !unicast_mac(&s.header[6..12]) {
+            self.drop_frame();
+            return Ok(());
+        }
+        let own = s.header[..6] == self.config.mac;
+        match be16(&s.header[12..14]) {
+            0x0806 if own || s.header[..6] == [255; 6] => self.arp(d, s, f, now),
+            0x0800 if own => self.ipv4(d, s, f, now),
+            _ => {
+                self.drop_frame();
+                Ok(())
+            }
+        }
+    }
+    fn arp(
+        &mut self,
+        d: &mut impl NetworkDevice,
+        s: &mut Scratch,
+        f: RxFrame,
+        now: u32,
+    ) -> Result<(), Error> {
+        if f.len < 42 {
+            self.drop_frame();
+            return Ok(());
+        }
+        d.rx_read_at(f, 14, &mut s.header[14..42])?;
+        let h = &s.header;
+        if h[14..22] != [0, 1, 8, 0, 6, 4, 0, 1] && h[14..22] != [0, 1, 8, 0, 6, 4, 0, 2] {
+            self.drop_frame();
+            return Ok(());
+        }
+        if h[22..28] != h[6..12] || h[38..42] != self.config.ip {
+            self.drop_frame();
+            return Ok(());
+        }
+        let peer = Peer {
+            mac: h[22..28].try_into().unwrap(),
+            ip: h[28..32].try_into().unwrap(),
+        };
+        let reply = h[21] == 1;
+        if !reply && h[32..38] != self.config.mac {
+            self.drop_frame();
+            return Ok(());
+        }
+        if peer.ip != [0; 4] && !self.local_peer(peer.ip) {
+            self.drop_frame();
+            return Ok(());
+        }
+        if peer.ip != [0; 4] {
+            self.neighbor = Some(Neighbor {
+                peer,
+                deadline: now.wrapping_add(3000),
+            });
+            if self.query.is_some_and(|q| q.ip == peer.ip) {
+                self.query = None;
+            }
+        }
+        if reply {
+            match self.send_arp(d, s, peer, true, now) {
+                Ok(()) => {}
+                Err(Error::Again) => self.reply = Some(peer),
+                Err(e) => return Err(e),
+            }
+        }
+        Ok(())
+    }
+    fn send_arp(
+        &mut self,
+        d: &mut impl NetworkDevice,
+        s: &mut Scratch,
+        peer: Peer,
+        reply: bool,
+        now: u32,
+    ) -> Result<(), Error> {
+        d.tx_begin(42)?;
+        let h = &mut s.header;
+        h[..42].fill(0);
+        h[..6].copy_from_slice(if reply { &peer.mac } else { &[255; 6] });
+        h[6..12].copy_from_slice(&self.config.mac);
+        h[12..20].copy_from_slice(&[8, 6, 0, 1, 8, 0, 6, 4]);
+        h[21] = if reply { 2 } else { 1 };
+        h[22..28].copy_from_slice(&self.config.mac);
+        h[28..32].copy_from_slice(&self.config.ip);
+        h[32..38].copy_from_slice(&peer.mac);
+        h[38..42].copy_from_slice(&peer.ip);
+        let result = d.tx_write(&h[..42]).and_then(|_| d.tx_commit(now));
+        if result.is_err() {
+            let _ = d.tx_abort();
+        } else {
+            self.stats.transmitted = self.stats.transmitted.saturating_add(1);
+        }
+        result
+    }
+    #[inline(always)]
+    fn ipv4(
+        &mut self,
+        d: &mut impl NetworkDevice,
+        s: &mut Scratch,
+        f: RxFrame,
+        now: u32,
+    ) -> Result<(), Error> {
+        if f.len < 34 {
+            self.drop_frame();
+            return Ok(());
+        }
+        d.rx_read_at(f, 14, &mut s.header[14..34])?;
+        let ihl = (s.header[14] & 15) as usize * 4;
+        let total = be16(&s.header[16..18]) as usize;
+        if s.header[14] >> 4 != 4
+            || !(20..=60).contains(&ihl)
+            || total < ihl
+            || total + 14 > f.len as usize
+            || s.header[22] == 0
+            || s.header[30..34] != self.config.ip
+        {
+            self.drop_frame();
+            return Ok(());
+        }
+        if ihl > 20 {
+            d.rx_read_at(f, 34, &mut s.header[34..14 + ihl])?;
+        }
+        if checksum(&s.header[14..14 + ihl]) != 0 {
+            self.stats.bad_checksum = self.stats.bad_checksum.saturating_add(1);
+            self.drop_frame();
+            return Ok(());
+        }
+        if be16(&s.header[20..22]) & 0xbfff != 0 {
+            self.stats.fragments = self.stats.fragments.saturating_add(1);
+            self.drop_frame();
+            return Ok(());
+        }
+        let mut option = 34;
+        while option < 14 + ihl {
+            let kind = s.header[option];
+            if kind == 0 {
+                break;
+            }
+            if kind == 1 {
+                option += 1;
+                continue;
+            }
+            if option + 1 >= 14 + ihl
+                || s.header[option + 1] < 2
+                || option + s.header[option + 1] as usize > 14 + ihl
+                || kind == 131
+                || kind == 137
+            {
+                self.drop_frame();
+                return Ok(());
+            }
+            option += s.header[option + 1] as usize;
+        }
+        let peer = Peer {
+            mac: s.header[6..12].try_into().unwrap(),
+            ip: s.header[26..30].try_into().unwrap(),
+        };
+        if !self.local_peer(peer.ip) || s.header[23] != 1 || total < ihl + 8 {
+            self.drop_frame();
+            return Ok(());
+        }
+        let start = 14 + ihl;
+        let len = total - ihl;
+        d.rx_read_at(f, start, &mut s.header[start..start + 8])?;
+        if s.header[start] != 8 || s.header[start + 1] != 0 {
+            self.drop_frame();
+            return Ok(());
+        }
+        let mut sum = Checksum::new();
+        let mut offset = 0;
+        while offset < len {
+            let count = s.stream.len().min(len - offset);
+            d.rx_read_at(f, start + offset, &mut s.stream[..count])?;
+            sum.update(&s.stream[..count]);
+            offset += count;
+        }
+        if sum.finish() != 0 {
+            self.stats.bad_checksum = self.stats.bad_checksum.saturating_add(1);
+            self.drop_frame();
+            return Ok(());
+        }
+        let old = be16(&s.header[start + 2..start + 4]) as u32 + 0x0800;
+        let reply_checksum = ((old & 0xffff) + (old >> 16)) as u16;
+        match d.tx_begin(34 + len) {
+            Ok(()) => {}
+            Err(Error::Again) => {
+                self.drop_frame();
+                return Ok(());
+            }
+            Err(e) => return Err(e),
+        }
+        s.header.copy_within(start..start + 8, 34);
+        s.header[..6].copy_from_slice(&peer.mac);
+        s.header[6..12].copy_from_slice(&self.config.mac);
+        s.header[14..34].fill(0);
+        s.header[14] = 0x45;
+        s.header[16..18].copy_from_slice(&((20 + len) as u16).to_be_bytes());
+        self.id = self.id.wrapping_add(1);
+        s.header[18..20].copy_from_slice(&self.id.to_be_bytes());
+        s.header[20] = 0x40;
+        s.header[22] = 64;
+        s.header[23] = 1;
+        s.header[26..30].copy_from_slice(&self.config.ip);
+        s.header[30..34].copy_from_slice(&peer.ip);
+        let ip_checksum = checksum(&s.header[14..34]);
+        s.header[24..26].copy_from_slice(&ip_checksum.to_be_bytes());
+        s.header[34] = 0;
+        s.header[36..38].copy_from_slice(&reply_checksum.to_be_bytes());
+        let result = (|| {
+            d.tx_write(&s.header[..42])?;
+            let mut offset = 8;
+            while offset < len {
+                let count = s.stream.len().min(len - offset);
+                d.rx_read_at(f, start + offset, &mut s.stream[..count])?;
+                d.tx_write(&s.stream[..count])?;
+                offset += count;
+            }
+            d.tx_commit(now)
+        })();
+        if result.is_err() {
+            let _ = d.tx_abort();
+        } else {
+            self.stats.transmitted = self.stats.transmitted.saturating_add(1);
+        }
+        result
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rv2k_drivers::network::{DeviceStatus, TxStatus};
+    use std::{vec, vec::Vec};
+    const HOST_MAC: [u8; 6] = [2, 0xaa, 0xbb, 0xcc, 0xdd, 0xee];
+    const HOST_IP: [u8; 4] = [192, 168, 1, 1];
+    fn config() -> Config {
+        Config {
+            mac: [2, 0, 0, 0, 0, 1],
+            ip: [192, 168, 1, 50],
+            mask: [255, 255, 255, 0],
+        }
+    }
+    fn reference(bytes: &[u8]) -> u16 {
+        let mut sum = 0u32;
+        for part in bytes.chunks(2) {
+            sum += ((part[0] as u32) << 8) | part.get(1).copied().unwrap_or(0) as u32;
+        }
+        while sum > 65535 {
+            sum = (sum & 65535) + (sum >> 16);
+        }
+        !(sum as u16)
+    }
+    fn arp_request() -> Vec<u8> {
+        let mut f = vec![0; 60];
+        f[..6].fill(255);
+        f[6..12].copy_from_slice(&HOST_MAC);
+        f[12..22].copy_from_slice(&[8, 6, 0, 1, 8, 0, 6, 4, 0, 1]);
+        f[22..28].copy_from_slice(&HOST_MAC);
+        f[28..32].copy_from_slice(&HOST_IP);
+        f[38..42].copy_from_slice(&config().ip);
+        f
+    }
+    fn echo(len: usize, options: &[u8]) -> Vec<u8> {
+        let ihl = 20 + options.len();
+        assert_eq!(ihl % 4, 0);
+        let total = ihl + 8 + len;
+        let start = 14 + ihl;
+        let mut f = vec![0; (14 + total).max(60)];
+        f[..6].copy_from_slice(&config().mac);
+        f[6..12].copy_from_slice(&HOST_MAC);
+        f[12..14].copy_from_slice(&[8, 0]);
+        f[14] = 0x40 | (ihl / 4) as u8;
+        f[16..18].copy_from_slice(&(total as u16).to_be_bytes());
+        f[22] = 64;
+        f[23] = 1;
+        f[26..30].copy_from_slice(&HOST_IP);
+        f[30..34].copy_from_slice(&config().ip);
+        f[34..34 + options.len()].copy_from_slice(options);
+        let sum = reference(&f[14..14 + ihl]);
+        f[24..26].copy_from_slice(&sum.to_be_bytes());
+        f[start] = 8;
+        f[start + 4..start + 8].copy_from_slice(&[0x12, 0x34, 0xff, 0xfe]);
+        for i in 0..len {
+            f[start + 8 + i] = i as u8;
+        }
+        let sum = reference(&f[start..14 + total]);
+        f[start + 2..start + 4].copy_from_slice(&sum.to_be_bytes());
+        f
+    }
+    struct Device {
+        rx: Option<Vec<u8>>,
+        active: bool,
+        token: u32,
+        tx: Vec<u8>,
+        len: usize,
+        out: Vec<Vec<u8>>,
+        releases: usize,
+        aborts: usize,
+        busy: bool,
+        fail_write: bool,
+    }
+    impl Device {
+        fn new(frame: Vec<u8>) -> Self {
+            Self {
+                rx: Some(frame),
+                active: false,
+                token: 1,
+                tx: Vec::new(),
+                len: 0,
+                out: Vec::new(),
+                releases: 0,
+                aborts: 0,
+                busy: false,
+                fail_write: false,
+            }
+        }
+    }
+    impl NetworkDevice for Device {
+        fn poll(&mut self, _: u32) -> Result<DeviceStatus, Error> {
+            Ok(DeviceStatus {
+                link_up: true,
+                rx_pending: self.rx.is_some(),
+                tx: if self.busy {
+                    TxStatus::Busy
+                } else {
+                    TxStatus::Idle
+                },
+            })
+        }
+        fn rx_begin(&mut self) -> Result<Option<RxFrame>, Error> {
+            assert!(!self.active);
+            if let Some(f) = &self.rx {
+                self.active = true;
+                Ok(Some(RxFrame {
+                    token: self.token,
+                    len: f.len() as u16,
+                }))
+            } else {
+                Ok(None)
+            }
+        }
+        fn rx_read_at(&mut self, f: RxFrame, offset: usize, out: &mut [u8]) -> Result<(), Error> {
+            assert!(self.active && f.token == self.token);
+            out.copy_from_slice(&self.rx.as_ref().unwrap()[offset..offset + out.len()]);
+            Ok(())
+        }
+        fn rx_release(&mut self, f: RxFrame) -> Result<(), Error> {
+            assert!(self.active && f.token == self.token);
+            self.active = false;
+            self.rx = None;
+            self.token += 1;
+            self.releases += 1;
+            Ok(())
+        }
+        fn tx_begin(&mut self, len: usize) -> Result<(), Error> {
+            if self.busy {
+                return Err(Error::Again);
+            }
+            assert_eq!(self.len, 0);
+            self.len = len;
+            self.tx.clear();
+            Ok(())
+        }
+        fn tx_write(&mut self, b: &[u8]) -> Result<(), Error> {
+            if self.fail_write {
+                return Err(Error::Io);
+            }
+            assert!(self.tx.len() + b.len() <= self.len);
+            self.tx.extend_from_slice(b);
+            Ok(())
+        }
+        fn tx_commit(&mut self, _: u32) -> Result<(), Error> {
+            assert_eq!(self.tx.len(), self.len);
+            self.tx.resize(self.len.max(60), 0);
+            self.out.push(self.tx.clone());
+            self.len = 0;
+            Ok(())
+        }
+        fn tx_abort(&mut self) -> Result<(), Error> {
+            self.aborts += 1;
+            self.len = 0;
+            self.tx.clear();
+            Ok(())
+        }
+    }
+    #[test]
+    fn arp_reply_cache_expiry_and_pending_tx_busy() {
+        let mut n = Network::new(config());
+        let mut s = Scratch::new();
+        let mut d = Device::new(arp_request());
+        d.busy = true;
+        n.poll(&mut d, &mut s, u32::MAX - 10).unwrap();
+        assert_eq!(d.releases, 1);
+        assert!(d.out.is_empty());
+        assert_eq!(n.neighbor(HOST_IP, 0), Some(HOST_MAC));
+        d.busy = false;
+        n.poll(&mut d, &mut s, 0).unwrap();
+        let f = &d.out[0];
+        assert_eq!(&f[..6], &HOST_MAC);
+        assert_eq!(&f[20..22], &[0, 2]);
+        assert_eq!(&f[22..28], &config().mac);
+        assert_eq!(&f[38..42], &HOST_IP);
+        assert_eq!(n.neighbor(HOST_IP, 2988), Some(HOST_MAC));
+        assert_eq!(n.neighbor(HOST_IP, 2989), None);
+    }
+    #[test]
+    fn icmp_stream_preserves_all_bytes_across_sizes_options_and_odd_lengths() {
+        for len in [0, 1, 55, 56, 57, 63, 64, 65, 1472] {
+            let mut n = Network::new(config());
+            let mut s = Scratch::new();
+            let input = echo(len, &[]);
+            let mut d = Device::new(input.clone());
+            n.poll(&mut d, &mut s, 0).unwrap();
+            assert_eq!(d.releases, 1);
+            assert_eq!(d.out.len(), 1);
+            let f = &d.out[0];
+            assert_eq!(&f[..6], &HOST_MAC);
+            assert_eq!(&f[6..12], &config().mac);
+            assert_eq!(reference(&f[14..34]), 0);
+            assert_eq!(reference(&f[34..42 + len]), 0);
+            assert_eq!(f[34], 0);
+            assert_eq!(&f[38..42 + len], &input[38..42 + len]);
+        }
+        for options in [&[1, 1, 0, 0][..], &[0u8; 40][..]] {
+            let input = echo(57, options);
+            let mut n = Network::new(config());
+            let mut d = Device::new(input.clone());
+            n.poll(&mut d, &mut Scratch::new(), 0).unwrap();
+            let f = &d.out[0];
+            assert_eq!(f[14], 0x45);
+            assert_eq!(&f[38..99], &input[38 + options.len()..99 + options.len()]);
+            assert_eq!(reference(&f[34..99]), 0);
+        }
+    }
+    #[test]
+    fn malformed_frames_are_dropped_and_released_once() {
+        let mut bad = Vec::new();
+        bad.push(vec![0; 13]);
+        for edit in 0..9 {
+            let mut f = echo(3, &[]);
+            match edit {
+                0 => f[0] ^= 2,
+                1 => f[14] = 0x44,
+                2 => f[16..18].copy_from_slice(&1510u16.to_be_bytes()),
+                3 => f[22] = 0,
+                4 => f[24] ^= 1,
+                5 => f[42] ^= 1,
+                6 => f[34] = 3,
+                7 => f[35] = 1,
+                8 => f[20] = 0x20,
+                _ => unreachable!(),
+            }
+            if [3, 8].contains(&edit) {
+                f[24..26].fill(0);
+                let sum = reference(&f[14..34]);
+                f[24..26].copy_from_slice(&sum.to_be_bytes());
+            }
+            bad.push(f);
+        }
+        let mut bad_options = echo(3, &[7, 1, 0, 0]);
+        bad_options[24..26].fill(0);
+        let sum = reference(&bad_options[14..38]);
+        bad_options[24..26].copy_from_slice(&sum.to_be_bytes());
+        bad.push(bad_options);
+        for f in bad {
+            let mut n = Network::new(config());
+            let mut d = Device::new(f);
+            n.poll(&mut d, &mut Scratch::new(), 0).unwrap();
+            assert!(d.out.is_empty());
+            assert_eq!(d.releases, 1);
+            assert_eq!(n.stats.dropped, 1);
+        }
+    }
+    #[test]
+    fn arp_resolution_retries_wrap_and_valid_reply_cancels_query() {
+        let mut n = Network::new(config());
+        let mut d = Device::new(Vec::new());
+        d.rx = None;
+        let mut s = Scratch::new();
+        assert_eq!(n.resolve(HOST_IP, u32::MAX - 25), Ok(None));
+        for now in [u32::MAX - 25, 73, 74, 174] {
+            n.poll(&mut d, &mut s, now).unwrap();
+        }
+        assert_eq!(d.out.len(), 3);
+        assert_eq!(n.poll(&mut d, &mut s, 274), Err(Error::Timeout));
+        n.resolve(HOST_IP, 300).unwrap();
+        n.poll(&mut d, &mut s, 300).unwrap();
+        let mut reply = arp_request();
+        reply[..6].copy_from_slice(&config().mac);
+        reply[21] = 2;
+        reply[32..38].copy_from_slice(&config().mac);
+        d.rx = Some(reply);
+        n.poll(&mut d, &mut s, 301).unwrap();
+        assert_eq!(n.resolve(HOST_IP, 302), Ok(Some(HOST_MAC)));
+        n.poll(&mut d, &mut s, 401).unwrap();
+        assert_eq!(d.out.len(), 4);
+    }
+    #[test]
+    fn tx_errors_abort_and_rx_is_released_even_on_error() {
+        for f in [arp_request(), echo(100, &[])] {
+            let mut n = Network::new(config());
+            let mut d = Device::new(f);
+            d.fail_write = true;
+            assert_eq!(n.poll(&mut d, &mut Scratch::new(), 0), Err(Error::Io));
+            assert_eq!(d.aborts, 1);
+            assert_eq!(d.releases, 1);
+            assert!(d.out.is_empty());
+        }
+        let mut n = Network::new(config());
+        let mut d = Device::new(echo(56, &[]));
+        d.busy = true;
+        n.poll(&mut d, &mut Scratch::new(), 0).unwrap();
+        assert_eq!(d.releases, 1);
+        assert_eq!(n.stats.dropped, 1);
+    }
+}
