@@ -16,7 +16,7 @@ vendor/renvo_emu/target/release/remu run --target ch32v003 --elf "$ELF.remu" --m
 python3 scripts/check-preempt.py
 python3 scripts/check-budget.py "$ELF" "$LOG/probe-budget.json"
 python3 scripts/preempt-negative.py
-cargo build --locked --release --features tcp,preempt,emulator-stop --target-dir target/preempt-tcp
+cargo build --locked --release --features tcp,preempt-timing,emulator-stop --target-dir target/preempt-tcp
 ELF=target/preempt-tcp/riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test
 python3 scripts/elf-for-remu.py "$ELF" "$ELF.remu"
 mkdir -p "$LOG/baseline"

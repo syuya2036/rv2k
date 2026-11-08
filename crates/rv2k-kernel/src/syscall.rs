@@ -54,16 +54,7 @@ pub(crate) fn task_info(
         return Err(Error::Invalid);
     }
     let info = scheduler.info(id);
-    let code = info.exit_code.to_le_bytes();
-    let bytes = [
-        info.version,
-        info.id as u8,
-        info.state as u8,
-        0,
-        code[0],
-        code[1],
-    ];
-    memory.copy_out(args[1], &bytes, core::mem::align_of::<TaskInfo>())?;
+    info.with_bytes(|bytes| memory.copy_out(args[1], bytes, core::mem::align_of::<TaskInfo>()))?;
     Ok(0)
 }
 

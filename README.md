@@ -64,7 +64,7 @@ Phase 7では単一接続TCPをEthernet/guestへ接続し、公開Socket APIに�
 仮想NIC版とENC28J60版はRAM 2KB・Flash 16KB以内です。Mac native TCPは未検証のためPhase 7全体はPARTIALです。[TCP実装状況](ch32v003-rust-os-test/docs/tcp.md) を参照してください。
 Phase 8ではSysTickによる強制切替、共有状態更新中の延期、SPI bit途中のIRQ、レジスタ・PC復元の負例を検証しました。
 Phase 8時点のENC構成は予約RAM 1,844byte / Flash 16,380byteでした。[プリエンプション検証](ch32v003-rust-os-test/docs/preemption.md) を参照してください。
-HTTPとTCPシェルの入力パーサ、および公開network snapshot APIを追加しました。サーバー／シェルの統合と容量検証は継続中です。[公開snapshot検証](ch32v003-rust-os-test/docs/snapshot.md) を参照してください。
+HTTPの入力パーサ、公開network snapshot APIとTCPシェルを追加しました。シェルは仮想NICで全コマンド・入力復帰・再接続が検証済みです。ENC構成の容量収容とMac接続検証は継続中です。[シェル検証](ch32v003-rust-os-test/docs/shell.md) を参照してください。[公開snapshot検証](ch32v003-rust-os-test/docs/snapshot.md) を参照してください。
 CH32V003実機での動作はこれからです。
 実測ログ・再現手順は [検証用プロジェクト](ch32v003-rust-os-test/README.md) と [協調マルチタスク検証](ch32v003-rust-os-test/docs/cooperative.md) を参照してください。
 

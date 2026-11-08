@@ -2,7 +2,10 @@
 name = "rv2k-arch"
 version = "0.1.0"
 edition = "2021"
+[dependencies]
+rv2k-api = { path = "../rv2k-api" }
 
 [features]
 timer = []
 preempt = ["timer"]
+preempt-timing = ["preempt"]

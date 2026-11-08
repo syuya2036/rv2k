@@ -37,3 +37,9 @@ CR、LF、CRLF に対応し、分割された CRLF を 1 改行として扱い�
 呼び出し側は新しい TCP 接続で `reset()` し、EOF の未完了行は実行しません。socket から複数行が一度に届いた場合も、全 byte を順番に push することで全コマンドを処理できます。このモジュールは行入力とコマンド識別だけを実装しており、公開 snapshot API による状態取得・送信や TCP シェル全体の完了を意味しません。
 
 試験は全チャンク幅 / 全 2 分割点、改行種別、64 / 65 byte 境界、5,000 byte の超過行からの復帰、全 byte 値の分類、接続変更時の reset を含みます。上記の test / clippy コマンドで HTTP と一緒に実行できます。
+
+## OS snapshot の表示
+
+`monitor::Line` は公開 TaskInfo / MemInfo / NetInfo と uptime を、最大 64 byte の行へ整形します。task は 1 行、memory は 3 行、network は 4 行に分けます。IPv4 と整数は十進表記で、uptime は u64 全域、終了コードは i16 全域に対応します。u64 の変換は 16 bit limb ごとの u32 除算で行い、core::fmt やヒープは使いません。
+
+最大値の snapshot、全状態名、負の終了コード、IPv4 の先頭ゼロ除去、u64 の境界値と 1,000 個の値を標準 formatter と照合します。socket 送信、接続中の取得結果、MCU スタック高水位は firmware の統合検証項目です。

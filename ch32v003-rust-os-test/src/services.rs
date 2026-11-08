@@ -627,14 +627,11 @@ unsafe extern "C" fn rv2k_idle_poll() -> usize {
 }
 
 unsafe fn watermark(base: *const u32, words: usize) -> u32 {
-    let mut untouched = 0;
-    while untouched < words && read_volatile(base.add(untouched)) == WATERMARK {
-        untouched += 1;
-    }
-    if untouched < 4 {
+    let usage = rv2k_arch::stack::StackRegion::new(base, words).inspect();
+    if !usage.guard_ok {
         stop(56);
     }
-    ((words - untouched) * 4) as u32
+    usage.used as u32
 }
 fn finish() -> ! {
     unsafe {

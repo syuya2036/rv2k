@@ -86,6 +86,13 @@ impl NetInfo {
 
 #[cfg(target_arch = "riscv32")]
 pub fn info() -> Result<NetInfo, crate::syscall::Error> {
+    with_info(|info| *info)
+}
+
+/// Visit a copied report, never a live kernel/network reference. The view is
+/// scoped to the callback and avoids an additional aggregate return buffer.
+#[cfg(target_arch = "riscv32")]
+pub fn with_info<T>(read: impl FnOnce(&NetInfo) -> T) -> Result<T, crate::syscall::Error> {
     use crate::syscall::{raw, Error, Number};
     let mut out = core::mem::MaybeUninit::<NetInfo>::uninit();
     unsafe {
@@ -93,7 +100,7 @@ pub fn info() -> Result<NetInfo, crate::syscall::Error> {
             Number::NetInfo as usize,
             [out.as_mut_ptr() as usize, BYTES, 0],
         ))?;
-        Ok(out.assume_init())
+        Ok(read(out.assume_init_ref()))
     }
 }
 

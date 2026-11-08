@@ -21,6 +21,11 @@ pub fn id() -> TaskId {
 }
 
 pub fn info(id: TaskId) -> Result<TaskInfo, Error> {
+    with_info(id, |info| *info)
+}
+
+/// Visit a task-local snapshot copy; no TCB reference crosses the syscall gate.
+pub fn with_info<T>(id: TaskId, read: impl FnOnce(&TaskInfo) -> T) -> Result<T, Error> {
     let mut out = core::mem::MaybeUninit::<TaskInfo>::uninit();
     unsafe {
         Error::decode(raw(
@@ -31,7 +36,7 @@ pub fn info(id: TaskId) -> Result<TaskInfo, Error> {
                 core::mem::size_of::<TaskInfo>(),
             ],
         ))?;
-        Ok(out.assume_init())
+        Ok(read(out.assume_init_ref()))
     }
 }
 

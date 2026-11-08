@@ -65,6 +65,7 @@ impl Error {
     pub const fn code(self) -> isize {
         -(self as isize)
     }
+    #[inline(always)]
     pub fn decode(result: isize) -> Result<usize, Self> {
         if result >= 0 {
             return Ok(result as usize);

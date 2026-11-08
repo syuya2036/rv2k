@@ -2,6 +2,7 @@
   "syscall": 14,
   "wire_bytes": 32,
   "version": 1,
+  "task_mem_net_callback_copies_survive_yield": true,
   "boot_and_two_connections": true,
   "invalid_arguments_and_destinations": 7,
   "states": [

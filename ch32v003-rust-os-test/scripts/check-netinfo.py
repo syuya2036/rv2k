@@ -13,7 +13,7 @@ def data(name, size):
     return ram[offset:offset + size]
 assert run['reason'] == 'Halted' and run['uart'] == 'SERVICES OK\n'
 assert int.from_bytes(data('FAULT_INFO', 4), 'little') == 0
-assert int.from_bytes(data('APP_NET_CHECK', 4), 'little') == 7
+assert int.from_bytes(data('APP_NET_CHECK', 4), 'little') == 63
 assert int.from_bytes(data('APP_NET_RECORDS', 4), 'little') == 3
 raw = data('APP_NET_SNAPSHOTS', 96)
 snapshots = [struct.unpack_from('<HBB4s4s10H', raw, index * 32) for index in range(3)]
@@ -57,6 +57,7 @@ for index, row in enumerate(snapshots[1:]):
     assert synacks >= (2 if index == 0 else 1)
     assert retries >= 1
 summary = {'syscall': 14, 'wire_bytes': 32, 'version': 1,
+           'task_mem_net_callback_copies_survive_yield': True,
            'boot_and_two_connections': True, 'invalid_arguments_and_destinations': 7,
            'states': [s[1] for s in snapshots], 'peer_ports': [s[6] for s in snapshots],
            'rx_counts': [s[7] for s in snapshots], 'tx_counts': [s[8] for s in snapshots],

@@ -3,7 +3,7 @@
 pub struct Clock {
     last: u32,
     remainder: u32,
-    period: u32,
+    period: core::num::NonZeroU32,
 }
 impl Clock {
     pub const fn new(period: u32, counter: u32) -> Self {
@@ -11,16 +11,18 @@ impl Clock {
         Self {
             last: counter,
             remainder: 0,
-            period,
+            period: match core::num::NonZeroU32::new(period) {
+                Some(n) => n,
+                None => panic!("zero clock period"),
+            },
         }
     }
     pub fn sample(&mut self, counter: u32) -> u32 {
         let elapsed = counter.wrapping_sub(self.last);
         self.last = counter;
-        let mut ticks = elapsed / self.period;
-        let remainder = elapsed % self.period;
+        let (mut ticks, remainder) = rv2k_api::integer::div_rem(elapsed, self.period);
         // Add two remainders without a 33-bit sum or 64-bit division on RV32E.
-        let until_tick = self.period - remainder;
+        let until_tick = self.period.get() - remainder;
         if self.remainder >= until_tick {
             ticks += 1;
             self.remainder -= until_tick;

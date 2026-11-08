@@ -2,3 +2,5 @@
 name = "rv2k-apps"
 version = "0.1.0"
 edition = "2021"
+[dependencies]
+rv2k-api = { path = "../rv2k-api" }

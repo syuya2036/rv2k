@@ -73,6 +73,15 @@ pub fn task() {
                     unsafe { read_volatile(addr_of!(PREEMPT_STARTED).cast::<u32>().add(1)) },
                     0
                 );
+                // Keep the next periodic IRQ away from the safe-point probe.
+                // The four observed IRQs have already published a deferred
+                // request. Otherwise instruction timing can let a fifth IRQ
+                // consume it immediately when MIE is restored.
+                unsafe {
+                    let now = read_volatile(0xe000f008 as *const u32);
+                    write_volatile(0xe000f010 as *mut u32, now.wrapping_add(240_000));
+                    write_volatile(0xe000f004 as *mut u32, 0);
+                }
             });
         }
         assert!(unsafe { read_volatile(addr_of!(TIMER_IRQS)) }.wrapping_sub(before) >= 4);

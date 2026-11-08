@@ -26,7 +26,7 @@ bash scripts/preempt.sh
 python3 scripts/diagnostics-negative.py --preempt-build-profile
 ```
 
-`preempt`は通常のサービスまたはTCPと組み合わせる。`preempt-probe`は専用2タスクとGPIO/SPIの所有者であり、net/driversとは同時に有効化しない。
+`preempt`は通常のサービスまたはTCPと組み合わせる。最大除外 clocks の計測は `preempt-timing` で追加する。`preempt-probe` と snapshot probe、および `preempt.sh` の仮想 TCP はこの計測を有効にし、通常の ENC / shell は無効にする。深さ・pending・IRQ 延期・切替動作はどちらにも残る。`preempt-probe`は専用2タスクとGPIO/SPIの所有者であり、net/driversとは同時に有効化しない。
 
 TCP同様にnightly-2026-03-12、RV32EC/ILP32E、opt-level=z、+relax、LLD ICF/relax-gpを使用する。追加のLLVM設定`-riscv-enable-global-merge=false`は、独立したSRAM globalへのGP relaxationを有効に使うためのもの。内部compiler optionなのでtoolchain pin、両構成のELF容量検査、実命令回帰を維持する。
 
@@ -61,3 +61,5 @@ CPU probeはgp/tp/ra、temporary、saved、argument registersをsaltで識別す
 原本は`docs/logs/preemption/`のprobe memory/trace、実行結果、PCAP、summary、budget、negative、regression。大きなbus logはスクリプトで再生成する。過去Phaseのrawログは当時の実測として残す。
 
 ENC Flashの余裕は4byte。後続のHTTP/shellを収容できる保証はなく、機能追加後に同じ上限で再検証する。実機のPFIC/HPE設定、SPI電気特性・実機stack、長時間運転は未確認。実機がないため、仮想HWの成功から実機PASSを推定しない。
+
+Phase 10 の共通最適化後の測定は [shell の回帰記録](logs/shell/regression) を参照。既存の表・raw log は Phase 8 時点の記録として残す。専用 safe-point probe は、4 回の保護中 IRQ を観測した後、MIE 復元前に次の周期 IRQ を 1 tick 先へ再設定する。未処理の延期要求が GetPid 境界に届くことを、コンパイラによる命令時間差から独立させて検査する。

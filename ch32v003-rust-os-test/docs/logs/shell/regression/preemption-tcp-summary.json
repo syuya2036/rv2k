@@ -1,0 +1,33 @@
+{
+  "host_packet_peer": "PASS (synthetic peer, not native Mac TCP)",
+  "public_mem_snapshot_checked": true,
+  "gp_preserved_across_timer_irqs_and_syscall": true,
+  "instructions": 6523061,
+  "frames_in": 25,
+  "frames_out": 30,
+  "connections": 2,
+  "echoed_bytes": 193,
+  "syn_data_fin_loss_recovered": true,
+  "out_of_order_and_duplicate_input": true,
+  "sequence_wrap": true,
+  "negotiated_peer_mss": 24,
+  "stack_used_bytes_tasks_kernel": [
+    204,
+    144,
+    112
+  ],
+  "syscalls": 256,
+  "timer_irqs": 37,
+  "uptime_ticks": 6552,
+  "simulated_clock_advance_ticks": 6500,
+  "mac_native_tcp": "UNVERIFIED",
+  "physical_enc": "UNVERIFIED",
+  "preemption": {
+    "nic_irq_injections": 25,
+    "deferred_irqs": 31,
+    "forced_switches": 2,
+    "max_disabled_clocks": 248112,
+    "injected_clocks_per_frame": 240000,
+    "shared_borrow_released_before_completion": true
+  }
+}

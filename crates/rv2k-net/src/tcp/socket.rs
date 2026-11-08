@@ -12,21 +12,23 @@ enum Phase {
 
 /// Fixed syscall mailbox. Only the network task changes connection/EOF state;
 /// syscalls copy bytes or publish requests, without retaining user pointers.
+#[repr(C)]
 pub struct Socket {
     rx: [u8; CAPACITY],
     tx: [u8; CAPACITY],
-    rx_len: u8,
-    tx_len: u8,
+    events: u32,
     generation: u16,
     retired: u16,
     port: u16,
+    rx_len: u8,
+    tx_len: u8,
     phase: Phase,
     error: Option<Error>,
     eof: bool,
     close: bool,
     listen: bool,
     window_update: bool,
-    events: u32,
+    tx_head: u8,
 }
 
 impl Default for Socket {
@@ -41,6 +43,7 @@ impl Socket {
             tx: [0; CAPACITY],
             rx_len: 0,
             tx_len: 0,
+            tx_head: 0,
             generation: 0,
             retired: 0,
             port: 0,
@@ -83,6 +86,7 @@ impl Socket {
             _ => {}
         }
         self.port = port;
+        self.tx_head = 0;
         self.rx_len = 0;
         self.tx_len = 0;
         self.error = None;
@@ -115,6 +119,7 @@ impl Socket {
         }
         let count = len.min(CAPACITY);
         copy(&mut self.tx[..count])?;
+        self.tx_head = 0;
         self.tx_len = count as u8;
         Ok(count)
     }
@@ -216,11 +221,12 @@ impl Socket {
         self.events |= event::NET_RX;
     }
     pub(super) fn tx(&self, len: usize) -> &[u8] {
-        &self.tx[..len]
+        let start = self.tx_head as usize;
+        &self.tx[start..start + len]
     }
     pub(super) fn acked(&mut self, count: usize) {
         assert!(count <= self.tx_len as usize);
-        self.tx.copy_within(count..self.tx_len as usize, 0);
+        self.tx_head += count as u8;
         self.tx_len -= count as u8;
         if self.tx_len == 0 {
             self.events |= event::NET_TX_READY;

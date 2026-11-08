@@ -82,3 +82,7 @@ PASS: RAM/Flash overflow rejected; GDB RSP registers, memory, step, detach
 
 `bash scripts/network.sh` でフレーム注入・guest番兵・仮想NIC/ENC構成の容量を検査します。
 Mac実pingは未検証のためPARTIALです。[試験範囲と再現手順](docs/network.md) を参照してください。
+
+## Phase 10 TCP シェル
+
+`bash scripts/shell.sh` は Renvo 上の実 RV32EC 命令で port 23 の ps / mem / uptime / netstat、入力エラー復帰、未完了 EOF / RST、再接続を通常・RX 中 IRQ 注入の両方で検査します。元 ELF は Flash 16,320 byte、予約 RAM 1,964 byte、全番兵が正常です。ENC 版は Flash 2,360 byte 超過、Mac native TCP と実機は未検証です。[仕様・結果・残作業](docs/shell.md) を参照してください。

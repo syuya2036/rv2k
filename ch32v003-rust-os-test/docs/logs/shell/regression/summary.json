@@ -1,0 +1,20 @@
+{
+  "workspace_tests": 80,
+  "clippy_all_targets_all_features": "PASS",
+  "fmt_workspace_and_packet_peer": "PASS",
+  "commands": [
+    "cargo +stable test --workspace --all-features --locked",
+    "cargo +stable clippy --workspace --all-targets --all-features -- -D warnings",
+    "bash scripts/snapshot.sh",
+    "bash scripts/preempt.sh",
+    "bash scripts/syscall.sh",
+    "python3 scripts/syscall-negative.py",
+    "python3 scripts/diagnostics-negative.py --preempt-build-profile",
+    "bash scripts/network.sh"
+  ],
+  "production_tcp_enc_flash_bytes": 15824,
+  "production_tcp_enc_reserved_ram_bytes": 1844,
+  "shell_enc_strict_link": "FAIL: Flash exceeds 16384 by 2360 bytes",
+  "mac_native_ping_tcp_http": "UNVERIFIED: sudo requires authentication before vmnet startup",
+  "physical_board": "UNVERIFIED: not owned"
+}
