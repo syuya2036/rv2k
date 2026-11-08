@@ -50,16 +50,18 @@ impl<P: SpiPins> SpiBus for SoftwareSpi<P> {
         if !self.selected {
             return Err(Error::Invalid);
         }
-        let mut input = 0;
-        for shift in (0..8).rev() {
-            self.pins.mosi(byte & (1 << shift) != 0);
+        let mut input = 0u32;
+        let mut output = byte as u32;
+        for _ in 0..8 {
+            self.pins.mosi(output & 0x80 != 0);
+            output <<= 1;
             self.pins.half_cycle();
             self.pins.clock(true);
             self.pins.half_cycle();
-            input = (input << 1) | self.pins.miso() as u8;
+            input = (input << 1) | self.pins.miso() as u32;
             self.pins.clock(false);
         }
-        Ok(input)
+        Ok(input as u8)
     }
     fn delay_us(&mut self, us: u16) {
         self.pins.delay_us(us);

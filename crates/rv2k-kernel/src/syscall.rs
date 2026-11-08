@@ -44,7 +44,7 @@ pub fn dispatch(
     })
 }
 
-fn task_info(
+pub(crate) fn task_info(
     scheduler: &Scheduler,
     memory: &mut impl UserMemory,
     args: [usize; 3],

@@ -1,0 +1,366 @@
+{
+  "host_tests": 59,
+  "fmt": "PASS",
+  "clippy_all_features": "PASS",
+  "positive_scripts": {
+    "tcp": {
+      "exit_code": 0,
+      "seconds": 4.93
+    },
+    "network": {
+      "exit_code": 0,
+      "seconds": 4.41
+    },
+    "drivers": {
+      "exit_code": 0,
+      "seconds": 1.94
+    },
+    "diagnostics": {
+      "exit_code": 0,
+      "seconds": 1.78
+    },
+    "services": {
+      "exit_code": 0,
+      "seconds": 1.68
+    },
+    "syscall": {
+      "exit_code": 0,
+      "seconds": 0.83
+    },
+    "scheduler": {
+      "exit_code": 0,
+      "seconds": 0.77
+    },
+    "coop": {
+      "exit_code": 0,
+      "seconds": 1.08
+    },
+    "timer": {
+      "exit_code": 0,
+      "seconds": 0.71
+    }
+  },
+  "negative_scripts": {
+    "diagnostics-negative.py": 0,
+    "diagnostics-negative.py --tcp-build-profile": 0,
+    "budget-negative.py": 0,
+    "syscall-negative.py": 0,
+    "coop-negative.py": 0
+  },
+  "baseline_boot_uart": "PASS",
+  "tcp_guest": {
+    "host_packet_peer": "PASS (synthetic peer, not native Mac TCP)",
+    "public_mem_snapshot_checked": true,
+    "gp_preserved_across_timer_irqs_and_syscall": true,
+    "instructions": 6491124,
+    "frames_in": 25,
+    "frames_out": 31,
+    "connections": 2,
+    "echoed_bytes": 193,
+    "syn_data_fin_loss_recovered": true,
+    "out_of_order_and_duplicate_input": true,
+    "sequence_wrap": true,
+    "negotiated_peer_mss": 24,
+    "stack_used_bytes_tasks_kernel": [
+      236,
+      156,
+      164
+    ],
+    "syscalls": 177,
+    "timer_irqs": 29,
+    "uptime_ticks": 6527,
+    "simulated_clock_advance_ticks": 6500,
+    "mac_native_tcp": "UNVERIFIED",
+    "physical_enc": "UNVERIFIED"
+  },
+  "tcp_virtual_budget": {
+    "flash_bytes": 13852,
+    "flash_limit": 16384,
+    "static_ram_bytes": 1568,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 1824,
+    "ram_limit": 2048
+  },
+  "tcp_enc_budget": {
+    "flash_bytes": 16180,
+    "flash_limit": 16384,
+    "static_ram_bytes": 1600,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 1856,
+    "ram_limit": 2048
+  },
+  "phase6": {
+    "instructions": 5058524,
+    "frames_in": 21,
+    "frames_out": 12,
+    "stats_rx_tx_drop_bad_checksum_fragment_io": [
+      21,
+      12,
+      9,
+      2,
+      1,
+      0
+    ],
+    "stack_used_bytes_tasks_kernel": [
+      200,
+      84,
+      148
+    ],
+    "static_ram_bytes": 1024,
+    "kernel_stack_reserved_bytes": 256,
+    "syscalls": 49,
+    "timer_irqs": 21,
+    "mac_live_ping": "UNVERIFIED",
+    "physical_enc28j60": "UNVERIFIED"
+  },
+  "phase6_virtual_budget": {
+    "flash_bytes": 10232,
+    "flash_limit": 16384,
+    "static_ram_bytes": 1024,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 1280,
+    "ram_limit": 2048
+  },
+  "phase6_enc_budget": {
+    "flash_bytes": 14236,
+    "flash_limit": 16384,
+    "static_ram_bytes": 1072,
+    "kernel_stack_reserved_bytes": 256,
+    "total_reserved_ram_bytes": 1328,
+    "ram_limit": 2048
+  },
+  "drivers": {
+    "spi_packets": [
+      [
+        255
+      ],
+      [
+        191,
+        3
+      ],
+      [
+        159,
+        3
+      ],
+      [
+        18,
+        0
+      ]
+    ],
+    "spi_rising_edges": 56,
+    "nic_attached": false,
+    "instructions": 1869583,
+    "syscalls": 31,
+    "timer_irqs": 6,
+    "idle_polls": 3300,
+    "uptime_ticks": 7,
+    "wait_results": 127,
+    "stack_used_bytes_tasks_kernel": [
+      184,
+      184,
+      196
+    ],
+    "static_ram_bytes": 832,
+    "kernel_stack_reserved_bytes": 256
+  },
+  "diagnostics": {
+    "instructions": 1723412,
+    "syscalls": 30,
+    "timer_irqs": 6,
+    "idle_polls": 3393,
+    "uptime_ticks": 7,
+    "wait_results": 127,
+    "stack_used_bytes_tasks_kernel": [
+      184,
+      184,
+      148
+    ],
+    "static_ram_bytes": 752,
+    "kernel_stack_reserved_bytes": 256
+  },
+  "diagnostic_faults": [
+    {
+      "case": "fault-irq-canary",
+      "reason": 2,
+      "task": 0,
+      "pc": 172,
+      "cause": 2147483660,
+      "tval": 1,
+      "sp": 536871408,
+      "instructions": 243088
+    },
+    {
+      "case": "fault-no-debugger",
+      "reason": 1,
+      "task": 0,
+      "pc": 0,
+      "cause": 0,
+      "tval": 0,
+      "sp": 536871400,
+      "instructions": 100000
+    },
+    {
+      "case": "fault-canary",
+      "reason": 2,
+      "task": 0,
+      "pc": 1116,
+      "cause": 11,
+      "tval": 1,
+      "sp": 536871304,
+      "instructions": 6710
+    },
+    {
+      "case": "fault-kernel-canary",
+      "reason": 2,
+      "task": 0,
+      "pc": 1116,
+      "cause": 11,
+      "tval": 4,
+      "sp": 536871304,
+      "instructions": 6710
+    },
+    {
+      "case": "fault-panic",
+      "reason": 1,
+      "task": 0,
+      "pc": 0,
+      "cause": 0,
+      "tval": 0,
+      "sp": 536871400,
+      "instructions": 6545
+    },
+    {
+      "case": "fault-illegal",
+      "reason": 4,
+      "task": 0,
+      "pc": 1344,
+      "cause": 2,
+      "tval": 4294967295,
+      "sp": 536871408,
+      "instructions": 6993
+    },
+    {
+      "case": "fault-kernel-illegal",
+      "reason": 5,
+      "task": 4294967295,
+      "pc": 3818,
+      "cause": 2,
+      "tval": 4294967295,
+      "sp": 536872880,
+      "instructions": 3352
+    },
+    {
+      "case": "fault-sp",
+      "reason": 3,
+      "task": 0,
+      "pc": 1346,
+      "cause": 11,
+      "tval": 0,
+      "sp": 0,
+      "instructions": 6720
+    },
+    {
+      "case": "fault-uart-stuck",
+      "reason": 1,
+      "task": 0,
+      "pc": 0,
+      "cause": 0,
+      "tval": 0,
+      "sp": 536871400,
+      "instructions": 1005714
+    }
+  ],
+  "gp_profile_diagnostic_faults": [
+    {
+      "case": "fault-irq-canary",
+      "reason": 2,
+      "task": 0,
+      "pc": 172,
+      "cause": 2147483660,
+      "tval": 1,
+      "sp": 536871392,
+      "instructions": 243670
+    },
+    {
+      "case": "fault-no-debugger",
+      "reason": 1,
+      "task": 0,
+      "pc": 0,
+      "cause": 0,
+      "tval": 0,
+      "sp": 536871388,
+      "instructions": 100000
+    },
+    {
+      "case": "fault-canary",
+      "reason": 2,
+      "task": 0,
+      "pc": 1036,
+      "cause": 11,
+      "tval": 1,
+      "sp": 536871288,
+      "instructions": 7214
+    },
+    {
+      "case": "fault-kernel-canary",
+      "reason": 2,
+      "task": 0,
+      "pc": 1036,
+      "cause": 11,
+      "tval": 4,
+      "sp": 536871288,
+      "instructions": 7214
+    },
+    {
+      "case": "fault-panic",
+      "reason": 1,
+      "task": 0,
+      "pc": 0,
+      "cause": 0,
+      "tval": 0,
+      "sp": 536871388,
+      "instructions": 7022
+    },
+    {
+      "case": "fault-illegal",
+      "reason": 4,
+      "task": 0,
+      "pc": 1298,
+      "cause": 2,
+      "tval": 4294967295,
+      "sp": 536871392,
+      "instructions": 7534
+    },
+    {
+      "case": "fault-kernel-illegal",
+      "reason": 5,
+      "task": 4294967295,
+      "pc": 3044,
+      "cause": 2,
+      "tval": 4294967295,
+      "sp": 536872868,
+      "instructions": 3968
+    },
+    {
+      "case": "fault-sp",
+      "reason": 3,
+      "task": 0,
+      "pc": 1300,
+      "cause": 11,
+      "tval": 0,
+      "sp": 0,
+      "instructions": 7229
+    },
+    {
+      "case": "fault-uart-stuck",
+      "reason": 1,
+      "task": 0,
+      "pc": 0,
+      "cause": 0,
+      "tval": 0,
+      "sp": 536871388,
+      "instructions": 1006141
+    }
+  ],
+  "hardware_runtime": "UNVERIFIED; J4M6 + ENC28J60 not owned"
+}

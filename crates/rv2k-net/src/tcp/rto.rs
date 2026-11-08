@@ -13,6 +13,15 @@ impl Default for Rto {
     }
 }
 impl Rto {
+    // TCP resets the estimator on SYN. Dormant connections need no initialized
+    // flash image for a timer that has not started yet.
+    pub(super) const fn dormant() -> Self {
+        Self {
+            srtt8: 0,
+            variance4: 0,
+            value: 0,
+        }
+    }
     pub const fn new() -> Self {
         Self {
             srtt8: 0,

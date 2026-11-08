@@ -48,6 +48,25 @@ pub struct Segment {
     pub len: u16,
     pub mss: u16,
 }
+impl Segment {
+    pub const fn empty() -> Self {
+        Self {
+            peer: Endpoint {
+                mac: [0; 6],
+                ip: [0; 4],
+                port: 0,
+            },
+            local_port: 0,
+            seq: 0,
+            ack: 0,
+            window: 0,
+            flags: 0,
+            len: 0,
+            mss: 0,
+        }
+    }
+}
+
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 enum SendKind {
     Ack,
@@ -68,6 +87,22 @@ pub struct Outbound {
     kind: SendKind,
 }
 impl Outbound {
+    pub const fn empty() -> Self {
+        Self {
+            peer: Endpoint {
+                mac: [0; 6],
+                ip: [0; 4],
+                port: 0,
+            },
+            local_port: 0,
+            seq: 0,
+            ack: 0,
+            window: 0,
+            flags: 0,
+            len: 0,
+            kind: SendKind::Ack,
+        }
+    }
     pub fn syn(&self) -> bool {
         self.flags & SYN != 0
     }
@@ -104,7 +139,8 @@ pub struct Tcp {
     retransmitted: bool,
     ack_pending: bool,
     repeat: bool,
-    reset: Option<Outbound>,
+    reset: Outbound,
+    reset_pending: bool,
     rto: rto::Rto,
     pub retransmissions: u16,
     pub resets: u16,
@@ -123,13 +159,13 @@ impl Tcp {
             window_seq: 0,
             window_ack: 0,
             peer_window: 0,
-            mss: 128,
+            mss: 0,
             flight: 0,
             flight_flags: 0,
             sent_at: 0,
             deadline: 0,
             persist_at: 0,
-            persist_interval: rto::INITIAL,
+            persist_interval: 0,
             state_deadline: 0,
             quiet_until,
             quiet_done: false,
@@ -138,14 +174,22 @@ impl Tcp {
             retransmitted: false,
             ack_pending: false,
             repeat: false,
-            reset: None,
-            rto: rto::Rto::new(),
+            reset: Outbound::empty(),
+            reset_pending: false,
+            rto: rto::Rto::dormant(),
             retransmissions: 0,
             resets: 0,
         }
     }
     pub fn state(&self) -> State {
         self.state
+    }
+    /// Configure before starting the listener; no protocol buffers are copied.
+    pub fn configure_boot(&mut self, seed: u32, quiet_until: u32) {
+        assert!(self.state == State::Closed && self.peer.is_none());
+        self.sequence_seed = seed;
+        self.quiet_until = quiet_until;
+        self.quiet_done = false;
     }
     pub fn peer(&self) -> Option<Endpoint> {
         self.peer
@@ -178,7 +222,7 @@ impl Tcp {
             return;
         }
         let has_ack = segment.flags & ACK != 0;
-        self.reset = Some(Outbound {
+        self.reset = Outbound {
             peer: segment.peer,
             local_port: segment.local_port,
             seq: if has_ack { segment.ack } else { 0 },
@@ -195,7 +239,8 @@ impl Tcp {
             flags: if has_ack { RST } else { RST | ACK },
             len: 0,
             kind: SendKind::Reset,
-        });
+        };
+        self.reset_pending = true;
     }
     fn requests(&mut self, socket: &mut Socket, now: u32) {
         if due(now, self.quiet_until) {
@@ -232,10 +277,11 @@ impl Tcp {
             self.finish(socket, Error::Timeout);
         }
     }
+    #[inline(never)]
     pub fn receive(
         &mut self,
         socket: &mut Socket,
-        segment: Segment,
+        segment: &Segment,
         now: u32,
         mut copy: impl FnMut(usize, &mut [u8]) -> Result<(), Error>,
     ) -> Result<(), Error> {
@@ -247,14 +293,14 @@ impl Tcp {
         }
         if matches!(self.state, State::Closed | State::Listen) {
             if self.state == State::Closed || segment.local_port != socket.port() {
-                self.reset_for(&segment);
+                self.reset_for(segment);
                 return Ok(());
             }
             if segment.flags & RST != 0 {
                 return Ok(());
             }
             if segment.flags & ACK != 0 {
-                self.reset_for(&segment);
+                self.reset_for(segment);
                 return Ok(());
             }
             if !socket.listening() || segment.flags & SYN == 0 || segment.flags & FIN != 0 {
@@ -285,7 +331,7 @@ impl Tcp {
             self.state = State::SynReceived;
             return Ok(());
         }
-        if !self.matching(&segment, socket) {
+        if !self.matching(segment, socket) {
             return Ok(());
         }
         // Preserve the old tuple through TIME_WAIT (RFC 1337 assassination fix).
@@ -351,7 +397,7 @@ impl Tcp {
         }
         if self.state == State::SynReceived {
             if self.flight == 0 || segment.ack != self.next {
-                self.reset_for(&segment);
+                self.reset_for(segment);
                 return Ok(());
             }
             self.state = State::Established;
@@ -453,15 +499,23 @@ impl Tcp {
         Ok(())
     }
     pub fn next_segment(&mut self, socket: &mut Socket, now: u32) -> Option<Outbound> {
+        let mut out = Outbound::empty();
+        self.prepare(socket, now, &mut out).then_some(out)
+    }
+    #[inline(never)]
+    pub fn prepare(&mut self, socket: &mut Socket, now: u32, out: &mut Outbound) -> bool {
         self.tick(socket, now);
         if !self.quiet_done {
-            return None;
+            return false;
         }
-        if self.reset.is_some() {
-            return self.reset;
+        if self.reset_pending {
+            *out = self.reset;
+            return true;
         }
-        let peer = self.peer?;
-        let mut out = Outbound {
+        let Some(peer) = self.peer else {
+            return false;
+        };
+        *out = Outbound {
             peer,
             local_port: socket.port(),
             seq: self.next,
@@ -513,20 +567,21 @@ impl Tcp {
                 out.flags |= FIN;
                 out.kind = SendKind::New;
             } else {
-                return None;
+                return false;
             }
         } else {
-            return None;
+            return false;
         }
-        Some(out)
+        true
     }
     pub fn payload<'a>(&self, socket: &'a Socket, out: &Outbound) -> &'a [u8] {
         socket.tx(out.len as usize)
     }
     /// Commit protocol sequence/timer changes only after the NIC accepted TX.
-    pub fn sent(&mut self, socket: &Socket, out: Outbound, now: u32) {
+    #[inline(never)]
+    pub fn sent(&mut self, socket: &Socket, out: &Outbound, now: u32) {
         if out.kind == SendKind::Reset {
-            self.reset = None;
+            self.reset_pending = false;
             return;
         }
         self.right = self.receive.wrapping_add(out.window as u32);

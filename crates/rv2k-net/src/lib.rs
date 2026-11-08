@@ -1,22 +1,26 @@
 #![no_std]
 pub mod checksum;
 pub mod tcp;
+#[cfg(feature = "tcp")]
+mod wire;
 use checksum::{checksum, Checksum};
 use rv2k_api::syscall::Error;
 use rv2k_drivers::network::{NetworkDevice, RxFrame};
 #[cfg(test)]
 extern crate std;
 
+#[repr(C, align(4))]
 #[derive(Clone, Copy)]
 pub struct Config {
-    pub mac: [u8; 6],
     pub ip: [u8; 4],
     pub mask: [u8; 4],
+    pub mac: [u8; 6],
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(C, align(4))]
 struct Peer {
-    mac: [u8; 6],
     ip: [u8; 4],
+    mac: [u8; 6],
 }
 #[derive(Clone, Copy)]
 struct Neighbor {
@@ -42,12 +46,36 @@ pub struct Stats {
 pub struct Scratch {
     pub header: [u8; 96],
     pub stream: [u8; 64],
+    #[cfg(feature = "tcp")]
+    reception: Reception,
+    #[cfg(feature = "tcp")]
+    output: tcp::Outbound,
+}
+#[cfg(feature = "tcp")]
+struct Reception {
+    valid: bool,
+    is_tcp: bool,
+    packet: tcp::Segment,
+    frame: RxFrame,
+    start: usize,
+    len: usize,
 }
 impl Scratch {
     pub const fn new() -> Self {
         Self {
             header: [0; 96],
             stream: [0; 64],
+            #[cfg(feature = "tcp")]
+            reception: Reception {
+                valid: false,
+                is_tcp: false,
+                packet: tcp::Segment::empty(),
+                frame: RxFrame { token: 0, len: 0 },
+                start: 0,
+                len: 0,
+            },
+            #[cfg(feature = "tcp")]
+            output: tcp::Outbound::empty(),
         }
     }
 }
@@ -63,6 +91,12 @@ pub struct Network {
     query: Option<Query>,
     id: u16,
     pub stats: Stats,
+    #[cfg(feature = "tcp")]
+    pub tcp: tcp::Tcp,
+    #[cfg(feature = "tcp")]
+    pub socket: tcp::socket::Socket,
+    #[cfg(feature = "tcp")]
+    link_up: bool,
 }
 fn due(now: u32, deadline: u32) -> bool {
     now.wrapping_sub(deadline) < 0x80000000
@@ -74,6 +108,64 @@ fn unicast_mac(mac: &[u8]) -> bool {
     mac.len() == 6 && mac[0] & 1 == 0 && mac.iter().any(|b| *b != 0)
 }
 impl Network {
+    #[inline(always)]
+    fn frame_checksum(
+        d: &mut impl NetworkDevice,
+        f: RxFrame,
+        start: usize,
+        len: usize,
+        stream: &mut [u8; 64],
+        sum: &mut Checksum,
+    ) -> Result<bool, Error> {
+        let mut offset = 0;
+        while offset < len {
+            let count = stream.len().min(len - offset);
+            d.rx_read_at(f, start + offset, &mut stream[..count])?;
+            sum.update(&stream[..count]);
+            offset += count;
+        }
+        Ok(sum.finish() == 0)
+    }
+    #[inline(never)]
+    fn ipv4_header(
+        &mut self,
+        h: &mut [u8; 96],
+        mac: &[u8; 6],
+        ip: &[u8; 4],
+        total: u16,
+        protocol: u8,
+    ) {
+        h[..6].copy_from_slice(mac);
+        h[6..12].copy_from_slice(&self.config.mac);
+        h[12..14].copy_from_slice(&[8, 0]);
+        h[14..34].fill(0);
+        h[14] = 0x45;
+        h[16..18].copy_from_slice(&total.to_be_bytes());
+        self.id = self.id.wrapping_add(1);
+        h[18..20].copy_from_slice(&self.id.to_be_bytes());
+        h[20] = 0x40;
+        h[22] = 64;
+        h[23] = protocol;
+        h[26..30].copy_from_slice(&self.config.ip);
+        h[30..34].copy_from_slice(ip);
+        let sum = checksum(&h[14..34]);
+        h[24..26].copy_from_slice(&sum.to_be_bytes());
+    }
+    #[cfg(feature = "tcp")]
+    pub const fn unconfigured() -> Self {
+        let mut n = Self::new(Config {
+            mac: [0; 6],
+            ip: [0; 4],
+            mask: [0; 4],
+        });
+        n.tcp = tcp::Tcp::new(0, 0);
+        n
+    }
+    #[cfg(feature = "tcp")]
+    pub fn configure(&mut self, config: Config, seed: u32, quiet_until: u32) {
+        self.config = config;
+        self.tcp.configure_boot(seed, quiet_until);
+    }
     pub const fn new(config: Config) -> Self {
         Self {
             config,
@@ -81,6 +173,12 @@ impl Network {
             reply: None,
             query: None,
             id: 0,
+            #[cfg(feature = "tcp")]
+            tcp: tcp::Tcp::new(0x10203040, 6000), // one 60-second MSL after reboot
+            #[cfg(feature = "tcp")]
+            socket: tcp::socket::Socket::new(),
+            #[cfg(feature = "tcp")]
+            link_up: false,
             stats: Stats {
                 received: 0,
                 transmitted: 0,
@@ -92,23 +190,17 @@ impl Network {
         }
     }
     fn local_peer(&self, ip: [u8; 4]) -> bool {
-        ip != self.config.ip
+        let address = u32::from_ne_bytes(ip);
+        let own = u32::from_ne_bytes(self.config.ip);
+        let mask = u32::from_ne_bytes(self.config.mask);
+        let host = address & !mask;
+        address != own
             && ip[0] != 0
             && ip[0] != 127
             && ip[0] < 224
-            && ip
-                .iter()
-                .zip(self.config.ip)
-                .zip(self.config.mask)
-                .all(|((&a, b), mask)| (a & mask) == (b & mask))
-            && !ip
-                .iter()
-                .zip(self.config.mask)
-                .all(|(&a, mask)| a & !mask == 0)
-            && !ip
-                .iter()
-                .zip(self.config.mask)
-                .all(|(&a, mask)| a & !mask == !mask)
+            && address & mask == own & mask
+            && host != 0
+            && host != !mask
     }
     pub fn neighbor(&self, ip: [u8; 4], now: u32) -> Option<[u8; 6]> {
         self.neighbor
@@ -140,11 +232,21 @@ impl Network {
         now: u32,
     ) -> Result<(), Error> {
         let result = self.poll_inner(device, scratch, now);
+        #[cfg(feature = "tcp")]
+        let result = if result.is_ok() && self.link_up {
+            self.tcp_transmit(device, scratch, now)
+        } else {
+            if result.is_ok() {
+                self.tcp.tick(&mut self.socket, now);
+            }
+            result
+        };
         if result.is_err() {
             self.stats.io_errors = self.stats.io_errors.saturating_add(1);
         }
         result
     }
+    #[cfg_attr(feature = "tcp", inline(never))]
     fn poll_inner(
         &mut self,
         device: &mut impl NetworkDevice,
@@ -152,6 +254,10 @@ impl Network {
         now: u32,
     ) -> Result<(), Error> {
         let status = device.poll(now)?;
+        #[cfg(feature = "tcp")]
+        {
+            self.link_up = status.link_up;
+        }
         if !status.link_up {
             return Ok(());
         }
@@ -190,14 +296,36 @@ impl Network {
                 Err(e) => return Err(e),
             }
         }
-        let Some(frame) = device.rx_begin()? else {
-            return Ok(());
-        };
-        self.stats.received = self.stats.received.saturating_add(1);
-        let result = self.receive(device, scratch, frame, now);
-        let release = device.rx_release(frame);
-        result.and(release)
+        if let Some(frame) = device.rx_begin()? {
+            self.stats.received = self.stats.received.saturating_add(1);
+            #[cfg(feature = "tcp")]
+            {
+                scratch.reception.valid = false;
+                scratch.reception.is_tcp = false;
+            }
+            let result = self.receive(device, scratch, frame, now);
+            #[cfg(feature = "tcp")]
+            let result = if result.is_ok() && scratch.reception.is_tcp {
+                self.tcp_receive(device, scratch)
+            } else {
+                result
+            };
+            #[cfg(feature = "tcp")]
+            let result = if result.is_ok() && scratch.reception.valid {
+                let r = &scratch.reception;
+                self.tcp
+                    .receive(&mut self.socket, &r.packet, now, |skip, out| {
+                        device.rx_read_at(frame, r.start + skip, out)
+                    })
+            } else {
+                result
+            };
+            let release = device.rx_release(frame);
+            result.and(release)?;
+        }
+        Ok(())
     }
+    #[cfg_attr(feature = "tcp", inline(never))]
     fn drop_frame(&mut self) {
         self.stats.dropped = self.stats.dropped.saturating_add(1);
     }
@@ -306,7 +434,8 @@ impl Network {
         }
         result
     }
-    #[inline(always)]
+    #[cfg_attr(not(feature = "tcp"), inline(always))]
+    #[cfg_attr(feature = "tcp", inline(never))]
     fn ipv4(
         &mut self,
         d: &mut impl NetworkDevice,
@@ -344,32 +473,49 @@ impl Network {
             self.drop_frame();
             return Ok(());
         }
-        let mut option = 34;
-        while option < 14 + ihl {
-            let kind = s.header[option];
+        let mut options = &s.header[34..14 + ihl];
+        while !options.is_empty() {
+            let kind = options[0];
             if kind == 0 {
                 break;
             }
             if kind == 1 {
-                option += 1;
+                options = &options[1..];
                 continue;
             }
-            if option + 1 >= 14 + ihl
-                || s.header[option + 1] < 2
-                || option + s.header[option + 1] as usize > 14 + ihl
+            if options.len() < 2
+                || options[1] < 2
+                || options[1] as usize > options.len()
                 || kind == 131
                 || kind == 137
             {
                 self.drop_frame();
                 return Ok(());
             }
-            option += s.header[option + 1] as usize;
+            options = &options[options[1] as usize..];
         }
         let peer = Peer {
             mac: s.header[6..12].try_into().unwrap(),
             ip: s.header[26..30].try_into().unwrap(),
         };
-        if !self.local_peer(peer.ip) || s.header[23] != 1 || total < ihl + 8 {
+        if !self.local_peer(peer.ip) {
+            self.drop_frame();
+            return Ok(());
+        }
+        #[cfg(feature = "tcp")]
+        if s.header[23] == 6 {
+            s.reception.packet.peer = tcp::Endpoint {
+                mac: peer.mac,
+                ip: peer.ip,
+                port: 0,
+            };
+            s.reception.frame = f;
+            s.reception.start = 14 + ihl;
+            s.reception.len = total - ihl;
+            s.reception.is_tcp = true;
+            return Ok(());
+        }
+        if s.header[23] != 1 || total < ihl + 8 {
             self.drop_frame();
             return Ok(());
         }
@@ -381,14 +527,7 @@ impl Network {
             return Ok(());
         }
         let mut sum = Checksum::new();
-        let mut offset = 0;
-        while offset < len {
-            let count = s.stream.len().min(len - offset);
-            d.rx_read_at(f, start + offset, &mut s.stream[..count])?;
-            sum.update(&s.stream[..count]);
-            offset += count;
-        }
-        if sum.finish() != 0 {
+        if !Self::frame_checksum(d, f, start, len, &mut s.stream, &mut sum)? {
             self.stats.bad_checksum = self.stats.bad_checksum.saturating_add(1);
             self.drop_frame();
             return Ok(());
@@ -404,20 +543,7 @@ impl Network {
             Err(e) => return Err(e),
         }
         s.header.copy_within(start..start + 8, 34);
-        s.header[..6].copy_from_slice(&peer.mac);
-        s.header[6..12].copy_from_slice(&self.config.mac);
-        s.header[14..34].fill(0);
-        s.header[14] = 0x45;
-        s.header[16..18].copy_from_slice(&((20 + len) as u16).to_be_bytes());
-        self.id = self.id.wrapping_add(1);
-        s.header[18..20].copy_from_slice(&self.id.to_be_bytes());
-        s.header[20] = 0x40;
-        s.header[22] = 64;
-        s.header[23] = 1;
-        s.header[26..30].copy_from_slice(&self.config.ip);
-        s.header[30..34].copy_from_slice(&peer.ip);
-        let ip_checksum = checksum(&s.header[14..34]);
-        s.header[24..26].copy_from_slice(&ip_checksum.to_be_bytes());
+        self.ipv4_header(&mut s.header, &peer.mac, &peer.ip, (20 + len) as u16, 1);
         s.header[34] = 0;
         s.header[36..38].copy_from_slice(&reply_checksum.to_be_bytes());
         let result = (|| {
@@ -512,6 +638,7 @@ mod tests {
         aborts: usize,
         busy: bool,
         fail_write: bool,
+        link_up: bool,
     }
     impl Device {
         fn new(frame: Vec<u8>) -> Self {
@@ -526,13 +653,14 @@ mod tests {
                 aborts: 0,
                 busy: false,
                 fail_write: false,
+                link_up: true,
             }
         }
     }
     impl NetworkDevice for Device {
         fn poll(&mut self, _: u32) -> Result<DeviceStatus, Error> {
             Ok(DeviceStatus {
-                link_up: true,
+                link_up: self.link_up,
                 rx_pending: self.rx.is_some(),
                 tx: if self.busy {
                     TxStatus::Busy
@@ -726,5 +854,337 @@ mod tests {
         n.poll(&mut d, &mut Scratch::new(), 0).unwrap();
         assert_eq!(d.releases, 1);
         assert_eq!(n.stats.dropped, 1);
+    }
+    #[cfg(feature = "tcp")]
+    mod wire_tests {
+        use super::*;
+        use crate::tcp::{State, Tcp, ACK, PSH, RST, SYN};
+        fn frame(
+            seq: u32,
+            ack: u32,
+            flags: u8,
+            data: &[u8],
+            options: &[u8],
+            ip_options: &[u8],
+        ) -> Vec<u8> {
+            let ihl = 20 + ip_options.len();
+            let thl = 20 + options.len();
+            let total = ihl + thl + data.len();
+            let mut f = vec![0; (14 + total).max(60)];
+            f[..6].copy_from_slice(&config().mac);
+            f[6..12].copy_from_slice(&HOST_MAC);
+            f[12..14].copy_from_slice(&[8, 0]);
+            f[14] = 0x40 | (ihl / 4) as u8;
+            f[16..18].copy_from_slice(&(total as u16).to_be_bytes());
+            f[22] = 64;
+            f[23] = 6;
+            f[26..30].copy_from_slice(&HOST_IP);
+            f[30..34].copy_from_slice(&config().ip);
+            f[34..34 + ip_options.len()].copy_from_slice(ip_options);
+            let sum = reference(&f[14..14 + ihl]);
+            f[24..26].copy_from_slice(&sum.to_be_bytes());
+            let start = 14 + ihl;
+            f[start..start + 2].copy_from_slice(&50000u16.to_be_bytes());
+            f[start + 2..start + 4].copy_from_slice(&80u16.to_be_bytes());
+            f[start + 4..start + 8].copy_from_slice(&seq.to_be_bytes());
+            f[start + 8..start + 12].copy_from_slice(&ack.to_be_bytes());
+            f[start + 12] = (thl / 4) as u8 * 16;
+            f[start + 13] = flags;
+            f[start + 14..start + 16].copy_from_slice(&128u16.to_be_bytes());
+            f[start + 20..start + thl].copy_from_slice(options);
+            f[start + thl..14 + total].copy_from_slice(data);
+            fix_tcp(&mut f);
+            f
+        }
+        fn fix_tcp(f: &mut [u8]) {
+            let start = 14 + (f[14] & 15) as usize * 4;
+            let end = 14 + be16(&f[16..18]) as usize;
+            f[start + 16..start + 18].fill(0);
+            let mut pseudo = f[26..34].to_vec();
+            pseudo.extend_from_slice(&[0, 6]);
+            pseudo.extend_from_slice(&((end - start) as u16).to_be_bytes());
+            pseudo.extend_from_slice(&f[start..end]);
+            let sum = reference(&pseudo);
+            f[start + 16..start + 18].copy_from_slice(&sum.to_be_bytes());
+        }
+        fn validate(f: &[u8]) -> &[u8] {
+            assert_eq!(&f[..6], &HOST_MAC);
+            assert_eq!(&f[6..12], &config().mac);
+            assert_eq!(f[14], 0x45);
+            assert_eq!(f[23], 6);
+            assert_eq!(reference(&f[14..34]), 0);
+            let end = 14 + be16(&f[16..18]) as usize;
+            let mut pseudo = f[26..34].to_vec();
+            pseudo.extend_from_slice(&[0, 6]);
+            pseudo.extend_from_slice(&((end - 34) as u16).to_be_bytes());
+            pseudo.extend_from_slice(&f[34..end]);
+            assert_eq!(reference(&pseudo), 0);
+            assert_eq!(be16(&f[34..36]), 80);
+            assert_eq!(be16(&f[36..38]), 50000);
+            &f[34..end]
+        }
+        fn setup() -> (Network, Scratch, Device, usize) {
+            let mut n = Network::new(config());
+            n.tcp = Tcp::new(0x12345678, 0);
+            let h = n.socket.listen(80).unwrap();
+            let mut d = Device::new(Vec::new());
+            d.rx = None;
+            (n, Scratch::new(), d, h)
+        }
+        fn inject(n: &mut Network, s: &mut Scratch, d: &mut Device, f: Vec<u8>, now: u32) {
+            d.rx = Some(f);
+            n.poll(d, s, now).unwrap();
+        }
+        #[test]
+        fn tcp_wire_busy_maximal_headers_odd_payload_partial_ack_and_streaming_checksum() {
+            let (mut n, mut s, mut d, h) = setup();
+            d.busy = true;
+            let peer_seq = u32::MAX - 1;
+            let mut options = vec![1; 40];
+            options[..4].copy_from_slice(&[2, 4, 0, 128]);
+            inject(
+                &mut n,
+                &mut s,
+                &mut d,
+                frame(peer_seq, 0, SYN, &[], &options, &[0; 40]),
+                0,
+            );
+            assert!(d.out.is_empty());
+            assert_eq!(d.releases, 1);
+            assert_eq!(n.tcp.state(), State::SynReceived);
+            d.busy = false;
+            n.poll(&mut d, &mut s, 1).unwrap();
+            let syn = validate(&d.out[0]);
+            assert_eq!(syn[13], SYN | ACK);
+            assert_eq!(&syn[20..24], &[2, 4, 0, 128]);
+            let server_next = u32::from_be_bytes(syn[4..8].try_into().unwrap()).wrapping_add(1);
+            let client_next = peer_seq.wrapping_add(1);
+            inject(
+                &mut n,
+                &mut s,
+                &mut d,
+                frame(client_next, server_next, ACK, &[], &[], &[]),
+                10,
+            );
+            assert_eq!(n.tcp.state(), State::Established);
+            assert_eq!(d.out.len(), 1);
+            let payload: Vec<u8> = (0..99).map(|i| i as u8).collect();
+            n.socket
+                .send_with(h, payload.len(), |b| {
+                    b.copy_from_slice(&payload);
+                    Ok(())
+                })
+                .unwrap();
+            n.poll(&mut d, &mut s, 10).unwrap();
+            let data = validate(&d.out[1]);
+            assert_eq!(data[13], ACK | PSH);
+            assert_eq!(&data[20..], &payload);
+            inject(
+                &mut n,
+                &mut s,
+                &mut d,
+                frame(
+                    client_next,
+                    server_next.wrapping_add(33),
+                    ACK,
+                    &[],
+                    &[],
+                    &[],
+                ),
+                11,
+            );
+            n.poll(&mut d, &mut s, 111).unwrap();
+            let retrans = validate(d.out.last().unwrap());
+            assert_eq!(&retrans[20..], &payload[33..]);
+            // A corruption beyond the 128-byte receive capacity must still fail
+            // the full TCP checksum, without publishing the valid prefix.
+            let big = vec![0x77; 1000];
+            let good = frame(
+                client_next,
+                server_next.wrapping_add(99),
+                ACK,
+                &big,
+                &[],
+                &[],
+            );
+            let mut bad = good.clone();
+            *bad.last_mut().unwrap() ^= 1;
+            let count = d.out.len();
+            inject(&mut n, &mut s, &mut d, bad, 112);
+            assert_eq!(n.socket.rx_len(), 0);
+            assert_eq!(d.out.len(), count);
+            inject(&mut n, &mut s, &mut d, good, 113);
+            assert_eq!(n.socket.rx_len(), 128);
+            let ack = validate(d.out.last().unwrap());
+            assert_eq!(
+                u32::from_be_bytes(ack[8..12].try_into().unwrap()),
+                client_next.wrapping_add(128)
+            );
+            assert_eq!(be16(&ack[14..16]), 0);
+            assert_eq!(n.stats.bad_checksum, 1);
+            assert_eq!(n.stats.io_errors, 0);
+            assert_eq!(n.socket.tx_len(), 0);
+        }
+        #[test]
+        fn tcp_wire_rejects_malformed_options_offsets_reserved_bits_and_checksum_before_state() {
+            let mut cases = Vec::new();
+            let good = frame(99, 0, SYN, &[], &[], &[]);
+            for (offset, value) in [(46, 0xf0), (46, 0x51), (34, 0), (36, 0)] {
+                let mut f = good.clone();
+                f[offset] = value;
+                if offset == 34 {
+                    f[35] = 0;
+                }
+                if offset == 36 {
+                    f[37] = 0;
+                }
+                fix_tcp(&mut f);
+                cases.push(f);
+            }
+            let mut bad = good.clone();
+            bad[50] ^= 1;
+            cases.push(bad);
+            for options in [
+                &[30, 1, 0, 0][..],
+                &[2, 3, 1, 0][..],
+                &[2, 4, 0, 0][..],
+                &[2, 4, 0, 128, 2, 4, 0, 64][..],
+            ] {
+                cases.push(frame(99, 0, SYN, &[], options, &[]));
+            }
+            for f in cases {
+                let (mut n, mut s, mut d, _) = setup();
+                inject(&mut n, &mut s, &mut d, f, 0);
+                assert_eq!(n.tcp.state(), State::Listen);
+                assert!(d.out.is_empty());
+                assert_eq!(d.releases, 1);
+                assert_eq!(n.stats.dropped, 1);
+                assert_eq!(n.stats.io_errors, 0);
+            }
+            let (mut n, mut s, mut d, _) = setup();
+            inject(
+                &mut n,
+                &mut s,
+                &mut d,
+                frame(99, 0, SYN, &[], &[30, 4, 1, 2, 1, 0, 0, 0], &[]),
+                0,
+            );
+            assert_eq!(n.tcp.state(), State::SynReceived);
+            validate(&d.out[0]);
+        }
+        #[test]
+        fn link_down_defers_receive_and_pending_control_transmission() {
+            let (mut n, mut s, mut d, _) = setup();
+            d.link_up = false;
+            d.rx = Some(frame(99, 0, SYN, &[], &[], &[]));
+            n.poll(&mut d, &mut s, 0).unwrap();
+            assert_eq!(d.releases, 0);
+            assert!(d.out.is_empty());
+            d.link_up = true;
+            d.busy = true;
+            n.poll(&mut d, &mut s, 1).unwrap();
+            assert_eq!(d.releases, 1);
+            assert!(d.out.is_empty());
+            d.link_up = false;
+            d.busy = false;
+            n.poll(&mut d, &mut s, 2).unwrap();
+            assert!(d.out.is_empty());
+            d.link_up = true;
+            n.poll(&mut d, &mut s, 3).unwrap();
+            assert_eq!(validate(&d.out[0])[13], SYN | ACK);
+        }
+        #[test]
+        fn tcp_wire_closed_port_reset_and_tx_error_leave_a_retryable_syn() {
+            let (mut n, mut s, mut d, _) = setup();
+            let mut f = frame(99, 123, ACK, &[], &[], &[]);
+            f[36..38].copy_from_slice(&81u16.to_be_bytes());
+            fix_tcp(&mut f);
+            inject(&mut n, &mut s, &mut d, f, 0);
+            let reset = &d.out[0][34..54];
+            assert_eq!(reset[13], RST);
+            assert_eq!(&reset[4..8], &123u32.to_be_bytes());
+            let (mut n, mut s, mut d, _) = setup();
+            d.fail_write = true;
+            d.rx = Some(frame(99, 0, SYN, &[], &[], &[]));
+            assert_eq!(n.poll(&mut d, &mut s, 0), Err(Error::Io));
+            assert_eq!(d.releases, 1);
+            assert_eq!(d.aborts, 1);
+            assert!(d.out.is_empty());
+            d.fail_write = false;
+            n.poll(&mut d, &mut s, 1).unwrap();
+            assert_eq!(validate(&d.out[0])[13], SYN | ACK);
+        }
+        #[test]
+        fn wire_rst_challenges_an_in_window_sequence_and_retires_the_exact_connection() {
+            let (mut n, mut s, mut d, h) = setup();
+            inject(&mut n, &mut s, &mut d, frame(99, 0, SYN, &[], &[], &[]), 0);
+            let syn = validate(&d.out[0]);
+            let next = u32::from_be_bytes(syn[4..8].try_into().unwrap()).wrapping_add(1);
+            inject(
+                &mut n,
+                &mut s,
+                &mut d,
+                frame(100, next, ACK, b"abc", &[], &[]),
+                1,
+            );
+            assert_eq!(n.socket.rx_len(), 3);
+            let count = d.out.len();
+            inject(
+                &mut n,
+                &mut s,
+                &mut d,
+                frame(104, next, RST | ACK, &[], &[], &[]),
+                2,
+            );
+            assert_eq!(n.tcp.state(), State::Established);
+            assert_eq!(n.socket.rx_len(), 3);
+            assert_eq!(d.out.len(), count + 1);
+            let challenge = validate(d.out.last().unwrap());
+            assert_eq!(challenge[13], ACK);
+            assert_eq!(&challenge[8..12], &103u32.to_be_bytes());
+            inject(
+                &mut n,
+                &mut s,
+                &mut d,
+                frame(103, next, RST | ACK, &[], &[], &[]),
+                3,
+            );
+            assert_eq!(n.tcp.state(), State::Closed);
+            assert_eq!(d.out.len(), count + 1);
+            assert_eq!(n.socket.recv_with(h, 8, |_| Ok(())), Err(Error::Closed));
+            assert_ne!(n.socket.listen(80).unwrap(), h);
+            assert_eq!(n.socket.recv_with(h, 8, |_| Ok(())), Err(Error::BadFd));
+            assert_eq!(d.releases, 4);
+        }
+        #[test]
+        fn wire_syn_retry_exhaustion_reports_timeout_and_allows_a_new_listener() {
+            let (mut n, mut s, mut d, h) = setup();
+            inject(&mut n, &mut s, &mut d, frame(99, 0, SYN, &[], &[], &[]), 0);
+            let first = validate(&d.out[0]).to_vec();
+            let mut now = 0;
+            let mut interval = 100;
+            for _ in 0..8 {
+                now += interval;
+                n.poll(&mut d, &mut s, now).unwrap();
+                assert_eq!(validate(d.out.last().unwrap()), first);
+                interval = (interval * 2).min(6000);
+            }
+            assert_eq!(d.out.len(), 9);
+            n.poll(&mut d, &mut s, now + interval).unwrap();
+            assert_eq!(n.tcp.state(), State::Closed);
+            assert_eq!(d.out.len(), 9);
+            assert_eq!(n.socket.recv_with(h, 8, |_| Ok(())), Err(Error::Timeout));
+            assert_ne!(n.socket.listen(80).unwrap(), h);
+            inject(
+                &mut n,
+                &mut s,
+                &mut d,
+                frame(999, 0, SYN, &[], &[], &[]),
+                now + interval + 1,
+            );
+            assert_eq!(n.tcp.state(), State::SynReceived);
+            assert_eq!(validate(d.out.last().unwrap())[13], SYN | ACK);
+            assert_eq!(d.releases, 2);
+        }
     }
 }

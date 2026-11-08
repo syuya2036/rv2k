@@ -10,8 +10,8 @@ jobs:
           components: rustfmt, clippy
       - run: cargo fmt --all -- --check
       - run: rustfmt --edition 2021 --check host/net-harness/src/*.rs
-      - run: cargo clippy --workspace --all-targets -- -D warnings
-      - run: cargo test --workspace --locked
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
+      - run: cargo test --workspace --all-features --locked
   rv32ec:
     runs-on: ubuntu-latest
     defaults:
@@ -23,9 +23,11 @@ jobs:
       - run: rustup toolchain install nightly-2026-03-12 --profile minimal --component rust-src --component llvm-tools-preview
       - run: bash scripts/setup-emulator.sh
       - run: bash scripts/network.sh
+      - run: bash scripts/tcp.sh
       - run: bash scripts/drivers.sh
       - run: bash scripts/diagnostics.sh
       - run: python3 scripts/diagnostics-negative.py
+      - run: python3 scripts/diagnostics-negative.py --tcp-build-profile
       - run: python3 scripts/budget-negative.py
       - run: bash scripts/services.sh
       - run: bash scripts/syscall.sh

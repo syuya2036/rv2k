@@ -15,10 +15,19 @@ impl Clock {
         }
     }
     pub fn sample(&mut self, counter: u32) -> u32 {
-        let elapsed = counter.wrapping_sub(self.last) as u64 + self.remainder as u64;
+        let elapsed = counter.wrapping_sub(self.last);
         self.last = counter;
-        self.remainder = (elapsed % self.period as u64) as u32;
-        (elapsed / self.period as u64) as u32
+        let mut ticks = elapsed / self.period;
+        let remainder = elapsed % self.period;
+        // Add two remainders without a 33-bit sum or 64-bit division on RV32E.
+        let until_tick = self.period - remainder;
+        if self.remainder >= until_tick {
+            ticks += 1;
+            self.remainder -= until_tick;
+        } else {
+            self.remainder += remainder;
+        }
+        ticks
     }
 }
 #[cfg(test)]
@@ -32,5 +41,26 @@ mod tests {
         assert_eq!(c.sample(39), 3);
         assert_eq!(c.sample(44), 1);
         assert_eq!(c.sample(44), 0);
+    }
+    #[test]
+    fn large_deltas_and_periods_match_wide_arithmetic() {
+        for period in [1, 2, 10, 240_000, u32::MAX / 2 + 1, u32::MAX] {
+            let mut c = Clock::new(period, 0);
+            let mut last = 0;
+            let mut remainder = 0u64;
+            let mut counter = 0u32;
+            for i in 0..10000u32 {
+                counter = if i < 3 {
+                    counter.wrapping_add(u32::MAX)
+                } else {
+                    counter.wrapping_mul(1664525).wrapping_add(1013904223)
+                };
+                let elapsed = counter.wrapping_sub(last) as u64 + remainder;
+                last = counter;
+                assert_eq!(c.sample(counter), (elapsed / period as u64) as u32);
+                remainder = elapsed % period as u64;
+                assert_eq!(c.remainder, remainder as u32);
+            }
+        }
     }
 }

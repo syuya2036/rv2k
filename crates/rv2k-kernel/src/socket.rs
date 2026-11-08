@@ -66,7 +66,25 @@ pub fn dispatch(
                 Err(e) => Err(e),
             }
         }
-    } else if caller != TaskId::Application {
+    } else {
+        operation(scheduler, memory, call, args, socket, caller)
+    };
+    Some(Outcome::Complete(match result {
+        Ok(n) => n as isize,
+        Err(e) => e.code(),
+    }))
+}
+
+#[inline]
+pub(crate) fn operation(
+    scheduler: &mut Scheduler,
+    memory: &mut impl UserMemory,
+    call: Number,
+    args: [usize; 3],
+    socket: &mut impl SocketService,
+    caller: TaskId,
+) -> Result<usize, Error> {
+    if caller != TaskId::Application {
         Err(Error::BadFd)
     } else if scheduler.info(TaskId::Network).state == TaskState::Exited {
         Err(Error::Closed)
@@ -87,11 +105,7 @@ pub fn dispatch(
             let _ = scheduler.signal(TaskId::Network, event::DRIVER_POLL);
         }
         result
-    };
-    Some(Outcome::Complete(match result {
-        Ok(n) => n as isize,
-        Err(e) => e.code(),
-    }))
+    }
 }
 
 #[cfg(test)]
@@ -229,6 +243,103 @@ mod tests {
         s.select_next();
         assert!(matches!(
             dispatch(&mut s, &mailbox, &mut memory, 7, [80, 0, 0], &mut service),
+            Some(Outcome::Complete(-7))
+        ));
+    }
+    fn unified(
+        s: &mut Scheduler,
+        m: &mut Mailbox,
+        u: &mut impl UserMemory,
+        n: usize,
+        a: [usize; 3],
+        socket: &mut Service,
+    ) -> Option<Outcome> {
+        Some(crate::services::dispatch_runtime(
+            s,
+            m,
+            u,
+            n,
+            a,
+            crate::services::RuntimeServices::<crate::services::NoConsole, _> {
+                console: None,
+                socket: Some(socket),
+                info: crate::services::InfoSource::None,
+            },
+        ))
+    }
+    #[test]
+    fn integrated_dispatch_preserves_socket_ownership_copy_wait_and_exit() {
+        let mut s = Scheduler::new();
+        s.initialize([0x100, 0x200]);
+        s.select_next();
+        let mut mailbox = Mailbox::new();
+        let mut memory = Memory([0x55; 16]);
+        let mut service = Service {
+            level: event::NET_RX,
+            bytes: [0; 16],
+            len: 0,
+            calls: 0,
+        };
+        assert!(matches!(
+            unified(
+                &mut s,
+                &mut mailbox,
+                &mut memory,
+                7,
+                [80, 0, 0],
+                &mut service
+            ),
+            Some(Outcome::Complete(-3))
+        ));
+        assert_eq!(service.calls, 0);
+        s.suspend(0x100, Action::Yield);
+        s.select_next();
+        for (number, args, expected) in [
+            (7, [80, 0, 0], 2),
+            (7, [65536, 0, 0], -1),
+            (9, [2, 0x1000, 20], 16),
+            (9, [2, usize::MAX, 8], -8),
+            (9, [2, 0x1000, usize::MAX], -8),
+            (8, [3, 0x1000, 8], -3),
+            (8, [2, 0, 8], -8),
+            (8, [2, 0x1000, 8], 8),
+            (4, [event::NET_RX as usize, 0, 0], event::NET_RX as isize),
+            (4, [0, 0, 0], -1),
+            (10, [2, 0, 0], 0),
+        ] {
+            assert!(
+                matches!(unified(&mut s,&mut mailbox,&mut memory,number,args,&mut service),Some(Outcome::Complete(v))if v==expected)
+            );
+        }
+        assert!(matches!(
+            unified(&mut s, &mut mailbox, &mut memory, 13, [0; 3], &mut service),
+            Some(Outcome::Complete(-2))
+        ));
+        service.level = 0;
+        assert!(matches!(
+            unified(
+                &mut s,
+                &mut mailbox,
+                &mut memory,
+                4,
+                [event::NET_RX as usize, 1, 0],
+                &mut service
+            ),
+            Some(Outcome::Switch(Action::Block))
+        ));
+        s.suspend(0x200, Action::Block);
+        s.select_next();
+        s.suspend(0x100, Action::Exit(0));
+        s.select_next();
+        assert!(matches!(
+            unified(
+                &mut s,
+                &mut mailbox,
+                &mut memory,
+                7,
+                [80, 0, 0],
+                &mut service
+            ),
             Some(Outcome::Complete(-7))
         ));
     }

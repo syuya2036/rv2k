@@ -2,12 +2,17 @@
 import json
 import os
 import subprocess
+import sys
 from pathlib import Path
 
 logs = Path('docs/logs')
-output = Path('target/diagnostic-faults')
+tcp_profile = '--tcp-build-profile' in sys.argv[1:]
+prefix = 'tcp-profile-' if tcp_profile else ''
+output = Path('target/diagnostic-faults') / ('tcp-profile' if tcp_profile else 'default')
 output.mkdir(parents=True, exist_ok=True)
 env = dict(os.environ, RUSTFLAGS='-C link-arg=--defsym=_kernel_stack_size=256 -C link-arg=-Tmemory.x')
+if tcp_profile:
+    env['RUSTFLAGS'] += ' -C opt-level=z -C target-feature=+relax -C link-arg=--icf=all -C link-arg=--relax -C link-arg=--relax-gp'
 sysroot = subprocess.check_output(['rustc','--print','sysroot'],text=True).strip()
 host = next(x[6:] for x in subprocess.check_output(['rustc','-vV'],text=True).splitlines() if x.startswith('host: '))
 nm = Path(sysroot)/'lib/rustlib'/host/'bin/llvm-nm'
@@ -21,7 +26,7 @@ for feature, expected, trap, value in [
     subprocess.run(['cargo','build','--locked','--release','--features',('fault-panic' if feature=='fault-no-debugger' else feature+',emulator-stop'),'--target-dir',str(output)],env=env,check=True)
     elf = output/'riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test'
     subprocess.run(['python3','scripts/elf-for-remu.py',str(elf),str(elf)+'.remu'],check=True)
-    bus_path=output/(feature+'-bus.json'); run_path=logs/(feature+'-run.json')
+    bus_path=output/(feature+'-bus.json'); run_path=logs/(prefix+feature+'-run.json')
     subprocess.run(['vendor/renvo_emu/target/release/remu','run','--target','ch32v003','--elf',str(elf)+'.remu',
                     '--max-instructions',('100000' if feature=='fault-no-debugger' else '2000000'),'--result',str(run_path),
                     '--bus-log',str(bus_path),'--bus-log-region','sram'],check=True)
@@ -51,5 +56,5 @@ for feature, expected, trap, value in [
     if feature=='fault-uart-stuck':assert uart==b''
     else:assert uart.startswith(b'FAULT ') and f'{reason:08x}'.encode() in uart,uart
     results.append(dict(case=feature,reason=reason,task=task,pc=pc,cause=cause,tval=tval,sp=sp,instructions=run['stats']['instructions']))
-(logs/'diagnostics-negative-summary.json').write_text(json.dumps(results,indent=2)+'\n')
+(logs/(prefix+'diagnostics-negative-summary.json')).write_text(json.dumps(results,indent=2)+'\n')
 print('PASS: diagnostic fault injections:',results)

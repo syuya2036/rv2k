@@ -1,11 +1,6 @@
 //! Full service dispatcher. The Phase 2 task-only dispatcher is retained for its
 //! independent ABI regression probe.
-use crate::{
-    ipc::Mailbox,
-    memory::UserMemory,
-    syscall::{dispatch as task_dispatch, Outcome},
-    Action, Scheduler,
-};
+use crate::{ipc::Mailbox, memory::UserMemory, syscall::Outcome, Action, Scheduler};
 use rv2k_api::{
     syscall::{Error, Number},
     TaskId,
@@ -23,6 +18,79 @@ pub struct DeviceServices<'a, C> {
     pub console: &'a mut C,
     pub info: Option<&'a rv2k_api::mem::MemInfo>,
 }
+/// All enabled services share one decode and one event-wait implementation.
+pub struct RuntimeServices<'a, C, S> {
+    pub console: Option<&'a mut C>,
+    pub socket: Option<&'a mut S>,
+    pub info: InfoSource<'a>,
+}
+pub enum InfoSource<'a> {
+    None,
+    Snapshot(&'a rv2k_api::mem::MemInfo),
+    Live(fn() -> rv2k_api::mem::MemInfo),
+}
+impl InfoSource<'_> {
+    fn copy(
+        &self,
+        memory: &mut impl UserMemory,
+        address: usize,
+        len: usize,
+    ) -> Result<usize, Error> {
+        if matches!(self, Self::None) {
+            return Err(Error::NoSys);
+        }
+        if len != 24 {
+            return Err(Error::Invalid);
+        }
+        let live;
+        let info = match self {
+            Self::None => unreachable!(),
+            Self::Snapshot(info) => *info,
+            Self::Live(read) => {
+                live = read();
+                &live
+            }
+        };
+        info.with_bytes(|bytes| memory.copy_out(address, bytes, 2))
+            .map(|_| 0)
+    }
+}
+pub struct NoConsole;
+impl ConsoleWrite for NoConsole {
+    fn write_user(&mut self, _: &mut impl UserMemory, _: usize, _: usize) -> Result<usize, Error> {
+        Err(Error::NoSys)
+    }
+}
+struct NoSocket;
+impl crate::socket::SocketService for NoSocket {
+    fn listen(&mut self, _: u16) -> Result<usize, Error> {
+        Err(Error::NoSys)
+    }
+    fn recv(
+        &mut self,
+        _: &mut impl UserMemory,
+        _: usize,
+        _: usize,
+        _: usize,
+    ) -> Result<usize, Error> {
+        Err(Error::NoSys)
+    }
+    fn send(
+        &mut self,
+        _: &mut impl UserMemory,
+        _: usize,
+        _: usize,
+        _: usize,
+    ) -> Result<usize, Error> {
+        Err(Error::NoSys)
+    }
+    fn close(&mut self, _: usize) -> Result<(), Error> {
+        Err(Error::NoSys)
+    }
+    fn readiness(&self) -> u32 {
+        0
+    }
+}
 pub fn dispatch_with_devices(
     scheduler: &mut Scheduler,
     mailbox: &mut Mailbox,
@@ -31,21 +99,19 @@ pub fn dispatch_with_devices(
     args: [usize; 3],
     devices: DeviceServices<'_, impl ConsoleWrite>,
 ) -> Outcome {
-    if number == Number::Write as usize {
-        if scheduler.current().is_none() {
-            return Outcome::Complete(Error::Invalid.code());
-        }
-        if args[0] != 1 {
-            return Outcome::Complete(Error::BadFd.code());
-        }
-        return Outcome::Complete(match devices.console.write_user(memory, args[1], args[2]) {
-            Ok(count) => count as isize,
-            Err(error) => error.code(),
-        });
-    }
-    dispatch_with_info(scheduler, mailbox, memory, number, args, devices.info)
+    dispatch_runtime(
+        scheduler,
+        mailbox,
+        memory,
+        number,
+        args,
+        RuntimeServices::<_, NoSocket> {
+            console: Some(devices.console),
+            socket: None,
+            info: devices.info.map_or(InfoSource::None, InfoSource::Snapshot),
+        },
+    )
 }
-
 pub fn dispatch(
     scheduler: &mut Scheduler,
     mailbox: &mut Mailbox,
@@ -55,7 +121,6 @@ pub fn dispatch(
 ) -> Outcome {
     dispatch_with_info(scheduler, mailbox, memory, number, args, None)
 }
-
 pub fn dispatch_with_info(
     scheduler: &mut Scheduler,
     mailbox: &mut Mailbox,
@@ -64,18 +129,42 @@ pub fn dispatch_with_info(
     args: [usize; 3],
     info: Option<&rv2k_api::mem::MemInfo>,
 ) -> Outcome {
+    dispatch_runtime(
+        scheduler,
+        mailbox,
+        memory,
+        number,
+        args,
+        RuntimeServices::<NoConsole, NoSocket> {
+            console: None,
+            socket: None,
+            info: info.map_or(InfoSource::None, InfoSource::Snapshot),
+        },
+    )
+}
+pub fn dispatch_runtime(
+    scheduler: &mut Scheduler,
+    mailbox: &mut Mailbox,
+    memory: &mut impl UserMemory,
+    number: usize,
+    args: [usize; 3],
+    services: RuntimeServices<'_, impl ConsoleWrite, impl crate::socket::SocketService>,
+) -> Outcome {
     let Some(caller) = scheduler.current() else {
         return Outcome::Complete(Error::Invalid.code());
     };
     let result = match Number::decode(number) {
-        Some(Number::MemInfo) => match info {
-            Some(info) if args[1] == 24 => memory.copy_out(args[0], &info.encode(), 2).map(|_| 0),
-            Some(_) => Err(Error::Invalid),
-            None => Err(Error::NoSys),
+        Some(Number::Yield) => return Outcome::Switch(Action::Yield),
+        Some(Number::GetPid) => Ok(caller.index()),
+        Some(Number::TaskExit) => match i16::try_from(args[0] as isize) {
+            Ok(code) => return Outcome::Switch(Action::Exit(code)),
+            Err(_) => Err(Error::Invalid),
         },
+        Some(Number::TaskInfo) => crate::syscall::task_info(scheduler, memory, args),
+        Some(Number::MemInfo) => services.info.copy(memory, args[0], args[1]),
         Some(Number::Sleep) => match u32::try_from(args[0])
             .ok()
-            .and_then(|ticks| scheduler.sleep(ticks).ok())
+            .and_then(|n| scheduler.sleep(n).ok())
         {
             Some(action) => return Outcome::Switch(action),
             None => Err(Error::Invalid),
@@ -97,14 +186,16 @@ pub fn dispatch_with_info(
             if args[0] > u32::MAX as usize || args[1] > u32::MAX as usize {
                 Err(Error::Invalid)
             } else {
-                match scheduler.wait_event(
-                    args[0] as u32,
-                    args[1] as u32,
-                    mailbox.readiness(caller),
-                ) {
+                let level = mailbox.readiness(caller)
+                    | if caller == TaskId::Application {
+                        services.socket.as_ref().map_or(0, |s| s.readiness())
+                    } else {
+                        0
+                    };
+                match scheduler.wait_event(args[0] as u32, args[1] as u32, level) {
                     Ok(Some(bits)) => Ok(bits as usize),
                     Ok(None) => return Outcome::Switch(Action::Block),
-                    Err(error) => Err(error),
+                    Err(e) => Err(e),
                 }
             }
         }
@@ -114,16 +205,30 @@ pub fn dispatch_with_info(
             }
             _ => Err(Error::Invalid),
         },
+        Some(Number::Write) => match services.console {
+            Some(c) if args[0] == 1 => c.write_user(memory, args[1], args[2]),
+            Some(_) => Err(Error::BadFd),
+            None => Err(Error::NoSys),
+        },
+        Some(
+            call @ (Number::SocketListen
+            | Number::SocketRecv
+            | Number::SocketSend
+            | Number::SocketClose),
+        ) => match services.socket {
+            Some(socket) => crate::socket::operation(scheduler, memory, call, args, socket, caller),
+            None => Err(Error::NoSys),
+        },
         Some(Number::MessageSend) => match TaskId::from_index(args[0]) {
             Some(id) => mailbox.send(scheduler, memory, id, args[1], args[2]),
             None => Err(Error::Invalid),
         },
         Some(Number::MessageRecv) => mailbox.recv(scheduler, memory, args[0], args[1]),
-        _ => return task_dispatch(scheduler, memory, number, args),
+        _ => Err(Error::NoSys),
     };
     Outcome::Complete(match result {
-        Ok(value) => value as isize,
-        Err(error) => error.code(),
+        Ok(n) => n as isize,
+        Err(e) => e.code(),
     })
 }
 
@@ -247,6 +352,7 @@ mod diagnostic_tests {
             flash_limit: 16384,
             reserved: 0,
         };
+        info.with_bytes(|bytes| assert_eq!(bytes, &info.encode()));
         assert!(matches!(
             dispatch_with_info(
                 &mut s,
@@ -269,6 +375,47 @@ mod diagnostic_tests {
                 matches!(dispatch_with_info(&mut s,&mut m,&mut output,13,args,Some(&info)),Outcome::Complete(v) if v==expected)
             );
         }
+    }
+    #[test]
+    fn live_snapshot_runs_only_for_a_valid_memory_info_request() {
+        use core::sync::atomic::{AtomicUsize, Ordering};
+        static READS: AtomicUsize = AtomicUsize::new(0);
+        fn read() -> MemInfo {
+            READS.fetch_add(1, Ordering::Relaxed);
+            MemInfo {
+                version: 1,
+                static_bytes: 768,
+                kernel_reserved: 256,
+                task_reserved: 256,
+                used: [80; 3],
+                guard_failures: 0,
+                flash_bytes: 8192,
+                ram_limit: 2048,
+                flash_limit: 16384,
+                reserved: 0,
+            }
+        }
+        let mut s = Scheduler::new();
+        s.initialize([0x100, 0x200]);
+        s.select_next();
+        let mut mailbox = Mailbox::new();
+        let mut out = Output([0; 24]);
+        for (number, args, expected) in [
+            (2, [0; 3], 0),
+            (17, [0; 3], -2),
+            (13, [0x1000, 23, 0], -1),
+            (13, [0x1000, 24, 0], 0),
+        ] {
+            assert!(
+                matches!(dispatch_runtime(&mut s,&mut mailbox,&mut out,number,args,
+                RuntimeServices::<NoConsole,NoSocket>{console:None,socket:None,info:InfoSource::Live(read)}),Outcome::Complete(n)if n==expected)
+            );
+            if number != 13 || args[1] != 24 {
+                assert_eq!(READS.load(Ordering::Relaxed), 0);
+            }
+        }
+        assert_eq!(READS.load(Ordering::Relaxed), 1);
+        assert_eq!(&out.0[..4], &[1, 0, 0, 3]);
     }
 }
 

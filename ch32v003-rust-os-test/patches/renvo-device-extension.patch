@@ -1,13 +1,20 @@
 diff --git a/crates/remu-machines/src/riscv/machine_runtime.rs b/crates/remu-machines/src/riscv/machine_runtime.rs
-index 1b514b6..b9bfed2 100644
+index 1b514b6..4b0636d 100644
 --- a/crates/remu-machines/src/riscv/machine_runtime.rs
 +++ b/crates/remu-machines/src/riscv/machine_runtime.rs
-@@ -1,4 +1,11 @@
+@@ -1,4 +1,18 @@
  impl RiscVMachine {
 +    /// Installs an external MMIO peripheral; overlap checks remain in the bus.
 +    pub fn attach_device(&mut self, name: &str, base: u64, size: usize,
 +        device: Box<dyn remu_bus::Device>) -> Result<(), MachineError> {
 +        self.bus.map_device(name, base, size, device)?;
++        Ok(())
++    }
++
++    /// Advances peripheral time without executing CPU instructions (test harness).
++    pub fn advance_time(&mut self, ticks: u64) -> Result<(), String> {
++        self.now = self.now.checked_add(remu_core::SimDuration::from_ticks(ticks))
++            .map_err(|error| error.to_string())?;
 +        Ok(())
 +    }
 +

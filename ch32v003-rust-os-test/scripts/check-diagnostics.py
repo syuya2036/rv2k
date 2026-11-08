@@ -1,12 +1,14 @@
 """Check execution, ordering, register probes, private locals and stack budgets."""
 import json
+import sys
 from pathlib import Path
 
 p = Path('docs/logs')
-r = json.loads((p / 'diagnostics-run.json').read_text())
-bus = json.loads((p / 'diagnostics-bus.json').read_text())
+prefix = sys.argv[1] if len(sys.argv)>1 else 'diagnostics'
+r = json.loads((p / f'{prefix}-run.json').read_text())
+bus = json.loads((p / f'{prefix}-bus.json').read_text())
 symbols = {}
-for line in (p / 'diagnostics-symbols.txt').read_text().splitlines():
+for line in (p / f'{prefix}-symbols.txt').read_text().splitlines():
     fields = line.split()
     if len(fields) == 4:
         address, size, kind, name = fields
@@ -34,6 +36,8 @@ def words(name):
 
 assert r['reason'] == 'Halted', r['reason']
 assert words('FAULT_INFO')[0] == 0, words('FAULT_INFO')
+if prefix == 'compact':
+    assert words('COMPACT_STATUS') == [0xc0]
 assert words('SERVICES_STATUS') == [0x600d], words('SERVICES_STATUS')
 assert bytes(r['uart']) == b'SERVICES OK\n', r['uart']
 assert words('COUNTERS') == [1, 1]
@@ -55,5 +59,7 @@ summary = {
     'static_ram_bytes': symbols['_ebss'][0]-0x20000000,
     'kernel_stack_reserved_bytes': symbols['_stack_top'][0]-symbols['_stack_bottom'][0],
 }
-(p/'diagnostics-summary.json').write_text(json.dumps(summary, indent=2)+'\n')
+if prefix == 'compact':
+    summary['compact_memory_status'] = words('COMPACT_STATUS')[0]
+(p/f'{prefix}-summary.json').write_text(json.dumps(summary, indent=2)+'\n')
 print('PASS: timed sleep/event/IPC and IRQ-enabled idle:', summary)

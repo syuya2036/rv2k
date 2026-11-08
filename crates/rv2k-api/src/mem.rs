@@ -15,6 +15,19 @@ pub struct MemInfo {
 }
 const _: () = assert!(core::mem::size_of::<MemInfo>() == 24);
 impl MemInfo {
+    /// Visit the little-endian wire image without a second stack buffer on RV32.
+    pub fn with_bytes<T>(&self, visit: impl FnOnce(&[u8]) -> T) -> T {
+        #[cfg(target_endian = "little")]
+        {
+            // repr(C), twelve u16 values and size=24 prove there is no padding.
+            // Every byte is initialized; this shared view cannot outlive self.
+            visit(unsafe { core::slice::from_raw_parts((self as *const Self).cast::<u8>(), 24) })
+        }
+        #[cfg(target_endian = "big")]
+        {
+            visit(&self.encode())
+        }
+    }
     pub fn encode(&self) -> [u8; 24] {
         let values = [
             self.version,

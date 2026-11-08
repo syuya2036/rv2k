@@ -121,7 +121,10 @@ rv2k_fault_entry:
 csrci mstatus, 8
 csrw mscratch, zero
 la sp, _stack_top
-li gp, 0
+.option push
+.option norelax
+la gp, __global_pointer$
+.option pop
 li tp, 0
 j rv2k_record_fault
 "#

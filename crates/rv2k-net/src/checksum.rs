@@ -1,29 +1,28 @@
 /// RFC Internet checksum, preserving an odd byte across arbitrary chunks.
-#[derive(Default)]
 pub struct Checksum {
     sum: u32,
-    high: Option<u8>,
+    shift: u32,
+}
+impl Default for Checksum {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 impl Checksum {
     pub const fn new() -> Self {
-        Self { sum: 0, high: None }
+        Self { sum: 0, shift: 8 }
     }
     pub fn update(&mut self, bytes: &[u8]) {
         for byte in bytes {
-            if let Some(high) = self.high.take() {
-                self.sum += u16::from_be_bytes([high, *byte]) as u32;
-                self.sum = (self.sum & 0xffff) + (self.sum >> 16);
-            } else {
-                self.high = Some(*byte);
-            }
+            self.sum += (*byte as u32) << self.shift;
+            self.sum = (self.sum & 0xffff) + (self.sum >> 16);
+            self.shift ^= 8;
         }
     }
     pub fn finish(&self) -> u16 {
-        let mut sum = self.sum + self.high.map_or(0, |b| (b as u32) << 8);
-        while sum >> 16 != 0 {
-            sum = (sum & 0xffff) + (sum >> 16);
-        }
-        !(sum as u16)
+        // Each update adds at most 0xff00 to an already folded 16-bit sum.
+        // One carry fold therefore leaves no carry for finish to propagate.
+        !(self.sum as u16)
     }
 }
 pub fn checksum(bytes: &[u8]) -> u16 {

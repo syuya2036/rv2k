@@ -2,6 +2,8 @@
 name = "rv2k-net"
 version = "0.1.0"
 edition = "2021"
+[features]
+tcp = ["rv2k-drivers/compact"]
 [dependencies]
 rv2k-api = { path = "../rv2k-api" }
 rv2k-drivers = { path = "../rv2k-drivers" }

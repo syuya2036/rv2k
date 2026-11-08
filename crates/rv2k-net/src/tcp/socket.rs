@@ -41,7 +41,7 @@ impl Socket {
             tx: [0; CAPACITY],
             rx_len: 0,
             tx_len: 0,
-            generation: 1,
+            generation: 0,
             retired: 0,
             port: 0,
             phase: Phase::Closed,
@@ -55,10 +55,10 @@ impl Socket {
     }
     fn handle(&self) -> usize {
         // Low bit is the only slot; the remaining bits identify its incarnation.
-        (self.generation as usize) << 1
+        (self.generation as usize + 1) << 1
     }
     fn validate(&self, handle: usize) -> Result<(), Error> {
-        if self.phase == Phase::Terminal && handle == (self.retired as usize) << 1 {
+        if self.phase == Phase::Terminal && handle == (self.retired as usize + 1) << 1 {
             return Err(self.error.unwrap_or(Error::Closed));
         }
         if handle != self.handle() || matches!(self.phase, Phase::Closed | Phase::Terminal) {
@@ -162,6 +162,12 @@ impl Socket {
     pub fn take_events(&mut self) -> u32 {
         core::mem::take(&mut self.events)
     }
+    pub fn network_stopped(&mut self) {
+        self.terminal(Error::Closed);
+    }
+    pub fn application_stopped(&mut self) {
+        self.close = true;
+    }
     pub fn port(&self) -> u16 {
         self.port
     }
@@ -224,7 +230,7 @@ impl Socket {
         self.phase = Phase::Terminal;
         self.error = Some(error);
         self.retired = self.generation;
-        self.generation = self.generation.wrapping_add(1).max(1);
+        self.generation = self.generation.wrapping_add(1);
         self.rx_len = 0;
         self.tx_len = 0;
         self.listen = false;
