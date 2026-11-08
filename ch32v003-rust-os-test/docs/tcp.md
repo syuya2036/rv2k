@@ -5,6 +5,7 @@
 仮想NIC構成は予約RAM 1,824byte / Flash 13,852byte。
 ENC28J60構成は予約RAM 1,856byte / Flash 16,180byteで、16KB/2KBのstrict linker gateをPASS。
 ソフトウェア・容量のゲートはPASS。Mac native TCPと実機のゲートを残す。
+以下の実測はPhase 7当時の記録。現在のIRQ統合・容量・stackは[Phase 8検証](preemption.md)を参照。
 Macのnative TCP、J4M6実機はUNVERIFIED。合成peerの成功をMacからの実通信として数えない。
 
 ## 実装済みの基礎
@@ -99,7 +100,7 @@ PCAPとSRAMを独立Python oracleでも照合する。
 過去フェーズのrawログは当時の実測として残し、今回の再検証結果は`tcp-regression.json`へ記録する。
 
 残るPhase 7ゲートはMac native TCP検証。host adapter経路は未検証で、合成peerによるwire検証とは区別する。
-実機のstack/SPI timingは未検証。Phase 8ではprotocol/NIC借用中のpreemption延期とcontext保存を含めて再計測する。
+実機のstack/SPI timingは未検証。Phase 8ではprotocol/NIC借用中のpreemption延期とcontext保存を含め、仮想HWで再計測した。
 
 設計根拠: [RFC 9293](https://www.rfc-editor.org/rfc/rfc9293.html)、
 [RFC 6298](https://www.rfc-editor.org/rfc/rfc6298.html)、
