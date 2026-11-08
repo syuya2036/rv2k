@@ -1,0 +1,32 @@
+{
+  "instructions": 12298364,
+  "progress": [
+    3,
+    3
+  ],
+  "forced_switches": 47,
+  "irqs": 51,
+  "deferred_irqs": 5,
+  "rejected_blocking_calls": 8,
+  "max_disabled_clocks": 963165,
+  "trace_irq_switches_inside_cpu_probes": [
+    3,
+    4
+  ],
+  "deferred_switches_at_syscall_boundary": 1,
+  "spi_mosi_packets": [
+    [
+      165,
+      60
+    ]
+  ],
+  "irq_inside_spi_bit_positions": [
+    3
+  ],
+  "stack_used_bytes_tasks_kernel": [
+    200,
+    200,
+    140
+  ],
+  "all_guards_intact": true
+}

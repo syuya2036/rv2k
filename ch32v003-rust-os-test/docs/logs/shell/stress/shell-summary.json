@@ -11,20 +11,20 @@
   "commands": 12,
   "frames_in": 103,
   "frames_out": 110,
-  "instructions": 38903863,
+  "instructions": 38182208,
   "stack_used_bytes_tasks_kernel": [
-    204,
+    176,
     224,
-    112
+    120
   ],
   "all_guards_intact": true,
   "uptime_command_ticks": [
-    6332,
-    6445
+    6331,
+    6442
   ],
   "nic_irq_injections": 103,
   "forced_switches": 0,
-  "deferred_irqs": 122,
+  "deferred_irqs": 117,
   "max_disabled_clocks": null,
   "mac_native_tcp": "UNVERIFIED",
   "physical_enc": "UNVERIFIED"

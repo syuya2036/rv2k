@@ -17,16 +17,16 @@
   "eof_reset_reconnect_and_absolute_timeout": true,
   "pcap_frames_in_out": [
     230,
-    230
+    232
   ],
-  "instructions": 84996360,
+  "instructions": 88090979,
   "stack_used_bytes_tasks_kernel": [
-    204,
+    176,
     184,
-    112
+    120
   ],
-  "forced_switches": 21,
-  "deferred_irqs": 8,
+  "forced_switches": 15,
+  "deferred_irqs": 6,
   "max_disabled_clocks": null,
   "nic_irq_injections": 0,
   "mac_native_http": "UNVERIFIED",

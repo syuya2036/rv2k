@@ -8,6 +8,8 @@
 
 `POST /echo HTTP/1.1`、本文 0〜64 byte、Content-Length / Host 必須の制限付きプロファイルです。[パーサ契約](../../crates/rv2k-apps/README.md) に、ヘッダ・Host・エラー応答・非対応機能を記載しています。行と本文で 64 byte 配列を再利用し、socket I/O 用の 128 byte 領域を別に持ちます。ヒープはありません。
 
+公開 `event::wait_until` で期限の検査と登録をカーネル内で一度に行います。残り時間の取得と相対 wait の間の preemption で期限が延びる競合を防ぎます。
+
 受信期限は接続後 500 tick（5 秒）の絶対期限で、途中でデータが届いても延長しません。応答送信も別の 500 tick で打ち切ります。送信 API の部分成功 / Again を扱い、NET_RX / NET_TX_READY / NET_CLOSED を待って再試行します。
 
 Content-Length と Connection: close を出力し、1 接続につき 1 リクエストで終了します。応答を読んだクライアントの FIN と未読要求データの排出を最大 100 tick（1 秒）待ってから close します。クライアントが閉じなければ active close となり、既存 TCP の 120 秒 TIME_WAIT が単一スロットを占有します。この制約を短縮して再接続試験を通してはいません。通常の close-first クライアントは LAST_ACK 完了後に再接続できます。Mac クライアントでの確認は残っています。
@@ -38,15 +40,15 @@ HTTP の対向 harness はホスト監視時間を 180 秒とします。17 接�
 
 |項目|通常|IRQ ストレス|
 |---|---:|---:|
-|実行命令数|84,996,360|85,484,179|
-|RX / TX フレーム|230 / 230|230 / 231|
-|強制切替 / 延期 IRQ|21 / 8|6 / 256|
-|T0 / T1 / kernel スタック使用 byte|204 / 184 / 112|204 / 184 / 112|
+|実行命令数|88,090,979|88,342,400|
+|RX / TX フレーム|230 / 232|230 / 231|
+|強制切替 / 延期 IRQ|15 / 6|4 / 246|
+|T0 / T1 / kernel スタック使用 byte|176 / 184 / 120|176 / 184 / 120|
 |番兵破損 / fault|0 / 0|0 / 0|
 
-仮想 NIC ELF は Flash 15,630 / 16,384 byte、静的 RAM 1,764 byte + kernel/IRQ/boot 予約 256 byte = 2,020 / 2,048 byte です。タスクの各 256 byte スタックと番兵は静的 RAM に含みます。
+仮想 NIC ELF は Flash 15,478 / 16,384 byte、静的 RAM 1,764 byte + kernel/IRQ/boot 予約 256 byte = 2,020 / 2,048 byte です。タスクの各 256 byte スタックと番兵は静的 RAM に含みます。
 
-ENC28J60 構成は最終リンクで Flash を 700 byte 超過しました。実機用の合格 ELF は生成できていません。`enc-link-failure.txt` が失敗証跡です。
+ENC28J60 構成は最終リンクで Flash を 460 byte 超過しました。実機用の合格 ELF は生成できていません。`enc-link-failure.txt` が失敗証跡です。
 
 ## 共通部分の回帰と未完了ゲート
 
@@ -54,6 +56,10 @@ HTTP と shell は選択式 feature とし、併用や HTTP と snapshot 専用 
 
 TCB を RV32 で 32 byte stride とし、初期化の一時コピー、固定 MMIO base の保持、syscall wrapper の中間 Result コピーを減らしました。UART/NIC は IRQ マスク中に一度初期化してから使い、デバイスの通常 RAM 状態に volatile な構造体コピーを使いません。OS サービスや TCP 機能は削除していません。
 
-[regression.json](logs/http/regression.json) は初期統合時の共通部分・ホスト NIC 所有権試験の履歴です。現在の統合後は workspace 83 tests / clippy / fmt と、shell / snapshot / TCP の通常・IRQ 注入を再検査して PASS です。[最新回帰](logs/http/integration-regression) と [source / ELF hash](logs/http/verification.json) を保存しています。preemption の除外時間計測は別の `preempt-timing` profile の機能であり、HTTP の `max_disabled_clocks` は未計測（null）です。従来フェーズのログは履歴として保持しています。
+[regression.json](logs/http/regression.json) は初期統合時の共通部分・ホスト NIC 所有権試験の履歴です。現在の統合後は workspace 86 tests / clippy / fmt と、shell / snapshot / TCP の通常・IRQ 注入を再検査して PASS です。[最新回帰](logs/http/integration-regression) と [source / ELF hash](logs/http/verification.json) を保存しています。preemption の除外時間計測は別の `preempt-timing` profile の機能であり、HTTP の `max_disabled_clocks` は未計測（null）です。従来フェーズのログは履歴として保持しています。
 
 未完了は ENC 構成の Flash 収容、Mac native HTTP、Phase 9 統合変更の PR レビュー / マージです。Mac vmnet は実行許可済みですが、前回の `sudo -n` が OS 認証を要求して起動前に失敗しており、ネットワークは作成されていません。[実接続試行](logs/network-live-attempt.json) を参照してください。CH32V003J4M6＋ENC28J60 は未保有で、実機検証は行っていません。
+
+最適化構成は固定 nightly-2026-03-12 の `-Z inline-mir=yes` を使います。全 TCP / snapshot / preemption の最適化試験も同じ設定で再検査します。MIR 設定比較で見つかった相対待機登録の競合は、絶対期限を渡す API で修正します。
+
+[絶対期限の回帰](logs/deadlines) に、残り時間取得後の preemption の反例、両 dispatcher・u32 wrap・期限切れ時のイベント非消費、MIR 構成の preemption / SPI / 診断負例を保存しています。実行予算を超えた harness も PCAP / RAM / 停止理由を保存し、成功としては扱いません。

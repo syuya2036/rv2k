@@ -1,0 +1,2 @@
+guest InstructionLimit: 200000016 instructions, 175 RX, 177 TX
+Error: "guest exceeded 200M instruction ceiling: 200000016"

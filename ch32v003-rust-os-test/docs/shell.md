@@ -1,6 +1,6 @@
 # Phase 10: TCP シェル統合（仮想 NIC 検証済み）
 
-Renvo 上の実 RV32EC 命令で TCP 接続から全 4 コマンドを実行し、独立 PCAP 検査が PASS しました。仮想 NIC 版は Flash 16,320 / 16,384 byte、全スタックを含む予約 RAM 1,964 / 2,048 byte です。ENC28J60 版は専有 SPI デバイスへの変更後も Flash が 1,616 byte 超過し、Mac native TCP と実機は未検証です。Phase 10 全体は未完了です。
+Renvo 上の実 RV32EC 命令で TCP 接続から全 4 コマンドを実行し、独立 PCAP 検査が PASS しました。仮想 NIC 版は Flash 16,288 / 16,384 byte、全スタックを含む予約 RAM 1,964 / 2,048 byte です。ENC28J60 版は専有 SPI と MIR 最適化後も Flash が 1,484 byte 超過し、Mac native TCP と実機は未検証です。Phase 10 全体は未完了です。
 
 ## 実装
 
@@ -21,7 +21,7 @@ Renvo 上の実 RV32EC 命令で TCP 接続から全 4 コマンドを実行し�
 
 入力は CR / LF / CRLF を扱います。超過・不正入力は次の改行まで破棄し、エラーを 1 回返して次の行へ復帰します。受信は 1 byte ずつ取り出し、出力中の未処理入力は kernel の TCP RX buffer に保持します。未完了行は実行せず、新しい接続で入力状態を reset します。
 
-部分送信と Again を処理し、1 コマンドの送信期限は 500 tick、NET_TX_READY / NET_CLOSED を待ちます。対話入力は NET_RX / NET_CLOSED を期限なしで待ちます。quit 後は未処理入力を実行せず、最大 100 tick 排出して peer の FIN を待ちます。peer が先に閉じなければ active close となり、既存の 120 秒 TIME_WAIT が単一スロットを占有します。
+部分送信と Again を処理し、1 コマンドの送信期限は 500 tick、`event::wait_until` で NET_TX_READY / NET_CLOSED を絶対期限まで待ちます。待機登録前の preemption で期限を延ばしません。対話入力は NET_RX / NET_CLOSED を期限なしで待ちます。quit 後は未処理入力を実行せず、最大 100 tick 排出して peer の FIN を待ちます。peer が先に閉じなければ active close となり、既存の 120 秒 TIME_WAIT が単一スロットを占有します。
 
 ## 再現と結果
 
@@ -32,7 +32,7 @@ cd ch32v003-rust-os-test
 bash scripts/shell.sh
 ```
 
-固定 nightly / 元の memory.x / 256 byte kernel stack / 既存のサイズ最適化フラグでビルドします。元 ELF の load span と RAM を検査してから、エミュレータ用 ELF を生成します。入力・整形・整数処理を含む workspace 80 tests、clippy、fmt が PASS です。
+固定 nightly / 元の memory.x / 256 byte kernel stack / 既存のサイズ最適化フラグでビルドします。元 ELF の load span と RAM を検査してから、エミュレータ用 ELF を生成します。入力・整形・整数処理を含む workspace 86 tests、clippy、fmt が PASS です。
 
 各 run は次の 5 接続を TCP MSS=24、受信窓=128 で検査します。
 
@@ -48,8 +48,8 @@ bash scripts/shell.sh
 |---|---:|---:|
 |接続 / 入力 byte / コマンド|5 / 138 / 12|5 / 138 / 12|
 |RX / TX frame|103 / 114|103 / 110|
-|T0 / T1 / kernel 高水位 byte|204 / 228 / 112|204 / 224 / 112|
-|強制切替 / 延期 IRQ|10 / 3|0 / 122|
+|T0 / T1 / kernel 高水位 byte|176 / 236 / 120|176 / 224 / 120|
+|強制切替 / 延期 IRQ|9 / 3|0 / 117|
 |NIC 読出し中の 1 tick 注入|0|103|
 
 ストレス試験では全 IRQ が T0 の保護された NIC 読出し中に届き、T1 が待機中なら強制切替は不要です。延期・共有借用の終了・全通信結果を検査します。強制切替自体は通常 run と、非 yield loop の専用 preemption probe（47 回）で確認しています。最大除外時間の計測は `preempt-timing` 専用で、shell の値は未計測です。
@@ -65,3 +65,5 @@ RUSTFLAGS='-C opt-level=z -C target-feature=+relax -C llvm-args=-riscv-enable-gl
 ```
 
 ENC 構成の収容、Mac native TCP、統合 PR のレビュー / マージが残ります。実機は未保有です。仮想 packet peer の成功を Mac や実機の PASS として扱いません。
+
+現在の最適化構成は固定 nightly の `-Z inline-mir=yes` を含みます。十進変換は保存した 4 limb を除算後に検査し、全 helper call をまたいで非ゼロ集計値を保持しません。RV32E のスタック spill を抑え、T1 の全番兵を検査しています。[絶対期限・最適化後の共通回帰](logs/deadlines) も参照してください。ENC の最新失敗証跡は [こちら](logs/deadlines/shell-enc-link-failure.txt) です。

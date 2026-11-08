@@ -1,0 +1,20 @@
+{
+  "workspace_tests": 86,
+  "clippy_all_targets_all_features": "PASS",
+  "event_wait_relative_mode": 0,
+  "event_wait_absolute_mode": 1,
+  "expired_absolute_wait_preserves_events": true,
+  "preempted_registration_counterexample_relative_expiry_tick": 1001,
+  "preempted_registration_absolute_deadline_tick": 500,
+  "u32_deadline_wrap_and_both_dispatchers": "PASS",
+  "mir_inline": "yes (pinned nightly-2026-03-12)",
+  "http_normal_irq_stress": "PASS: 17 connections each",
+  "shell_normal_irq_stress": "PASS: 5 connections each",
+  "snapshot_tcp_normal_irq_stress": "PASS: 2 connections each",
+  "preemption_non_yield_spi_negative": "PASS",
+  "diagnostic_fault_injections": "PASS: 9 TCP + 9 preempt profile",
+  "http_enc_flash_overflow": 460,
+  "shell_enc_flash_overflow": 1484,
+  "mac_native_network": "UNVERIFIED",
+  "physical_enc": "UNVERIFIED"
+}

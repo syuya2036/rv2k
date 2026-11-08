@@ -19,14 +19,14 @@
     230,
     231
   ],
-  "instructions": 85484179,
+  "instructions": 88342400,
   "stack_used_bytes_tasks_kernel": [
-    204,
+    176,
     184,
-    112
+    120
   ],
-  "forced_switches": 6,
-  "deferred_irqs": 256,
+  "forced_switches": 4,
+  "deferred_irqs": 246,
   "max_disabled_clocks": null,
   "nic_irq_injections": 230,
   "mac_native_http": "UNVERIFIED",
