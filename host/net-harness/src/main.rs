@@ -78,6 +78,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     } else {
         60
     };
+    // HTTP runs 17 connections, including 230 protected RX IRQ injections.
+    // Slow CI hosts need more wall time; guest clocks, protocol deadlines and
+    // the deterministic instruction ceiling remain independent of this watchdog.
+    let watchdog_seconds = if probe.as_ref().is_some_and(peer::Peer::is_http) {
+        180
+    } else {
+        timeout + 10
+    };
     let began = Instant::now();
     let mut outputs = Vec::new();
     let mut capture = Vec::new();
@@ -215,10 +223,14 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         if result.reason != StopReason::InstructionLimit {
             break result;
         }
-        if (socket.is_none() && instructions > 200_000_000)
-            || began.elapsed() > Duration::from_secs(timeout + 10)
-        {
-            return Err("guest did not terminate within run budget".into());
+        if socket.is_none() && instructions > 200_000_000 {
+            return Err(format!("guest exceeded 200M instruction ceiling: {instructions}").into());
+        }
+        if began.elapsed() > Duration::from_secs(watchdog_seconds) {
+            return Err(format!(
+                "host watchdog exceeded {watchdog_seconds}s in {} mode: {instructions} guest instructions, {:.1}s elapsed",
+                args[5], began.elapsed().as_secs_f64()
+            ).into());
         }
     };
     if let Some(frame) = state.borrow_mut().take_tx() {

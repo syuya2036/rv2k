@@ -22,6 +22,8 @@ bash scripts/http.sh                # ENC の strict link まで含む完了ゲ�
 
 スクリプトは通常試験、RX ごとの IRQ 注入試験、元の ELF の容量検査を実行し、最後に ENC28J60 構成をビルドします。**現時点では最後の ENC リンクが Flash 超過で失敗し、スクリプト全体は非ゼロ終了します。** リンカの 16,384 byte 制約を緩めていません。CI は明示的な `--virtual-only` で仮想 NIC の試験を実行します。引数なしの完了ゲートは引き続き ENC の strict link を必須とし、未達の現在は失敗します。
 
+HTTP の対向 harness はホスト監視時間を 180 秒とします。17 接続・全 230 RX の保護区間 IRQ 注入を低速な CI ホストでも実行するための上限で、ゲストの 200M 命令上限、500 tick の HTTP 絶対期限とその独立検査は維持します。停止時は命令数上限とホスト時間超過を区別し、実行命令数・経過秒を報告します。
+
 結果は [logs/http](logs/http) にあります。`check-http.py` は PCAP の IP/TCP checksum、ストリームの再構築、Python 標準ライブラリの HTTPResponse による応答解析、独立した期待本文、ゲスト SRAM の状態・スタック番兵を照合します。ホスト peer と rv2k パーサの実装を共有しません。PCAP / SRAM の raw log を保存しています。
 
 ## 仮想 NIC で確認した内容

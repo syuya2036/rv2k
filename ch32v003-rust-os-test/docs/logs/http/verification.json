@@ -15,7 +15,7 @@
     "crates/rv2k-api/src/socket.rs": "7e976c93f078b03e137d6a6a5fe35070c9794c2b72188198b95e1d6de8852b5d",
     "crates/rv2k-drivers/src/virtual_nic.rs": "68e98bd4e975e962f4c64a6cd2fd1cf81391fd255f4a8099bedb44b8d4cd0fad",
     "ch32v003-rust-os-test/src/drivers.rs": "a2666966703bf4306f955b83463fbc37a1198689694c64c85f208a9101f63609",
-    "host/net-harness/src/main.rs": "28974ca8ba7a2798fd8acefb8e5cc7050d6d3fc16dd1f1e5bc3de7770d75fdf6",
+    "host/net-harness/src/main.rs": "c909c0f772e73b3a345925c944914b4d762c6b0aeb75542bf5e04e25ef58ca57",
     "host/net-harness/src/tcp_probe.rs": "325c604a874eb7adcdce1154692f4a8a38a20ad3f18a7297d59ae08c8a8641c0",
     "host/net-harness/src/http_probe.rs": "cf6f964002863225e9ac8ae3f804a029e72825670ea28c8c82d440441649cb04",
     "host/net-harness/src/peer.rs": "7f458db8ab5484d5cb2abf4701282419b7a2db2c1e12699fbba16d37289d1df1",
@@ -46,5 +46,9 @@
   "shell_snapshot_tcp_regression": "PASS: integration-regression/",
   "initial_regression_source": "c5ca09d26a0fb625c81e196b5653dd1c58316065 (historical initial implementation)",
   "http_virtual_ci_command": "bash scripts/http.sh --virtual-only",
-  "http_full_gate_command": "bash scripts/http.sh (still fails at ENC strict link)"
+  "http_full_gate_command": "bash scripts/http.sh (still fails at ENC strict link)",
+  "host_watchdog_seconds": 180,
+  "guest_instruction_ceiling": 200000000,
+  "http_absolute_deadline_ticks": 500,
+  "watchdog_regression": "PASS: same 17 connections, 16 responses and guest instruction counts in normal/IRQ stress"
 }
