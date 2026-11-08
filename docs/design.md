@@ -158,7 +158,7 @@ Phase 8のSysTickはタスク実行中にrescheduleを要求する。カーネ�
 |1|Sleep|a0=相対tick、復帰時0。0はyield|
 |2|GetPid|TaskId|
 |3|Uptime|a0=8byte出力先、a1=サイズ、0。起動後u64 tick|
-|4|EventWait|a0=mask、a1=相対timeout、成立bitsetまたはTimeout|
+|4|EventWait|a0=mask、a1=timeout/deadline、a2=0:相対・1:絶対、成立bitsetまたはTimeout|
 |5|EventSignal|a0=宛先TaskId、a1=mask、0|
 |6|Write|a0=fd（UART=1）、a1=ptr、a2=len、受理byte数|
 |7|SocketListen|a0=port、唯一のsocket handle。接続待ちはイベントで行う|
@@ -174,7 +174,7 @@ Phase 8のSysTickはタスク実行中にrescheduleを要求する。カーネ�
 
 エラー案: Invalid=1、NoSys=2、BadFd=3、Again=4、Timeout=5、Busy=6、Closed=7、Fault=8、MessageSize=9、Io=10。a0ではそれぞれ負値。未知番号はNoSys、未知フラグ・不正長はInvalid。snapshotは固定長・version付きで、可変長formattingをsyscall内に持ち込まない。
 
-公開APIは `task::yield_now/exit/info`, `time::sleep/uptime`, `event::wait/signal`, `ipc::send/recv`, `socket::listen/recv/send/close`, `console::write`, `mem::info`。Rustの予約語yieldを関数名にそのまま使わない。
+公開APIは `task::yield_now/exit/info`, `time::sleep/uptime`, `event::wait/wait_until/signal`, `ipc::send/recv`, `socket::listen/recv/send/close`, `console::write`, `mem::info`。Rustの予約語yieldを関数名にそのまま使わない。
 
 ### ポインタとブロッキング
 
@@ -187,6 +187,8 @@ SocketRecv/SendとUART Writeは初期APIでは非ブロッキング。カーネ�
 Phase 3の実装・実測と実機の残ゲートは [サービス検証](../ch32v003-rust-os-test/docs/services.md) を参照。
 
 タイマーベース目標は10ms tick。u64 uptimeと、下位u32のdeadlineを使用する。相対timeoutは2^31 tick未満とし、wrapを考慮した差分比較を行う。0は非待機、0xffffffffは無期限待機を示す予約値。SysTickの実時間精度、マスク中の経過時刻補正、カウンタwrapを別々に検証する。
+
+`event::wait_until(mask, deadline)` は wrapping u32 uptime の絶対期限を渡し、残り時間の計算と待機登録をカーネルの同じ IRQ 除外区間で行う。未来は i32::MAX tick 以内とし、同時刻・過去の期限は Timeout、pending を消費しない。u32::MAX は絶対モードでは時刻であり FOREVER ではない。相対モードの 0 tick polling は従来どおり readiness を優先する。a2 の他の値は Invalid。
 
 イベントはタスクごとのpending bitset。NET_RX、NET_TX_READY、NET_CONNECTED、NET_CLOSED、MSG_AVAILABLE、DRIVER_POLLを予約する。EventWaitは指定maskのany条件とし、返したsticky bitを消費する。socketのデータ有無などはレベル条件でも再評価する。
 

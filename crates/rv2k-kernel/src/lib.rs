@@ -261,6 +261,37 @@ impl Scheduler {
         Ok(None)
     }
 
+    /// Register against the current clock atomically with the expiry check.
+    pub fn wait_event_until(
+        &mut self,
+        mask: u32,
+        deadline: u32,
+        level: u32,
+    ) -> Result<Option<u32>, Error> {
+        if mask == 0 || mask & !event::ALL != 0 {
+            return Err(Error::Invalid);
+        }
+        self.current().ok_or(Error::Invalid)?;
+        let left = deadline.wrapping_sub(self.ticks as u32);
+        if left == 0 || left > i32::MAX as u32 {
+            return Err(Error::Timeout);
+        }
+        self.wait_event(mask, left, level)
+    }
+    pub(crate) fn wait_event_call(
+        &mut self,
+        args: [usize; 3],
+        level: u32,
+    ) -> Result<Option<u32>, Error> {
+        let mask = u32::try_from(args[0]).map_err(|_| Error::Invalid)?;
+        let time = u32::try_from(args[1]).map_err(|_| Error::Invalid)?;
+        match args[2] {
+            0 => self.wait_event(mask, time, level),
+            1 => self.wait_event_until(mask, time, level),
+            _ => Err(Error::Invalid),
+        }
+    }
+
     pub fn signal(&mut self, id: TaskId, mask: u32) -> Result<(), Error> {
         if mask == 0 || mask & !event::ALL != 0 {
             return Err(Error::Invalid);
@@ -534,5 +565,78 @@ mod wait_tests {
         s.suspend(0x210, Action::Exit(0));
         assert_eq!(s.select_next(), Selection::Run(A, 0x110));
         assert!(!s.can_preempt());
+    }
+}
+
+#[cfg(test)]
+mod absolute_event_tests {
+    use super::*;
+    fn running() -> Scheduler {
+        let mut s = Scheduler::new();
+        s.initialize([0x100, 0x200]);
+        s.select_next();
+        s
+    }
+    #[test]
+    fn deadline_does_not_restart_after_preemption_and_wraps() {
+        // Counterexample for an application that captures a relative timeout
+        // then is preempted before registering it: expiry moves to tick 1001.
+        let mut delayed = running();
+        let captured_remaining = 500;
+        delayed.advance_ticks(501);
+        assert_eq!(
+            delayed.wait_event(event::NET_RX, captured_remaining, 0),
+            Ok(None)
+        );
+        delayed.suspend(0x100, Action::Block);
+        delayed.select_next();
+        delayed.advance_ticks(499);
+        assert_eq!(delayed.take_result(TaskId::Network), None);
+        delayed.advance_ticks(1);
+        assert_eq!(delayed.uptime(), 1001);
+        assert_eq!(
+            delayed.take_result(TaskId::Network),
+            Some(Error::Timeout.code())
+        );
+
+        let mut s = running();
+        let deadline = (s.uptime() as u32).wrapping_add(500);
+        s.advance_ticks(501);
+        assert_eq!(
+            s.wait_event_call([event::NET_RX as usize, deadline as usize, 1], 0),
+            Err(Error::Timeout)
+        );
+        s.signal(TaskId::Network, event::NET_RX).unwrap();
+        assert_eq!(
+            s.wait_event_until(event::NET_RX, deadline, event::NET_RX),
+            Err(Error::Timeout)
+        );
+        assert_eq!(s.wait_event(event::NET_RX, 0, 0), Ok(Some(event::NET_RX)));
+        let mut s = running();
+        s.advance_ticks(u32::MAX - 3);
+        assert_eq!(
+            s.wait_event_call([event::NET_RX as usize, 2, 1], 0),
+            Ok(None)
+        );
+        s.suspend(0x100, Action::Block);
+        s.select_next();
+        s.advance_ticks(5);
+        assert_eq!(s.take_result(TaskId::Network), None);
+        s.advance_ticks(1);
+        assert_eq!(s.take_result(TaskId::Network), Some(Error::Timeout.code()));
+    }
+    #[test]
+    fn argument_modes_validation_and_relative_compatibility() {
+        let mut s = running();
+        for args in [[1, 1, 2], [0, 1, 1], [event::ALL as usize + 1, 1, 1]] {
+            assert_eq!(s.wait_event_call(args, event::NET_RX), Err(Error::Invalid));
+        }
+        #[cfg(target_pointer_width = "64")]
+        for args in [[u32::MAX as usize + 1, 1, 1], [1, u32::MAX as usize + 1, 1]] {
+            assert_eq!(s.wait_event_call(args, 0), Err(Error::Invalid));
+        }
+        assert_eq!(s.wait_event_call([1, 0, 0], 1), Ok(Some(1)));
+        assert_eq!(s.wait_event_call([1, 0, 1], 1), Err(Error::Timeout));
+        assert_eq!(s.wait_event_call([1, u32::MAX as usize, 0], 0), Ok(None));
     }
 }

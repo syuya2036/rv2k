@@ -50,12 +50,7 @@ fn remaining(deadline: u32) -> u32 {
     }
 }
 fn wait(mask: u32, deadline: u32) -> Result<(), Error> {
-    let left = remaining(deadline);
-    if left == 0 {
-        Err(Error::Timeout)
-    } else {
-        event::wait(mask | event::NET_CLOSED, left).map(|_| ())
-    }
+    event::wait_until(mask | event::NET_CLOSED, deadline).map(|_| ())
 }
 
 #[inline(never)]

@@ -183,7 +183,7 @@ pub fn dispatch_runtime(
             }
         }
         Some(Number::EventWait) => {
-            if args[0] > u32::MAX as usize || args[1] > u32::MAX as usize {
+            if args[0] > u32::MAX as usize || args[1] > u32::MAX as usize || args[2] > 1 {
                 Err(Error::Invalid)
             } else {
                 let level = mailbox.readiness(caller)
@@ -192,7 +192,7 @@ pub fn dispatch_runtime(
                     } else {
                         0
                     };
-                match scheduler.wait_event(args[0] as u32, args[1] as u32, level) {
+                match scheduler.wait_event_call(args, level) {
                     Ok(Some(bits)) => Ok(bits as usize),
                     Ok(None) => return Outcome::Switch(Action::Block),
                     Err(e) => Err(e),
