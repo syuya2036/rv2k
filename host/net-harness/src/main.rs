@@ -19,8 +19,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     if args.len() < 6 {
         return Err("usage: net-harness ELF INPUT.pcap OUTPUT.pcap REPORT.json replay | ELF BIND_ADDR OUTPUT.pcap REPORT.json udp PEER_ADDR SECONDS".into());
     }
-    if args[5] != "replay" && args[5] != "udp" && args[5] != "tcp" {
-        return Err("mode must be replay, udp or tcp".into());
+    if !matches!(args[5].as_str(), "replay" | "udp" | "tcp" | "tcp-preempt") {
+        return Err("mode must be replay, udp, tcp or tcp-preempt".into());
     }
     let image = FirmwareImage::parse(&fs::read(&args[1])?)?;
     let mut machine = RiscVMachine::new(TargetId::Ch32v003)?;
@@ -32,7 +32,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         Box::new(Nic(state.clone())),
     )?;
     machine.load_firmware(&image)?;
-    let mut probe = if args[5] == "tcp" {
+    let preemption_stress = args[5] == "tcp-preempt";
+    let mut probe = if matches!(args[5].as_str(), "tcp" | "tcp-preempt") {
         Some(tcp_probe::Probe::new())
     } else {
         None
@@ -62,6 +63,9 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut exhausted = false;
     let mut stopped = false;
     let mut instructions = 0u64;
+    let mut nic_irq_armed = false;
+    let mut rx_reads_before = 0;
+    let mut nic_irq_injections = 0u32;
     let final_result = loop {
         if let Some(frame) = state.borrow_mut().take_tx() {
             if let Some(probe) = &mut probe {
@@ -96,6 +100,10 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
             if state.borrow().empty() {
                 if let Some(frame) = probe.queue.pop_front() {
                     state.borrow_mut().inject(frame)?;
+                    if preemption_stress {
+                        nic_irq_armed = true;
+                        rx_reads_before = state.borrow().rx_reads;
+                    }
                 }
             }
             if probe.done() && probe.queue.is_empty() && state.borrow().empty() {
@@ -134,12 +142,32 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         let result = machine.run(
             RunLimits {
-                instructions: Some(10000),
+                // Stop soon after the first RX byte, while the network task
+                // still owns its shared protocol/NIC state.
+                instructions: Some(if nic_irq_armed { 16 } else { 10000 }),
                 deadline: None,
             },
             None,
         )?;
         instructions += result.stats.instructions;
+        if nic_irq_armed && state.borrow().rx_reads != rx_reads_before {
+            let address = image
+                .symbols
+                .iter()
+                .find(|s| s.name == "PREEMPT_STATE")
+                .ok_or("missing preemption state")?
+                .address;
+            let depth =
+                u32::from_le_bytes(machine.debug_read_memory(address, 4)?.try_into().unwrap());
+            if depth == 0 {
+                return Err("RX IRQ injection missed the protected borrow".into());
+            }
+            // Advance device time only: do not change CPU registers, guest
+            // protocol state, interrupt flags or shared application memory.
+            machine.advance_time(240_000)?;
+            nic_irq_injections += 1;
+            nic_irq_armed = false;
+        }
         if result.reason != StopReason::InstructionLimit {
             break result;
         }
@@ -170,7 +198,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let ram = machine.debug_read_memory(0x20000000, 2048)?;
     let report = serde_json::json!({"reason":final_result.reason,"instructions":instructions,"uart":String::from_utf8_lossy(&final_result.uart),
         "injected":state.borrow().received,"released":state.borrow().released,"transmitted":state.borrow().transmitted,
-        "symbols":symbols,"ram_hex":ram.iter().map(|b|format!("{b:02x}")).collect::<String>(),"mode":args[5],"rx_overflow":overflow,"tcp_probe":probe.as_ref().map(|p|p.summary())});
+        "symbols":symbols,"ram_hex":ram.iter().map(|b|format!("{b:02x}")).collect::<String>(),"mode":args[5],"rx_overflow":overflow,"nic_irq_injections":nic_irq_injections,"tcp_probe":probe.as_ref().map(|p|p.summary())});
     fs::write(&args[4], serde_json::to_vec_pretty(&report)?)?;
     println!(
         "guest {:?}: {} instructions, {} RX, {} TX",

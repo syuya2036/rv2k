@@ -1,6 +1,6 @@
 # rv2k 2.0 設計書
 
-状態: Phase 4まで検証済み。Phase 5はsoftware driver/model/RV32ECがPASS、J4M6実機未検証のためPARTIAL。Phase 6はvirtual NICとARP/IPv4/ICMPのhost/RV32ECフレーム注入がPASS、Mac実ping未検証のためPARTIAL。Phase 7はwire/guestのTCP echo・再送・異常終了と、仮想NIC/ENC構成の容量検査がPASS。Mac native TCPが未検証のためPARTIAL。Phase 8以降は設計案。Phase 0/1の実測を土台に、後続の契約と検証条件を定める。設計上の予算やAPIを実装済みと解釈しない。リリース名は **rv2k 2.0** に統一する。
+状態: Phase 4まで検証済み。Phase 5はsoftware driver/model/RV32ECがPASS、J4M6実機未検証のためPARTIAL。Phase 6はvirtual NICとARP/IPv4/ICMPのhost/RV32ECフレーム注入がPASS、Mac実ping未検証のためPARTIAL。Phase 7はwire/guestのTCP echo・再送・異常終了と、仮想NIC/ENC構成の容量検査がPASS。Mac native TCPが未検証のためPARTIAL。Phase 8はIRQ強制切替・共有状態保護・SPI途中IRQ・異常系と両構成の容量検査がPASS（実機はUNVERIFIED）。Phase 9以降は設計案。Phase 0/1の実測を土台に、後続の契約と検証条件を定める。設計上の予算やAPIを実装済みと解釈しない。リリース名は **rv2k 2.0** に統一する。
 
 ## 1. 目的と決定事項
 
@@ -114,7 +114,7 @@ api/kernelはPhase 1、archはPhase 2、driversはPhase 5、netとhost/net-harne
 
 Phase 1は既存の64バイトRV32E協調フレームを利用する。ra、gp、tp、t0〜t2、s0〜s1、a0〜a5、元spを保存。x0は不変、x16以降は使わない。初回entryと再開時レジスタを明示初期化する。
 
-Phase 2でecall共通の80バイトフレームへ移行済み。IRQ統合はPhase 8:
+Phase 2でecall共通の80バイトフレームへ移行済み。IRQ統合はPhase 8でRenvo検証済み（実機未検証）:
 
 |オフセット|内容|
 |---|---|

@@ -36,11 +36,19 @@ pub unsafe fn init() {
     );
 }
 
+// The public 64-bit uptime copy needs an aligned temporary. End that frame
+// before entering the deeper protocol/driver chain.
+#[inline(never)]
+fn sample_time() -> u32 {
+    time::uptime().unwrap_or(0) as u32
+}
 #[inline(never)]
 pub fn task() {
     loop {
-        let now = time::uptime().unwrap_or(0) as u32;
-        unsafe {
+        let now = sample_time();
+        let bits = unsafe {
+            #[cfg(feature = "preempt")]
+            let _guard = rv2k_arch::preempt::disable();
             let network = &mut *addr_of_mut!(NETWORK);
             #[cfg(not(feature = "drivers"))]
             let device = &mut *addr_of_mut!(DEVICE);
@@ -70,11 +78,17 @@ pub fn task() {
             }
             #[cfg(feature = "tcp")]
             {
-                let bits = network.socket.take_events();
-                if bits != 0 {
-                    let _ = event::signal(rv2k_api::TaskId::Application, bits);
-                }
+                network.socket.take_events()
             }
+            #[cfg(not(feature = "tcp"))]
+            {
+                0
+            }
+        };
+        #[cfg(feature = "preempt")]
+        rv2k_arch::preempt::checkpoint();
+        if bits != 0 {
+            let _ = event::signal(rv2k_api::TaskId::Application, bits);
         }
         match event::wait(event::DRIVER_POLL, 1) {
             Ok(_) | Err(Error::Timeout) => {}
@@ -88,7 +102,9 @@ pub fn task() {
 #[cfg(feature = "tcp")]
 mod sockets {
     use super::*;
-    use core::ptr::{addr_of, read_volatile, write_volatile};
+    use core::ptr::addr_of;
+    #[cfg(feature = "emulator-stop")]
+    use core::ptr::{read_volatile, write_volatile};
     use rv2k_api::{socket, TaskId};
     use rv2k_kernel::{
         memory::{Region, UserMemory},
@@ -98,10 +114,13 @@ mod sockets {
     use rv2k_net::tcp::socket::Socket;
     #[no_mangle]
     static mut APP_BUFFER: [u8; 32] = [0; 32];
+    #[cfg(feature = "emulator-stop")]
     #[no_mangle]
     static mut APP_BYTES: u32 = 0;
+    #[cfg(feature = "emulator-stop")]
     #[no_mangle]
     static mut APP_LISTENS: u32 = 0;
+    #[cfg(feature = "emulator-stop")]
     #[no_mangle]
     static mut APP_MEM_CHECK: u32 = 0;
     #[cfg(feature = "emulator-stop")]
@@ -208,15 +227,18 @@ ret
             assert_eq!(app_gp_probe(), 1);
             write_volatile(addr_of_mut!(APP_GP_CHECK), 1);
         }
-        let info = rv2k_api::mem::info().expect("memory snapshot");
-        assert!(
-            info.version == 1
-                && info.guard_failures == 0
-                && info.static_bytes + info.kernel_reserved <= 2048
-                && info.flash_bytes <= 16384
-        );
-        unsafe {
-            write_volatile(addr_of_mut!(APP_MEM_CHECK), 1);
+        #[cfg(feature = "emulator-stop")]
+        {
+            let info = rv2k_api::mem::info().expect("memory snapshot");
+            assert!(
+                info.version == 1
+                    && info.guard_failures == 0
+                    && info.static_bytes + info.kernel_reserved <= 2048
+                    && info.flash_bytes <= 16384
+            );
+            unsafe {
+                write_volatile(addr_of_mut!(APP_MEM_CHECK), 1);
+            }
         }
         loop {
             let handle = match socket::listen(1234) {
@@ -230,6 +252,7 @@ ret
                 }
                 Err(_) => panic!("listen failed"),
             };
+            #[cfg(feature = "emulator-stop")]
             unsafe {
                 write_volatile(
                     addr_of_mut!(APP_LISTENS),
@@ -260,6 +283,7 @@ ret
                                 Err(_) => break 'connection,
                             }
                         }
+                        #[cfg(feature = "emulator-stop")]
                         unsafe {
                             write_volatile(
                                 addr_of_mut!(APP_BYTES),

@@ -368,7 +368,7 @@ impl Network {
         }
         d.rx_read_at(f, 14, &mut s.header[14..42])?;
         let h = &s.header;
-        if h[14..22] != [0, 1, 8, 0, 6, 4, 0, 1] && h[14..22] != [0, 1, 8, 0, 6, 4, 0, 2] {
+        if h[14..20] != [0, 1, 8, 0, 6, 4] || h[20] != 0 || !(1..=2).contains(&h[21]) {
             self.drop_frame();
             return Ok(());
         }
@@ -468,7 +468,8 @@ impl Network {
             self.drop_frame();
             return Ok(());
         }
-        if be16(&s.header[20..22]) & 0xbfff != 0 {
+        // DF is allowed; reserved/MF bits and the fragment offset must be zero.
+        if s.header[20] & 0xbf != 0 || s.header[21] != 0 {
             self.stats.fragments = self.stats.fragments.saturating_add(1);
             self.drop_frame();
             return Ok(());

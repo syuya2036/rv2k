@@ -1,9 +1,10 @@
 """Independent PCAP, guest memory, stack and echo oracle for the TCP probe."""
 import json
 import struct
+import sys
 from pathlib import Path
 
-LOG=Path('docs/logs')
+LOG=Path(sys.argv[1]) if len(sys.argv)>1 else Path('docs/logs')
 r=json.loads((LOG/'tcp-run.json').read_text())
 ram=bytes.fromhex(r['ram_hex']);symbols=r['symbols']
 
@@ -93,5 +94,18 @@ summary={'host_packet_peer':'PASS (synthetic peer, not native Mac TCP)',
     'stack_used_bytes_tasks_kernel':usage,'syscalls':integer('TRAPS'),
     'timer_irqs':integer('TIMER_IRQS'),'uptime_ticks':integer('UPTIME',8),
     'simulated_clock_advance_ticks':6500,'mac_native_tcp':'UNVERIFIED','physical_enc':'UNVERIFIED'}
+if 'PREEMPT_STATE' in symbols:
+    if r['mode']=='tcp-preempt':
+        assert r['nic_irq_injections']==len(incoming)
+    assert integer('PREEMPT_DEFERRED')>=r['nic_irq_injections']
+    assert integer('PREEMPT_SWITCHES')>0
+    assert integer('PREEMPT_BLOCKED_CALLS')==0
+    assert integer('PREEMPT_STATE')==0
+    summary['preemption']={'nic_irq_injections':r['nic_irq_injections'],
+        'deferred_irqs':integer('PREEMPT_DEFERRED'),
+        'forced_switches':integer('PREEMPT_SWITCHES'),
+        'max_disabled_clocks':integer('PREEMPT_MAX_CLOCKS'),
+        'injected_clocks_per_frame':240000 if r['mode']=='tcp-preempt' else 0,
+        'shared_borrow_released_before_completion':True}
 (LOG/'tcp-summary.json').write_text(json.dumps(summary,indent=2)+'\n')
 print('PASS: guest TCP echo/socket calls, PCAP checksums, loss and stack guards:',summary)

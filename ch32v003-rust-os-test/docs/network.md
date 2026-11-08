@@ -80,3 +80,5 @@ TX失敗時abortとRX releaseも確認する。
 これはpermission denied固有のcodeではなく、権限不足が確定したとは扱わない。
 設定・終了処理・実pingの手順は [host adapter](../../../host/vmnet/README.md) を参照。
 権限を要する実行は設計書の事前確認ゲートに従う。成功ログが揃うまでPhase 6はPARTIAL。
+
+利用者の許可後のroot起動試行は、sudoの`a password is required`で停止した。vmnet APIのroot実行には到達せず、network/routeは作られていない。guestの40秒動作はRX/TX=0で、実ping成功として扱わない。記録は`docs/logs/network-live-attempt.json`。

@@ -14,7 +14,8 @@ host/vmnet/target/probe
 このMacの通常実行ではprobeとbridgeがともにstatus 1001で失敗した。
 そのためビルドのみ検証済み、host adapterの通信はUNVERIFIED。
 SDKでは1001はVMNET_FAILURE（一般エラー）。特定のpermission deniedとは断定しない。
-rootまたは適切なentitlementによる利用可否は別途検証する。
+利用者の許可後、`sudo -n .../bridge 60`を実行したが、sudoが`a password is required`で終了した。vmnetのroot実行には到達しておらず、一時network・routeは作られていない。UDP guestは40秒で正常終了したがRX/TXは0で、pingは実行していない。
+[今回の試行記録](../../ch32v003-rust-os-test/docs/logs/network-live-attempt.json)を参照。rootまたは適切なentitlementによる利用可否は引き続き未検証。
 
 ## 実pingの手順（事前の実行確認が必要）
 

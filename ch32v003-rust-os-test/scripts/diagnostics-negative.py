@@ -2,17 +2,23 @@
 import json
 import os
 import subprocess
-import sys
+import argparse
 from pathlib import Path
 
 logs = Path('docs/logs')
-tcp_profile = '--tcp-build-profile' in sys.argv[1:]
-prefix = 'tcp-profile-' if tcp_profile else ''
-output = Path('target/diagnostic-faults') / ('tcp-profile' if tcp_profile else 'default')
+parser = argparse.ArgumentParser()
+profiles = parser.add_mutually_exclusive_group()
+profiles.add_argument('--tcp-build-profile', action='store_true')
+profiles.add_argument('--preempt-build-profile', action='store_true')
+args = parser.parse_args()
+prefix = 'preempt-profile-' if args.preempt_build_profile else ('tcp-profile-' if args.tcp_build_profile else '')
+output = Path('target/diagnostic-faults') / (prefix.rstrip('-') if prefix else 'default')
 output.mkdir(parents=True, exist_ok=True)
 env = dict(os.environ, RUSTFLAGS='-C link-arg=--defsym=_kernel_stack_size=256 -C link-arg=-Tmemory.x')
-if tcp_profile:
+if args.tcp_build_profile or args.preempt_build_profile:
     env['RUSTFLAGS'] += ' -C opt-level=z -C target-feature=+relax -C link-arg=--icf=all -C link-arg=--relax -C link-arg=--relax-gp'
+if args.preempt_build_profile:
+    env['RUSTFLAGS'] += ' -C llvm-args=-riscv-enable-global-merge=false'
 sysroot = subprocess.check_output(['rustc','--print','sysroot'],text=True).strip()
 host = next(x[6:] for x in subprocess.check_output(['rustc','-vV'],text=True).splitlines() if x.startswith('host: '))
 nm = Path(sysroot)/'lib/rustlib'/host/'bin/llvm-nm'
@@ -23,7 +29,8 @@ for feature, expected, trap, value in [
     ('fault-kernel-illegal',5,2,0xffffffff), ('fault-sp',3,11,0),
     ('fault-uart-stuck',1,0,0),
 ]:
-    subprocess.run(['cargo','build','--locked','--release','--features',('fault-panic' if feature=='fault-no-debugger' else feature+',emulator-stop'),'--target-dir',str(output)],env=env,check=True)
+    features = ('fault-panic' if feature=='fault-no-debugger' else feature+',emulator-stop') + (',preempt' if args.preempt_build_profile else '')
+    subprocess.run(['cargo','build','--locked','--release','--features',features,'--target-dir',str(output)],env=env,check=True)
     elf = output/'riscv32ec-unknown-none-elf/release/ch32v003-rust-os-test'
     subprocess.run(['python3','scripts/elf-for-remu.py',str(elf),str(elf)+'.remu'],check=True)
     bus_path=output/(feature+'-bus.json'); run_path=logs/(prefix+feature+'-run.json')
@@ -54,7 +61,7 @@ for feature, expected, trap, value in [
     else: assert 0x20000000<=sp<=0x20000800
     uart=bytes(run['uart'])
     if feature=='fault-uart-stuck':assert uart==b''
-    else:assert uart.startswith(b'FAULT ') and f'{reason:08x}'.encode() in uart,uart
+    else:assert uart==b'FAULT '+b' '.join(f'{v:08x}'.encode() for v in [reason,task,pc,cause,tval,sp])+b' \n',uart
     results.append(dict(case=feature,reason=reason,task=task,pc=pc,cause=cause,tval=tval,sp=sp,instructions=run['stats']['instructions']))
 (logs/(prefix+'diagnostics-negative-summary.json')).write_text(json.dumps(results,indent=2)+'\n')
 print('PASS: diagnostic fault injections:',results)

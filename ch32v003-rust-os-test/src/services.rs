@@ -56,6 +56,18 @@ static mut STACK_USED: [u32; 3] = [0; 3];
 static mut LAST_CAUSE: u32 = 0;
 #[no_mangle]
 static mut LAST_PC: u32 = 0;
+#[cfg(feature = "preempt")]
+#[no_mangle]
+static mut PREEMPT_SWITCHES: u32 = 0;
+#[cfg(feature = "preempt")]
+#[no_mangle]
+static mut PREEMPT_BLOCKED_CALLS: u32 = 0;
+#[cfg(feature = "preempt-probe")]
+#[no_mangle]
+static mut PREEMPT_TRACE: [[u32; 4]; 8] = [[0; 4]; 8];
+#[cfg(feature = "preempt-probe")]
+#[no_mangle]
+static mut PREEMPT_TRACE_LEN: u32 = 0;
 extern "C" {
     fn rv2k_trap_entry();
     fn rv2k_first_task(sp: usize) -> !;
@@ -214,6 +226,19 @@ unsafe extern "C" fn rv2k_trap_dispatch(frame: *mut TrapFrame) -> usize {
         saved.registers[9] as usize,
         saved.registers[10] as usize,
     ];
+    #[cfg(feature = "preempt")]
+    if (rv2k_arch::preempt::disabled() || saved.status & 0x80 == 0)
+        && matches!(saved.registers[13], 0 | 1 | 4 | 11)
+    {
+        // Reject before dispatch can publish a wait/exit. Shared borrows must
+        // not survive a syscall that suspends their owning task.
+        write_volatile(
+            addr_of_mut!(PREEMPT_BLOCKED_CALLS),
+            read_volatile(addr_of!(PREEMPT_BLOCKED_CALLS)).wrapping_add(1),
+        );
+        saved.registers[8] = Error::Busy.code() as u32;
+        return frame as usize;
+    }
     #[cfg(all(feature = "diagnostics", not(feature = "tcp")))]
     let snapshot = crate::diagnostics::info();
     #[cfg(feature = "tcp")]
@@ -284,9 +309,18 @@ unsafe extern "C" fn rv2k_trap_dispatch(frame: *mut TrapFrame) -> usize {
     match outcome {
         Outcome::Complete(result) => {
             saved.registers[8] = result as u32;
+            #[cfg(feature = "preempt")]
+            if saved.status & 0x80 != 0
+                && rv2k_arch::preempt::take_pending()
+                && scheduler.can_preempt()
+            {
+                return rv2k_preempt_dispatch(frame);
+            }
             frame as usize
         }
         Outcome::Switch(action) => {
+            #[cfg(feature = "preempt")]
+            let _ = rv2k_arch::preempt::take_pending();
             saved.registers[8] = 0;
             scheduler.suspend(frame as usize, action);
             if matches!(action, Action::Exit(_)) {
@@ -308,6 +342,9 @@ extern "C" fn rv2k_kernel_fault(_sp: usize) -> ! {
 }
 
 extern "C" fn task_trampoline() -> ! {
+    #[cfg(feature = "preempt-probe")]
+    crate::preemption_probe::task();
+    #[cfg(not(feature = "preempt-probe"))]
     if task::id() == TaskId::Network {
         #[cfg(feature = "net")]
         crate::network::task();
@@ -493,7 +530,7 @@ fn task_b() {
 }
 
 #[no_mangle]
-unsafe extern "C" fn rv2k_timer_irq(_frame: *const TrapFrame) {
+unsafe extern "C" fn rv2k_timer_irq(_frame: *const TrapFrame) -> usize {
     #[cfg(feature = "diagnostics")]
     crate::diagnostics::check(Some(&*_frame));
     let count = read_volatile(0xe000f008 as *const u32);
@@ -503,6 +540,60 @@ unsafe extern "C" fn rv2k_timer_irq(_frame: *const TrapFrame) {
         addr_of_mut!(TIMER_IRQS),
         read_volatile(addr_of!(TIMER_IRQS)) + 1,
     );
+    #[cfg(feature = "preempt")]
+    {
+        update_clock();
+        let switch = rv2k_arch::preempt::irq_request();
+        #[cfg(feature = "fault-preempt-lock")]
+        let switch = {
+            let _ = switch;
+            true
+        };
+        if switch && (&*addr_of!(SCHEDULER)).can_preempt() {
+            return 1;
+        }
+    }
+    0
+}
+#[cfg(feature = "preempt")]
+#[no_mangle]
+unsafe extern "C" fn rv2k_preempt_dispatch(frame: *mut TrapFrame) -> usize {
+    #[cfg(feature = "fault-preempt-pc")]
+    {
+        if (*frame).cause == 0x8000000c {
+            (*frame).pc = (*frame).pc.wrapping_add(4);
+        }
+    }
+    // Timer frames retain their interrupted PC; ecall Complete already wrote
+    // its result and advanced PC before joining this path.
+    write_volatile(
+        addr_of_mut!(PREEMPT_SWITCHES),
+        read_volatile(addr_of!(PREEMPT_SWITCHES)).wrapping_add(1),
+    );
+    let scheduler = &mut *addr_of_mut!(SCHEDULER);
+    #[cfg(feature = "preempt-probe")]
+    let from = scheduler.current().unwrap().index() as u32;
+    scheduler.suspend(frame as usize, Action::Yield);
+    let next = select_next();
+    #[cfg(feature = "preempt-probe")]
+    {
+        let len = read_volatile(addr_of!(PREEMPT_TRACE_LEN));
+        if len < 8 {
+            write_volatile(
+                addr_of_mut!(PREEMPT_TRACE)
+                    .cast::<[u32; 4]>()
+                    .add(len as usize),
+                [
+                    from,
+                    (*frame).pc,
+                    (*frame).cause,
+                    (&*addr_of!(SCHEDULER)).current().unwrap().index() as u32,
+                ],
+            );
+            write_volatile(addr_of_mut!(PREEMPT_TRACE_LEN), len + 1);
+        }
+    }
+    next
 }
 unsafe fn update_clock() {
     #[cfg(feature = "drivers")]

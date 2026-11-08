@@ -53,6 +53,17 @@ j rv2k_restore
 .if {timer}
 rv2k_timer_trap:
 call rv2k_timer_irq
+.if {preempt}
+beqz a0, rv2k_timer_resume
+mv a0, sp
+call rv2k_prepare_frame
+# The checked copy now lives on the task stack. No kernel temporary frame
+# survives across scheduler dispatch or the selected task's restore.
+la sp, _stack_top
+call rv2k_preempt_dispatch
+j rv2k_restore
+rv2k_timer_resume:
+.endif
 mv a0, sp
 j rv2k_restore
 rv2k_idle:

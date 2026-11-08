@@ -1,9 +1,11 @@
 #![no_std]
 
 #[cfg(target_arch = "riscv32")]
-core::arch::global_asm!(include_str!("trap.S"), timer = const cfg!(feature = "timer") as usize);
+core::arch::global_asm!(include_str!("trap.S"), timer = const cfg!(feature = "timer") as usize, preempt = const cfg!(feature = "preempt") as usize);
 
 pub mod clock;
+#[cfg(feature = "preempt")]
+pub mod preempt;
 pub mod stack;
 
 /// Preserve the caller's MIE state, including nested critical sections.
